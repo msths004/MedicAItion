@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nota Médica — {{ datos_demograficos.nombre or curp }}</title>
+  <style>
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: white;
+      padding: 0;
+      margin: 0;
+    }
+
+    .nota-container {
+      max-width: 816px; /* ~21.6cm = carta */
+      margin: 0 auto;
+      padding: 40px 50px;
+    }
+
+    /* ── MEMBRETE ── */
+    .membrete {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid #c41e1e;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+
+    .membrete-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .membrete-logo svg {
+      flex-shrink: 0;
+    }
+
+    .membrete-info h1 {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #c41e1e;
+      letter-spacing: -0.3px;
+    }
+
+    .membrete-info p {
+      font-size: 9pt;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .membrete-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* ── TÍTULO DE LA NOTA ── */
+    .nota-titulo {
+      text-align: center;
+      font-size: 13pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #333;
+      margin: 16px 0 20px;
+      padding: 8px 0;
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+    }
+
+    /* ── FICHA DE IDENTIFICACIÓN ── */
+    .ficha {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 24px;
+      background: #f8f8f8;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 10pt;
+    }
+
+    .ficha-item {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ficha-label {
+      font-weight: 700;
+      color: #444;
+      min-width: 120px;
+    }
+
+    .ficha-value {
+      color: #1a1a1a;
+    }
+
+    /* ── SECCIONES CLÍNICAS ── */
+    .seccion {
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+    }
+
+    .seccion-titulo {
+      font-size: 10pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #c41e1e;
+      border-bottom: 1px solid #e8e8e8;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+
+    .seccion-contenido {
+      font-size: 10.5pt;
+      line-height: 1.7;
+      text-align: justify;
+      color: #222;
+    }
+
+    /* ── TABLA CIE-10 ── */
+    .tabla-cie10 {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+      margin-top: 6px;
+    }
+
+    .tabla-cie10 th {
+      background: #c41e1e;
+      color: white;
+      text-align: left;
+      padding: 6px 10px;
+      font-weight: 600;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tabla-cie10 td {
+      padding: 5px 10px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    .tabla-cie10 tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .codigo-badge {
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      color: #c41e1e;
+    }
+
+    .similitud-alta { color: #16a34a; font-weight: 600; }
+    .similitud-media { color: #d97706; font-weight: 600; }
+    .similitud-baja { color: #dc2626; font-weight: 600; }
+
+    /* ── TABLA MEDICAMENTOS ── */
+    .tabla-meds {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+      margin-top: 6px;
+    }
+
+    .tabla-meds th {
+      background: #1e3a5f;
+      color: white;
+      text-align: left;
+      padding: 6px 10px;
+      font-weight: 600;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tabla-meds td {
+      padding: 5px 10px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    .tabla-meds tr:nth-child(even) {
+      background: #f5f8fc;
+    }
+
+    /* ── SIGNOS VITALES ── */
+    .signos-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .signo-tag {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 9.5pt;
+      font-weight: 500;
+      color: #3730a3;
+    }
+
+    /* ── PIE DE FIRMA ── */
+    .firma-area {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .firma-bloque {
+      flex: 1;
+      text-align: center;
+    }
+
+    .firma-linea {
+      border-top: 1px solid #333;
+      margin: 40px 20px 6px;
+    }
+
+    .firma-nombre {
+      font-size: 10pt;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .firma-cargo {
+      font-size: 8.5pt;
+      color: #777;
+    }
+
+    /* ── PIE DE PÁGINA ── */
+    .pie-pagina {
+      margin-top: 24px;
+      padding-top: 10px;
+      border-top: 1px solid #e0e0e0;
+      font-size: 7.5pt;
+      color: #999;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ── PRINT RULES ── */
+    /* ── AVISO DE EDICIÓN ── */
+    .edit-notice {
+      background: #fffbe6;
+      border: 1px solid #f0d000;
+      border-radius: 4px;
+      padding: 8px 14px;
+      font-size: 9pt;
+      color: #856404;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    @media print {
+      body { padding: 0; margin: 0; }
+      .nota-container { padding: 20px 30px; max-width: 100%; }
+      .seccion { page-break-inside: avoid; }
+      .firma-area { page-break-inside: avoid; }
+      .edit-notice { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="nota-container" contenteditable="true" spellcheck="true">
+
+    <!-- AVISO DE EDICIÓN (no se imprime) -->
+    <div class="edit-notice" contenteditable="false">
+      ✏️ Esta nota es editable. Haga clic en cualquier sección para corregir o completar la información antes de imprimir.
+    </div>
+
+    <!-- MEMBRETE -->
+    <div class="membrete">
+      <div class="membrete-logo">
+        <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+          <rect x="11" y="2" width="6" height="24" rx="3" fill="#c41e1e"/>
+          <rect x="2" y="11" width="24" height="6" rx="3" fill="#c41e1e"/>
+        </svg>
+        <div class="membrete-info">
+          <h1>{{ institucion_nombre }}</h1>
+          <p>Sistema de Expediente Clínico Electrónico — MedicAItion v2.0</p>
+        </div>
+      </div>
+      <div class="membrete-meta">
+        CLUES: {{ clues_institucion }}<br />
+        Folio: {{ id[:8] | upper }}<br />
+        {{ timestamp_formateado }}
+      </div>
+    </div>
+
+    <!-- TÍTULO -->
+    <div class="nota-titulo">Nota Médica de Evolución</div>
+
+    <!-- FICHA DE IDENTIFICACIÓN -->
+    <div class="ficha">
+      <div class="ficha-item">
+        <span class="ficha-label">Nombre:</span>
+        <span class="ficha-value">{{ datos_demograficos.nombre or 'No proporcionado' }}</span>
+      </div>
+      <div class="ficha-item">
+        <span class="ficha-label">CURP:</span>
+        <span class="ficha-value" style="font-family: 'Courier New', monospace;">{{ curp }}</span>
+      </div>
+      <div class="ficha-item">
+        <span class="ficha-label">Edad:</span>
+        <span class="ficha-value">{{ datos_demograficos.edad or 'No especificada' }}</span>
+      </div>
+      <div class="ficha-item">
+        <span class="ficha-label">Sexo:</span>
+        <span class="ficha-value">{{ datos_demograficos.sexo or 'No especificado' }}</span>
+      </div>
+      <div class="ficha-item">
+        <span class="ficha-label">Fecha y Hora:</span>
+        <span class="ficha-value">{{ timestamp_formateado }}</span>
+      </div>
+      <div class="ficha-item">
+        <span class="ficha-label">Institución:</span>
+        <span class="ficha-value">{{ institucion_nombre }}</span>
+      </div>
+    </div>
+
+    <!-- MOTIVO DE CONSULTA -->
+    <div class="seccion">
+      <div class="seccion-titulo">I. Motivo de Consulta</div>
+      <div class="seccion-contenido">{{ nota_clinica.motivo_consulta }}</div>
+    </div>
+
+    <!-- EVOLUCIÓN DEL PADECIMIENTO ACTUAL -->
+    <div class="seccion">
+      <div class="seccion-titulo">II. Evolución y Actualización del Cuadro Clínico</div>
+      <div class="seccion-contenido">{{ nota_clinica.evolucion_padecimiento }}</div>
+    </div>
+
+    <!-- SIGNOS VITALES -->
+    {% if entidades_extraidas.signos_vitales %}
+    <div class="seccion">
+      <div class="seccion-titulo">III. Signos Vitales</div>
+      <div class="signos-grid" contenteditable="false">
+        {% for signo in entidades_extraidas.signos_vitales %}
+        <span class="signo-tag">{{ signo }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- EXPLORACIÓN FÍSICA -->
+    <div class="seccion">
+      <div class="seccion-titulo">{% if entidades_extraidas.signos_vitales %}IV{% else %}III{% endif %}. Exploración Física</div>
+      <div class="seccion-contenido">{{ nota_clinica.exploracion_fisica }}</div>
+    </div>
+
+    <!-- DIAGNÓSTICOS CON CIE-10 -->
+    <div class="seccion">
+      <div class="seccion-titulo">{% if entidades_extraidas.signos_vitales %}V{% else %}IV{% endif %}. Diagnósticos — Códigos CIE-10</div>
+      <div class="seccion-contenido">{{ nota_clinica.diagnostico_integral }}</div>
+
+      {% set all_codes = [] %}
+      {% for category in ['sintomas_referidos', 'diagnosticos_tentativos', 'tratamientos'] %}
+        {% for item in codigos_cie10.get(category, []) %}
+          {% if item.codigo %}
+            {% if all_codes.append(item) %}{% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+
+      {% if all_codes %}
+      <table class="tabla-cie10" contenteditable="false">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Descripción Oficial</th>
+            <th>Término Original</th>
+            <th>Similitud</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in all_codes %}
+          <tr>
+            <td><span class="codigo-badge">{{ item.codigo }}</span></td>
+            <td>{{ item.descripcion }}</td>
+            <td>{{ item.termino_original }}</td>
+            <td>
+              {% set sim_pct = (item.similitud * 100) | round | int %}
+              <span class="{% if sim_pct >= 75 %}similitud-alta{% elif sim_pct >= 50 %}similitud-media{% else %}similitud-baja{% endif %}">
+                {{ sim_pct }}%
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+
+    <!-- PRONÓSTICO -->
+    <div class="seccion">
+      <div class="seccion-titulo">{% if entidades_extraidas.signos_vitales %}VI{% else %}V{% endif %}. Pronóstico</div>
+      <div class="seccion-contenido">{{ nota_clinica.pronostico }}</div>
+    </div>
+
+    <!-- PLAN DE TRATAMIENTO E INDICACIONES MÉDICAS -->
+    <div class="seccion">
+      <div class="seccion-titulo">{% if entidades_extraidas.signos_vitales %}VII{% else %}VI{% endif %}. Plan de Tratamiento e Indicaciones Médicas</div>
+      <div class="seccion-contenido">{{ nota_clinica.plan_tratamiento }}</div>
+
+      {% set meds = entidades_extraidas.medicamentos %}
+      {% if meds %}
+      <table class="tabla-meds" contenteditable="false">
+        <thead>
+          <tr>
+            <th>Medicamento</th>
+            <th>Dosis</th>
+            <th>Vía</th>
+            <th>Periodicidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for med in meds %}
+          <tr>
+            {% if med is mapping %}
+            <td><strong>{{ med.nombre or '—' }}</strong></td>
+            <td>{{ med.dosis or 'No especificada' }}</td>
+            <td>{{ med.via or 'No especificada' }}</td>
+            <td>{{ med.periodicidad or 'No especificada' }}</td>
+            {% else %}
+            <td><strong>{{ med }}</strong></td>
+            <td colspan="3">Sin detalles de posología</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+
+    <!-- FIRMA DEL MÉDICO -->
+    <div class="firma-area">
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">Nombre y Firma del Médico</div>
+        <div class="firma-cargo">Cédula Profesional: _______________</div>
+      </div>
+      <div class="firma-bloque">
+        <div class="firma-linea"></div>
+        <div class="firma-nombre">Nombre y Firma del Paciente o Responsable</div>
+        <div class="firma-cargo">Relación: _______________</div>
+      </div>
+    </div>
+
+    <!-- PIE DE PÁGINA -->
+    <div class="pie-pagina">
+      Documento generado por MedicAItion v2.0 — Sistema de Expediente Clínico Electrónico con Inteligencia Artificial<br />
+      Conforme a la NOM-004-SSA3-2012 — Del expediente clínico<br />
+      Folio interno: {{ id }} | Generado: {{ timestamp_formateado }}
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedicAItion — Cruz Roja Mérida</title>
+  <meta name="description" content="Sistema inteligente de captura y estandarización de datos médicos con IA para la Cruz Roja Mérida." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="11" y="2" width="6" height="24" rx="3" fill="#ef4444"/>
+            <rect x="2" y="11" width="24" height="6" rx="3" fill="#ef4444"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-main">MedicAItion</span>
+          <span class="logo-sub">Cruz Roja Mérida</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-badge" id="status-badge">
+          <span class="status-dot"></span>
+          <span id="status-text">Sistema listo</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <main class="main-layout">
+
+    <!-- LEFT: INPUT PANEL -->
+    <section class="panel panel-input">
+      <div class="panel-header">
+        <h2>Nueva Entrada</h2>
+        <p class="panel-desc">Ingresa los datos del paciente por voz o texto</p>
+      </div>
+
+      <!-- Patient Meta -->
+      <div class="form-group">
+        <label for="curp-input">CURP del Paciente <span style="font-weight:400;color:#888;font-size:11px">(opcional en urgencias)</span></label>
+        <input id="curp-input" type="text" placeholder="Dejar vacío si no se tiene" maxlength="18" class="input-field" />
+      </div>
+      <div class="form-group">
+        <label for="clues-input">CLUES de la Institución</label>
+        <input id="clues-input" type="text" value="YUC-CR-001" class="input-field" />
+      </div>
+
+      <!-- Mode Toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-audio" onclick="setMode('audio')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Audio
+        </button>
+        <button class="mode-btn" id="btn-text" onclick="setMode('text')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Texto
+        </button>
+      </div>
+
+      <!-- AUDIO MODE -->
+      <div id="audio-panel" class="input-panel">
+        <div class="recorder-area" id="recorder-area">
+          <div class="waveform" id="waveform">
+            <div class="wave-bars" id="wave-bars">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+          <button class="record-btn" id="record-btn" onclick="toggleRecord()">
+            <div class="record-icon" id="record-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+            </div>
+          </button>
+          <p class="record-label" id="record-label">Presiona para grabar</p>
+          <p class="record-timer" id="record-timer" style="display:none">00:00</p>
+        </div>
+        <div id="audio-preview" style="display:none" class="audio-preview">
+          <audio id="audio-playback" controls></audio>
+        </div>
+      </div>
+
+      <!-- TEXT MODE -->
+      <div id="text-panel" class="input-panel" style="display:none">
+        <textarea id="text-input" class="textarea-field" rows="6"
+          placeholder="Describe el caso clínico: síntomas, diagnóstico, tratamiento indicado, medicamentos..."></textarea>
+      </div>
+
+      <!-- Submit -->
+      <button class="submit-btn" id="submit-btn" onclick="submitData()">
+        <span id="submit-label">Procesar Expediente</span>
+        <div class="spinner" id="spinner" style="display:none"></div>
+      </button>
+    </section>
+
+    <!-- CENTER: RESULTS PANEL -->
+    <section class="panel panel-results" id="panel-results">
+      <div class="panel-header">
+        <h2>Expediente Generado</h2>
+        <p class="panel-desc">Datos estandarizados con CIE-10</p>
+      </div>
+
+      <!-- Tab Toggle -->
+      <div class="results-tabs" id="results-tabs" style="display:none">
+        <button class="results-tab active" id="tab-datos" onclick="setResultTab('datos')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Datos
+        </button>
+        <button class="results-tab" id="tab-nota" onclick="setResultTab('nota')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Nota Médica
+        </button>
+        <button class="print-btn" id="print-btn" onclick="printNotaMedica()" title="Imprimir Nota Médica">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir
+        </button>
+      </div>
+
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="2"/>
+          </svg>
+        </div>
+        <p>Procesa una entrada para ver<br/>el expediente estandarizado</p>
+      </div>
+
+      <!-- TAB: DATOS -->
+      <div id="results-content" style="display:none">
+
+        <!-- Transcript -->
+        <div class="result-section">
+          <h3 class="section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Texto Original
+          </h3>
+          <p id="result-text" class="result-text-content"></p>
+        </div>
+
+        <!-- Demographics -->
+        <div class="result-section">
+          <h3 class="section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Datos Demográficos
+          </h3>
+          <div id="result-demo" class="tags-row"></div>
+        </div>
+
+        <!-- CIE-10 Codes by category -->
+        <div class="result-section">
+          <h3 class="section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Códigos CIE-10 Estandarizados
+          </h3>
+          <div id="result-cie10"></div>
+        </div>
+
+        <!-- Raw JSON toggle -->
+        <details class="json-details">
+          <summary>Ver JSON completo</summary>
+          <pre id="result-json" class="json-block"></pre>
+        </details>
+
+      </div>
+
+      <!-- TAB: NOTA MÉDICA -->
+      <div id="nota-content" style="display:none">
+        <iframe id="nota-iframe" class="nota-iframe" title="Nota Médica"></iframe>
+      </div>
+
+    </section>
+
+    <!-- RIGHT: PATIENTS PANEL -->
+    <section class="panel panel-patients">
+      <div class="panel-header">
+        <h2>Pacientes</h2>
+        <p class="panel-desc">Expedientes registrados</p>
+      </div>
+
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Buscar por CURP..." oninput="searchPatient()" class="search-input" />
+      </div>
+
+      <div id="patients-list" class="patients-list">
+        <div class="loading-patients">Cargando pacientes...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

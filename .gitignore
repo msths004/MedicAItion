@@ -1,0 +1,26 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.python_env/
+venv/
+env/
+ENV/
+
+# Environment variables & secrets
+.env
+!.env.example
+
+# Legacy / temporary directory
+MedicAItion_GitHub/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/

@@ -1,0 +1,22 @@
+[
+  {"codigo": "b110", "descripcion": "Funciones de la conciencia", "sinonimos": ["nivel de conciencia", "estado de alerta", "orientación"]},
+  {"codigo": "b130", "descripcion": "Funciones de la energía y los impulsos", "sinonimos": ["energía vital", "motivación", "impulso"]},
+  {"codigo": "b134", "descripcion": "Funciones del sueño", "sinonimos": ["insomnio", "trastorno del sueño", "dormir"]},
+  {"codigo": "b140", "descripcion": "Funciones de la atención", "sinonimos": ["atención", "concentración", "déficit de atención"]},
+  {"codigo": "b144", "descripcion": "Funciones de la memoria", "sinonimos": ["memoria", "amnesia", "olvidos"]},
+  {"codigo": "b152", "descripcion": "Funciones emocionales", "sinonimos": ["emociones", "estado afectivo", "humor"]},
+  {"codigo": "b210", "descripcion": "Funciones de la visión", "sinonimos": ["visión", "vista", "agudeza visual"]},
+  {"codigo": "b230", "descripcion": "Funciones auditivas", "sinonimos": ["audición", "oído", "hipoacusia"]},
+  {"codigo": "b280", "descripcion": "Sensación de dolor", "sinonimos": ["dolor", "dolor crónico", "algesia"]},
+  {"codigo": "b310", "descripcion": "Funciones de la voz", "sinonimos": ["voz", "disfonía", "afonía"]},
+  {"codigo": "b410", "descripcion": "Funciones del corazón", "sinonimos": ["función cardiaca", "frecuencia cardiaca", "ritmo cardiaco"]},
+  {"codigo": "b420", "descripcion": "Funciones de la presión arterial", "sinonimos": ["presión arterial", "tensión arterial", "PA"]},
+  {"codigo": "b430", "descripcion": "Funciones del sistema hematológico", "sinonimos": ["sangre", "hematológico", "coagulación"]},
+  {"codigo": "b440", "descripcion": "Funciones de la respiración", "sinonimos": ["respiración", "ventilación", "función respiratoria"]},
+  {"codigo": "b510", "descripcion": "Funciones de ingestión", "sinonimos": ["deglución", "ingestión", "tragar"]},
+  {"codigo": "b525", "descripcion": "Funciones de defecación", "sinonimos": ["defecación", "estreñimiento", "diarrea"]},
+  {"codigo": "b620", "descripcion": "Funciones urinarias", "sinonimos": ["micción", "orina", "función urinaria"]},
+  {"codigo": "b710", "descripcion": "Funciones de la movilidad articular", "sinonimos": ["movilidad articular", "rango de movimiento", "articulación"]},
+  {"codigo": "b730", "descripcion": "Funciones de la fuerza muscular", "sinonimos": ["fuerza muscular", "debilidad muscular", "paresia"]},
+  {"codigo": "b760", "descripcion": "Funciones del control de movimientos voluntarios", "sinonimos": ["control motor", "coordinación", "movimiento voluntario"]}
+]

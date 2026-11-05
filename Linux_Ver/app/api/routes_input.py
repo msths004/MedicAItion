@@ -1,7 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
+from typing import Optional
 import tempfile
 import shutil
+import uuid
 import os
 
 from app.core.noise_suppressor import suppress_noise
@@ -17,6 +19,10 @@ router = APIRouter(prefix="/api/input", tags=["Input"])
 
 
 def _run_pipeline(text: str, curp: str, clues: str) -> dict:
+    # Auto-generar identificador temporal si no se proporcionó CURP
+    if not curp or not curp.strip():
+        curp = f"URGENCIAS-{uuid.uuid4().hex[:8].upper()}"
+
     entities = extract_entities(text)
     cie10_codes = map_to_cie10(entities)
     record = build_record(curp, clues, text, entities, cie10_codes)
@@ -38,7 +44,7 @@ def _run_pipeline(text: str, curp: str, clues: str) -> dict:
 @router.post("/audio")
 async def process_audio(
     audio: UploadFile = File(...),
-    curp: str = Form(...),
+    curp: Optional[str] = Form(None),
     clues: str = Form(...),
 ):
     suffix = os.path.splitext(audio.filename or "audio.wav")[1] or ".wav"
@@ -56,19 +62,18 @@ async def process_audio(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        # Limpiar TODOS los archivos temporales
-        for path in [tmp_input.name, clean_audio]:
-            if path and os.path.exists(path):
-                try:
-                    os.unlink(path)
-                except OSError:
-                    pass
+        # Limpiar archivo temporal de entrada
+        if tmp_input and hasattr(tmp_input, 'name') and os.path.exists(tmp_input.name):
+            try:
+                os.unlink(tmp_input.name)
+            except OSError:
+                pass
 
 
 @router.post("/text")
 async def process_text(
     text: str = Form(...),
-    curp: str = Form(...),
+    curp: Optional[str] = Form(None),
     clues: str = Form(...),
 ):
     try:
