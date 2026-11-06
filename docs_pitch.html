@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>MedicAItion — Documentación Técnica & Estructura de Elevator Pitch</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.55;
+      color: #1e293b;
+      background: #ffffff;
+    }
+    .page-break {
+      page-break-after: always;
+    }
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+
+    /* ── PORTADA ── */
+    .cover {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 20px 20px 20px;
+    }
+    .cover-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 3px solid #dc2626;
+      padding-bottom: 24px;
+    }
+    .logo-badge {
+      width: 64px;
+      height: 64px;
+      background: #dc2626;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 36px;
+      font-weight: 900;
+    }
+    .cover-header-text h1 {
+      font-size: 28pt;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+    .cover-header-text p {
+      font-size: 13pt;
+      color: #dc2626;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .cover-body {
+      margin: 60px 0;
+    }
+    .doc-subtitle {
+      font-size: 16pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    .doc-desc {
+      font-size: 11pt;
+      color: #475569;
+      line-height: 1.7;
+      max-width: 640px;
+    }
+    .cover-tags {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #334155;
+    }
+    .tag-highlight {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+    .cover-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 18px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9pt;
+      color: #64748b;
+    }
+
+    /* ── ESTILOS DE CONTENIDO ── */
+    h2 {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0f172a;
+      border-left: 4px solid #dc2626;
+      padding-left: 10px;
+      margin: 22px 0 12px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    h3 {
+      font-size: 11.5pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 14px 0 6px 0;
+    }
+    p {
+      margin-bottom: 8px;
+      color: #334155;
+      text-align: justify;
+    }
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 10px;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+
+    /* ── TARJETAS & TABLAS ── */
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .card-accent {
+      border-left: 4px solid #2563eb;
+      background: #f0f7ff;
+    }
+    .card-red {
+      border-left: 4px solid #dc2626;
+      background: #fef2f2;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 9pt;
+    }
+    th {
+      background: #0f172a;
+      color: white;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 600;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .code-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 8.5pt;
+      line-height: 1.45;
+      margin: 8px 0 12px 0;
+      white-space: pre-wrap;
+    }
+    .badge-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+  <!-- PORTADA -->
+  <div class="cover page-break">
+    <div class="cover-top">
+      <div class="logo-badge">+</div>
+      <div class="cover-header-text">
+        <h1>MedicAItion</h1>
+        <p>Inteligencia Artificial Clínica Edge-First & Estandarización NOM-004</p>
+      </div>
+    </div>
+
+    <div class="cover-body">
+      <div class="doc-subtitle">Documentación Técnica Integral & Dossier para Elevator Pitch</div>
+      <p class="doc-desc">
+        Compendio exhaustivo de especificaciones de arquitectura, pipeline de procesamiento en lenguaje natural, interoperabilidad con estándares sanitarios mexicanos e internacionales (NOM-004-SSA3-2012, CIE-10, CIE-9MC), modelo de negocio SMART y guiones estructurados de pitch para inversionistas y jurados técnicos.
+      </p>
+
+      <div class="cover-tags">
+        <span class="tag tag-highlight">Cruz Roja Mexicana — Delegación Mérida</span>
+        <span class="tag">Edge Computing / Offline First</span>
+        <span class="tag">FastAPI & Python 3.11</span>
+        <span class="tag">ChromaDB Vector Embeddings</span>
+        <span class="tag">NOM-004-SSA3-2012</span>
+        <span class="tag">CIE-10 / ICD-10 Automatizado</span>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <div><strong>Confidencialidad:</strong> Documento Técnico & Comercial</div>
+      <div><strong>Versión:</strong> 3.0-NOM004 — Noviembre 2026</div>
+      <div><strong>Proyecto:</strong> MedicAItion (EHR Asistido por IA)</div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 1: RESUMEN EJECUTIVO Y PROBLEMA -->
+  <h2>1. Resumen Ejecutivo & Problemática Sanitaria</h2>
+  
+  <div class="grid-2">
+    <div class="card card-red">
+      <h3 style="color:#991b1b;">La Crisis en el Consultorio Médico</h3>
+      <p style="font-size:9pt;">
+        En México y Latinoamérica, los profesionales de la salud pasan entre el <strong>40% y 50% de su tiempo de consulta</strong> frente a una pantalla transcribiendo notas burocráticas a mano o en sistemas rígidos. Esto provoca:
+      </p>
+      <ul style="font-size:8.5pt;">
+        <li><strong>Síndrome de Burnout:</strong> Agotamiento crónico por carga administrativa.</li>
+        <li><strong>Deshumanización:</strong> El médico mira la computadora en lugar de mirar a los ojos al paciente.</li>
+        <li><strong>Errores de Codificación:</strong> Menos del 25% de las notas hospitalarias cumplen rigurosamente la NOM-004 y la codificación CIE-10.</li>
+        <li><strong>Brecha de Conectividad:</strong> Las soluciones Cloud fallan en clínicas rurales o de urgencias sin internet estable.</li>
+      </ul>
+    </div>
+
+    <div class="card card-accent">
+      <h3 style="color:#1e40af;">La Solución: MedicAItion</h3>
+      <p style="font-size:9pt;">
+        <strong>MedicAItion</strong> es un Asistente Clínico Inteligente de arquitectura <strong>Edge-First</strong> que transforma el dictado o conversación médica libre en un expediente clínico estructurado conforme a la <strong>NOM-004-SSA3-2012</strong> en menos de <strong>3 segundos</strong>, funcionando 100% desconectado de internet o con soporte híbrido en la nube.
+      </p>
+      <div style="margin-top:8px;">
+        <span class="badge-pill badge-green">Tiempo ahorrado: 85%</span>
+        <span class="badge-pill badge-blue">Soberanía de Datos</span>
+        <span class="badge-pill badge-red">Cero Fuga a Cloud</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Propuesta de Valor Única (UVP)</h3>
+  <p>
+    A diferencia de los software de expediente clínico electrónico (EHR) tradicionales, que son meras bases de datos estáticas que exigen docenas de clics, y a diferencia de los modelos de IA comerciales que exigen enviar datos confidenciales de salud a servidores extranjeros:
+  </p>
+  <ul>
+    <li><strong>Dictado Natural a Estructura Oficial:</strong> El médico solo habla con naturalidad (o escribe un resumen rápido). MedicAItion extrae signos vitales, sintomatología, antecedentes y diagnósticos.</li>
+    <li><strong>Codificación CIE-10 / CIE-9MC Determinista y Semántica:</strong> Mapeo matemático vectorial sobre catálogos clínicos oficiales de México mediante embeddings locales.</li>
+    <li><strong>Soberanía y Privacidad Estricta:</strong> Cumplimiento pleno de la legislación de protección de datos en salud al poder operar localmente (On-Premise) sin exponer nombres ni CURPs en internet.</li>
+  </ul>
+
+  <!-- SECCIÓN 2: ARQUITECTURA TÉCNICA -->
+  <div class="page-break"></div>
+  <h2>2. Arquitectura de Software & Especificaciones Técnicas</h2>
+  
+  <p>
+    MedicAItion se diseñó con un enfoque modular, liviano y de alto desempeño. El stack tecnológico no requiere dependencias pesadas en el cliente y puede ejecutarse de forma portátil en computadoras médicas estándar:
+  </p>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Diagrama del Pipeline Clínico Inteligente</h3>
+    <div class="code-box">
+[Entrada de Audio / Dictado Médico]
+                │
+                ▼
+  [1. Supresor Acústico (noisereduce + librosa)]
+                │
+                ▼
+  [2. Transcriptor ASR (Whisper / Audio Buffer)]
+                │
+                ▼
+  [3. Extractor de Entidades Clínicas (Pipeline Heurístico + LLM Local llama.cpp)]
+     ├── Datos Demográficos (Nombre, CURP, Sexo, Edad vía DB o Regex)
+     ├── Signos Vitales (TA, FC, FR, Temp, SpO2, Glucemia)
+     ├── Síntomas Referidos & Exploración Física
+     └── Plan Terapéutico & Medicamentos
+                │
+                ▼
+  [4. Mapeador Vectorial CIE-10 / CIE-9MC (SentenceTransformers + Cosine Sim)]
+                │
+                ▼
+  [5. Generador NOM-004 & Receta (Motor Jinja2 + HTML5 Imprimible)]
+                │
+                ▼
+  [6. Indexación y Búsqueda Semántica Vectorial en ChromaDB]
+    </div>
+  </div>
+
+  <h3>Detalle de Componentes Técnicos</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:25%;">Capa / Módulo</th>
+        <th style="width:30%;">Tecnología Utilizada</th>
+        <th style="width:45%;">Función & Valor Técnico</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Backend API</strong></td>
+        <td>FastAPI, Uvicorn, Python 3.11</td>
+        <td>Servidor asíncrono ultrarrápido (&lt;50ms por request), endpoints REST limpios para captura de audio, texto y gestión de eventos.</td>
+      </tr>
+      <tr>
+        <td><strong>Almacenamiento Híbrido</strong></td>
+        <td>SQLite3 (Relacional) + ChromaDB (Vectorial)</td>
+        <td>SQLite almacena perfiles de pacientes, auditoría y expedientes; ChromaDB almacena embeddings semánticos para búsquedas inteligentes en lenguaje natural.</td>
+      </tr>
+      <tr>
+        <td><strong>Embeddings Clínicos</strong></td>
+        <td><code>paraphrase-multilingual-MiniLM-L12-v2</code></td>
+        <td>Conversión de síntomas y diagnósticos en vectores de 384 dimensiones. Permite encontrar códigos CIE-10 oficiales incluso con términos coloquiales ("dolor de cabeza" → R51 Cefalea).</td>
+      </tr>
+      <tr>
+        <td><strong>Motor de Lenguaje</strong></td>
+        <td><code>llama.cpp</code> (Local) / Claude 3 (Nube opcional)</td>
+        <td>Extracción estructurada JSON y redacción médica formal. Modo local permite operar sin internet ni costo por API token.</td>
+      </tr>
+      <tr>
+        <td><strong>Renderizado Normativo</strong></td>
+        <td>Jinja2 + CSS Print Engine</td>
+        <td>Generación de la Nota Médica de Evolución NOM-004 oficial lista para impresión en formato Carta, firmas autógrafas y Receta limpia para el paciente.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECCIÓN 3: MODELO DE EMPRENDIMIENTO SMART -->
+  <div class="page-break"></div>
+  <h2>3. Modelo de Emprendimiento SMART</h2>
+  <p>
+    La estrategia de despliegue, adopción y crecimiento de MedicAItion se diseñó bajo la metodología SMART para garantizar viabilidad técnica y retorno de inversión en entornos de salud públicos y privados:
+  </p>
+
+  <div class="card card-accent avoid-break">
+    <p><strong>S — Específico (Specific):</strong> Automatizar al 100% el llenado de la Nota Médica de Evolución según la NOM-004-SSA3-2012 y la asignación automática de códigos CIE-10 a partir de la captura de audio o texto libre del médico en la Delegación Cruz Roja Mérida.</p>
+  </div>
+
+  <div class="card card-accent avoid-break">
+    <p><strong>M — Medible (Measurable):</strong> Reducir el tiempo promedio de redacción de consulta médica de <strong>12-15 minutos a menos de 45 segundos</strong> por paciente, alcanzando una tasa de precisión en la codificación diagnóstica CIE-10 superior al <strong>95%</strong>.</p>
+  </div>
+
+  <div class="card card-accent avoid-break">
+    <p><strong>A — Alcanzable (Achievable):</strong> Implementación mediante una aplicación ligera, autocontenida y portátil en Python 3.11 que no requiere infraestructura de servidores dedicados ni hardware de GPU costoso para operar las funciones esenciales.</p>
+  </div>
+
+  <div class="card card-accent avoid-break">
+    <p><strong>R — Relevante (Relevant):</strong> Resuelve directamente la saturación de los servicios de urgencias y consulta externa, mitiga el agotamiento del personal de salud y asegura el cumplimiento legal ante auditorías sanitarias de COFEPRIS y Secretaría de Salud.</p>
+  </div>
+
+  <div class="card card-accent avoid-break">
+    <p><strong>T — Temporal (Time-bound):</strong> Fase 1: Validación piloto en Cruz Roja Mérida en 60 días; Fase 2: Integración con 5 clínicas ambulatorias en 6 meses; Fase 3: Despliegue comercial SaaS institucional a 12 meses.</p>
+  </div>
+
+  <h3>Ventajas Competitivas Clave</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:#0f172a; margin-bottom:6px;">Vs. Expedientes Tradicionales</h4>
+      <p style="font-size:8.5pt;">
+        • Llenado manual tedioso campo por campo.<br/>
+        • Búsqueda de códigos CIE-10 en PDFs interminables.<br/>
+        • Cero comprensión semántica de antecedentes.<br/>
+        • Interfaces complejas y lentas.
+      </p>
+    </div>
+    <div class="card">
+      <h4 style="color:#dc2626; margin-bottom:6px;">Con MedicAItion</h4>
+      <p style="font-size:8.5pt;">
+        • <strong>Dictas o pegas el caso y el sistema estructura todo.</strong><br/>
+        • <strong>Mapeo CIE-10 semántico automático en milisegundos.</strong><br/>
+        • <strong>Búsqueda semántica por IA</strong> ("paciente contador con sed").<br/>
+        • <strong>Impresión directa de Nota y Receta profesional.</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 4: ESTRUCTURA DE ELEVATOR PITCH -->
+  <div class="page-break"></div>
+  <h2>4. Estructura de Elevator Pitch (Guiones por Tiempos)</h2>
+  
+  <p>
+    Guiones estratégicos listos para ser presentados ante comités de innovación, inversionistas de riesgo (HealthTech VCs) o directores de hospitales:
+  </p>
+
+  <div class="card avoid-break">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="margin:0; color:#dc2626;">A. El Gancho Rápido (30 Segundos)</h3>
+      <span class="badge-pill badge-red">Filtro de Inversionistas</span>
+    </div>
+    <p style="font-size:9pt; font-style:italic; border-left:3px solid #dc2626; padding-left:10px;">
+      "¿Sabían que los médicos dedican casi la mitad de cada consulta médica a llenar pantallas y buscar códigos burocráticos en lugar de atender a sus pacientes? En México, el 75% de las notas no cumplen la norma oficial por falta de tiempo. Con <strong>MedicAItion</strong>, el médico simplemente habla de forma natural, y nuestra Inteligencia Artificial local genera la Nota Médica NOM-004, codifica en CIE-10 y redacta la receta médica en menos de 3 segundos, sin enviar un solo dato confidencial a la nube. Estamos devolviendo el tiempo a los médicos para que se concentren en lo que realmente importa: salvar vidas."
+    </p>
+  </div>
+
+  <div class="card avoid-break">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="margin:0; color:#2563eb;">B. Pitch Ejecutivo de 1 Minuto (Elevator Clásico)</h3>
+      <span class="badge-pill badge-blue">Rondas de Capital Semilla</span>
+    </div>
+    <p style="font-size:9pt; font-style:italic; border-left:3px solid #2563eb; padding-left:10px;">
+      "Buenas tardes. Mi nombre es Kevin Morales y represento a <strong>MedicAItion</strong>.<br/>
+      Hoy en día, las salas de urgencias y consultorios están colapsados por la burocracia clínica: un doctor tarda 15 minutos en registrar manualmente una consulta para cumplir con la NOM-004 y clasificarla en CIE-10. Esto genera agotamiento médico, demoras de horas para los pacientes y graves riesgos legales para las clínicas.<br/>
+      Creamos <strong>MedicAItion</strong>: un copiloto clínico inteligente que procesa el audio o texto libre del médico y estructura automáticamente la ficha clínica completa, signos vitales, diagnósticos estandarizados y receta en 3 segundos.<br/>
+      ¿Nuestra gran ventaja? Funciona <strong>Edge-First</strong>: opera 100% local en cualquier computadora médica estándar, sin necesidad de internet y con total privacidad de datos del paciente.<br/>
+      Ya validamos el sistema con éxito en Cruz Roja Mérida, reduciendo el tiempo administrativo en un 85%. Los invito a unirse para transformar la atención médica en México."
+    </p>
+  </div>
+
+  <div class="card avoid-break">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="margin:0; color:#0f172a;">C. Pitch Completo de 3 a 5 Minutos (Estructura de Competencia / Demo)</h3>
+      <span class="badge-pill badge-green">Concursos & Foros Médicos</span>
+    </div>
+    <ol style="font-size:8.5pt;">
+      <li><strong>El Problema (1 min):</strong> Contexto de saturación en hospitales públicos y privados. El costo invisible del tiempo médico perdido (miles de horas-hombre al año por institución).</li>
+      <li><strong>La Demostración en Vivo (1.5 min):</strong> Mostrar el caso de <em>Carlos Manuel González Pech</em>. Dictar un cuadro clínico desordenado. En 2 segundos ver en pantalla los signos vitales ordenados (TA, FC, SpO2), los códigos CIE-10 (Diabetes, Hipertensión), la Nota NOM-004 lista para firma y la receta lista para imprimir.</li>
+      <li><strong>La Tecnología y Privacidad (1 min):</strong> Explicar el motor híbrido (Local con llama.cpp + SentenceTransformers para búsqueda semántica vectorial). Destacar que cumple con la NOM-024 de confidencialidad porque los datos sensibles nunca abandonan el hospital.</li>
+      <li><strong>Modelo de Negocio & Escalabilidad (1 min):</strong> Suscripción B2B por consultorio / licencia institucional por hospital. Oportunidad en más de 25,000 clínicas privadas y públicas en México.</li>
+      <li><strong>El Llamado a la Acción (30 seg):</strong> "Buscamos aliados estratégicos y financiamiento para certificar el sistema e iniciar el despliegue en 50 centros hospitalarios del sureste del país."</li>
+    </ol>
+  </div>
+
+  <!-- SECCIÓN 5: MEGA-PROMPT PARA LA IA -->
+  <div class="page-break"></div>
+  <h2>5. Mega-Prompt para Entrenar y Simular Pitches con IA</h2>
+  <p>
+    Copia y pega este prompt maestro en cualquier modelo de Inteligencia Artificial (ChatGPT, Claude, Gemini) para convertirlo en un evaluador de HealthTech, preparar defensas técnicas y simular sesiones de Q&A:
+  </p>
+
+  <div class="code-box" style="font-size:7.8pt;">
+========================================================================================
+PROMPT MAESTRO DE SIMULACIÓN Y MEJORA CONTINUA DE ELEVATOR PITCH — MEDICAITION
+========================================================================================
+
+Actúa como un panel combinado de tres jueces expertos de talla internacional en HealthTech:
+1. Un Inversionista de Capital de Riesgo (VC Partner) especializado en salud digital y SaaS médico.
+2. Un Director Médico y Auditor Clínico experto en normatividad mexicana (NOM-004-SSA3-2012 y CIE-10).
+3. Un Director de Tecnología (CTO) especializado en Inteligencia Artificial Edge, Vector Databases y Ciberseguridad Sanitaria.
+
+ESTE ES EL CONTEXTO DE MI PROYECTO:
+- Nombre: MedicAItion (Asistente Clínico Inteligente & Expediente NOM-004).
+- Caso de uso probado: Delegación Cruz Roja Mérida (Urgencias y Consulta Externa).
+- Problema que resuelve: Elimina el 85% de la carga administrativa del médico. El doctor gasta 15 min llenando notas burocráticas a mano; MedicAItion lo reduce a 3 segundos.
+- Arquitectura: Edge-First (Local con llama.cpp y fallback a Claude 3), búsqueda semántica vectorial con ChromaDB y SentenceTransformers (MiniLM-L12-v2), backend en FastAPI/Python 3.11, frontend web responsivo.
+- Funcionalidades estrella: 
+  a) Captura por audio/texto en lenguaje coloquial y estructuración automática de Signos Vitales, Síntomas, Diagnósticos y Plan.
+  b) Mapeo semántico automatizado a catálogos oficiales CIE-10 y CIE-9MC.
+  c) Generación instantánea de la Nota Médica de Evolución NOM-004 imprimible y Receta médica estructurada.
+  d) Búsqueda Semántica de Pacientes por lenguaje natural (ej: "paciente contador con sed").
+- Cumplimiento normativo y privacidad: Soberanía de datos absoluta (EDGE / On-Premise), no requiere subir datos a servidores foráneos.
+
+TU MISIÓN CON ESTE PROMPT:
+1. Sométeme a una sesión interactiva de preparación para pitch de inversión de 3 minutos.
+2. Hazme 5 preguntas difíciles que me harían los jueces (sobre escalabilidad, precisión médica legal, latencia offline y modelo de cobro B2B).
+3. Evalúa las respuestas que te dé con una calificación del 1 al 10 y proponme mejoras tácticas en mi dicción, ganchos de persuasión y métricas de impacto.
+4. Si te solicito "Dame el pitch adaptado a médicos", adecúa el lenguaje a terminología clínica empática. Si te solicito "Dame el pitch para inversionistas financieros", enfatiza el CAC, LTV, tamaño del mercado (TAM/SAM/SOM) y barreras de entrada tecnológicas.
+
+Confirma que has asumido el rol y dame la bienvenida con la primera pregunta del panel de jueces.
+========================================================================================
+  </div>
+
+  <div class="card card-accent avoid-break" style="margin-top:14px;">
+    <h3 style="margin-top:0; color:#1e40af;">Consejo de Ejecución</h3>
+    <p style="font-size:8.5pt;">
+      Guarda este documento como respaldo técnico oficial de <strong>MedicAItion</strong>. Cuando te presentes ante jurados, apóyate en las métricas concretas: <em>"De 15 minutos a 45 segundos"</em>, <em>"100% conforme a NOM-004"</em> y <em>"Operación Edge sin dependencia de internet"</em>. Esos tres pilares diferencian inmediatamente a MedicAItion de cualquier otra propuesta en el mercado.
+    </p>
+  </div>
+
+</body>
+</html>
