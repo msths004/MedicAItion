@@ -84,8 +84,14 @@ function setResultTab(tab) {
 /* ── NOTA MÉDICA (iframe) ── */
 function loadNotaMedica(curp) {
   const iframe = document.getElementById('nota-iframe');
+  if (AppState.lastProcessedRecord && AppState.lastProcessedRecord.nota_medica_html && AppState.lastProcessedRecord.curp === curp) {
+    iframe.srcdoc = AppState.lastProcessedRecord.nota_medica_html;
+    iframe.setAttribute('data-loaded-curp', curp);
+    return;
+  }
   const url = `${API}/api/input/nota-medica/${encodeURIComponent(curp)}`;
   if (iframe.getAttribute('data-loaded-curp') !== curp) {
+    iframe.removeAttribute('srcdoc');
     iframe.src = url;
     iframe.setAttribute('data-loaded-curp', curp);
   }
@@ -260,8 +266,14 @@ function renderResults(data) {
   setResultTab('original');
 
   const iframe = document.getElementById('nota-iframe');
-  iframe.removeAttribute('data-loaded-curp');
-  iframe.src = 'about:blank';
+  if (data.nota_medica_html) {
+    iframe.srcdoc = data.nota_medica_html;
+    iframe.setAttribute('data-loaded-curp', data.curp || '');
+  } else {
+    iframe.removeAttribute('data-loaded-curp');
+    iframe.removeAttribute('srcdoc');
+    iframe.src = 'about:blank';
+  }
 
   // 1. Texto original
   document.getElementById('result-text').textContent = data.texto_original || '—';
@@ -337,7 +349,7 @@ function renderResults(data) {
 
   const medsListEl = document.getElementById('receta-meds-list');
   medsListEl.innerHTML = '';
-  const meds = data.medicamentos || [];
+  const meds = data.medicamentos || (data.entidades_extraidas && data.entidades_extraidas.medicamentos) || [];
   if (meds.length > 0) {
     meds.forEach(med => {
       medsListEl.innerHTML += `
@@ -353,8 +365,12 @@ function renderResults(data) {
     medsListEl.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#777;">No se prescribieron medicamentos específicos.</td></tr>';
   }
 
-  document.getElementById('receta-instructions-text').textContent =
-    data.receta_paciente || data.plan_tratamiento || 'Seguir indicaciones generales médicas.';
+  const instructions = data.receta_paciente || 
+                       (data.entidades_extraidas && data.entidades_extraidas.receta_paciente) ||
+                       (data.nota_clinica && data.nota_clinica.plan_tratamiento) || 
+                       data.plan_tratamiento || 
+                       'Seguir indicaciones generales médicas.';
+  document.getElementById('receta-instructions-text').textContent = instructions;
 }
 
 /* ── PATIENTS DIRECTORY & SEARCH ── */

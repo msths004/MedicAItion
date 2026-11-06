@@ -30,6 +30,9 @@ def build_record(
             "medicamentos": entidades.get("medicamentos", []),
         },
         "codigos_cie10": codigos_cie10,
+        "medicamentos": entidades.get("medicamentos", []),
+        "receta_paciente": entidades.get("receta_paciente", ""),
+        "plan_tratamiento": entidades.get("nota_clinica", {}).get("plan_tratamiento", "") if isinstance(entidades.get("nota_clinica"), dict) else "",
         "nota_clinica": entidades.get("nota_clinica", {
             "motivo_consulta": "No especificado",
             "evolucion_padecimiento": "Paciente de ingreso reciente. Sin evolución previa documentada.",

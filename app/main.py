@@ -29,9 +29,9 @@ def _preload_models():
             print("[Startup] Pre-cargando modelo LLM médico...")
             from app.core.entity_extractor import _get_llm
             _get_llm()
-            print("[Startup] LLM cargado ✅")
+            print("[Startup] LLM cargado [OK]")
         except Exception as e:
-            print(f"[Startup] ⚠️  No se pudo pre-cargar el LLM: {e}")
+            print(f"[Startup] [WARN] No se pudo pre-cargar el LLM: {e}")
             print("[Startup] Se intentará cargar cuando llegue el primer paciente.")
         finally:
             llm_preload_finished = True
@@ -57,12 +57,12 @@ async def lifespan(app: FastAPI):
         ubicacion="Mérida, Yucatán",
     )
     _preload_models()
-    print("✅ MedicAItion iniciado correctamente")
+    print("[OK] MedicAItion iniciado correctamente")
 
     yield
 
     # ── SHUTDOWN ──
-    print("🔒 MedicAItion detenido")
+    print("[INFO] MedicAItion detenido")
 
 
 app = FastAPI(

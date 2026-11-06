@@ -336,6 +336,11 @@ def register_patient(data: dict) -> dict:
             db=db
         )
 
+        try:
+            index_patient_profile_semantically(data)
+        except Exception:
+            pass
+
         return _patient_to_dict(patient)
     finally:
         db.close()
@@ -1020,6 +1025,45 @@ def index_event_semantically(record: dict):
         )
     except Exception as e:
         print(f"[SemanticIndex] Error al indizar: {e}")
+
+
+def index_patient_profile_semantically(data: dict):
+    """Indiza un perfil de paciente en ChromaDB (colección patients_semantic)."""
+    try:
+        from app.core.cie10_mapper import _get_embedder
+        from app.db.chroma_store import get_collection
+
+        curp = (data.get("curp") or "").strip().upper()
+        if not curp:
+            return
+
+        nombre = data.get("nombre_completo") or f"{data.get('nombres', '')} {data.get('primer_apellido', '')} {data.get('segundo_apellido', '')}".strip()
+        doc_text = " ".join(filter(None, [
+            f"Paciente: {nombre}.",
+            f"CURP: {curp}.",
+            f"Folio: {data.get('folio_hospital') or ''}.",
+            f"Ocupación: {data.get('ocupacion') or ''}.",
+            f"Ubicación y Domicilio: {data.get('ubicacion_casa') or ''}.",
+            f"Lugar de Nacimiento: {data.get('lugar_nacimiento') or ''}.",
+            f"Anotaciones y Antecedentes Clínicos: {data.get('anotaciones_generales') or ''}."
+        ]))
+
+        col = get_collection("patients_semantic")
+        embedder = _get_embedder()
+        embedding = embedder.encode([doc_text]).tolist()
+
+        col.upsert(
+            ids=[curp],
+            embeddings=embedding,
+            documents=[doc_text],
+            metadatas=[{
+                "patient_curp": curp,
+                "nombre_paciente": nombre,
+            }]
+        )
+    except Exception as e:
+        print(f"[SemanticIndex] Error al indizar perfil: {e}")
+
 
 
 def index_evento_semantically(evento_id: str, patient_curp: str, nombre_evento: str, consultas_text: str = ""):

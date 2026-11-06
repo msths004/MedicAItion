@@ -26,9 +26,9 @@ def _get_embedder():
     global _embedder
     if _embedder is None:
         from sentence_transformers import SentenceTransformer
-        print(f"[CIE10Mapper] Cargando modelo de embeddings: {EMBEDDING_MODEL}")
+        print("[CIE10Mapper] Cargando modelo de embeddings: " + EMBEDDING_MODEL)
         _embedder = SentenceTransformer(EMBEDDING_MODEL)
-        print("[CIE10Mapper] Modelo de embeddings listo ✅")
+        print("[CIE10Mapper] Modelo de embeddings listo [OK]")
     return _embedder
 
 

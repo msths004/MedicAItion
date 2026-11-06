@@ -16,6 +16,8 @@ from app.db.local_db import get_patient_by_curp
 
 router = APIRouter(prefix="/api/input", tags=["Input"])
 
+_last_consultation_records: dict = {}
+
 
 def _run_pipeline(
     text: str,
@@ -37,6 +39,7 @@ def _run_pipeline(
     # Intentar obtener sexo y edad desde la DB
     patient_sex = "Otro"
     patient_age = None
+    patient_data = None
     if curp and not curp.startswith("URGENCIAS"):
         patient_data = get_patient_by_curp(curp)
         if patient_data:
@@ -45,13 +48,35 @@ def _run_pipeline(
 
     entities = extract_entities(text, mode=llm_mode, api_key=api_key)
 
+    # Asegurar que demográficos exista como dict
+    if "demograficos" not in entities or not isinstance(entities["demograficos"], dict):
+        entities["demograficos"] = {}
+    demo = entities["demograficos"]
+
+    # Inyectar datos del paciente de la BD si están disponibles
+    if patient_data:
+        if not demo.get("nombre"):
+            nombre_db = patient_data.get("nombre_completo")
+            if not nombre_db:
+                partes = [patient_data.get("nombres", ""), patient_data.get("primer_apellido", ""), patient_data.get("segundo_apellido", "")]
+                nombre_db = " ".join(p for p in partes if p).strip()
+            demo["nombre"] = nombre_db or None
+        if not demo.get("curp"):
+            demo["curp"] = patient_data.get("curp") or curp
+        if not demo.get("sexo"):
+            demo["sexo"] = patient_data.get("sexo")
+        if not demo.get("edad"):
+            demo["edad"] = patient_data.get("edad")
+
+    if curp and not curp.startswith("URGENCIAS") and not demo.get("curp"):
+        demo["curp"] = curp
+
     # Fallback a demográficos extraídos por el LLM si faltan datos en la DB
-    demo = entities.get("demograficos", {})
     if patient_sex == "Otro" and demo.get("sexo"):
         s = str(demo.get("sexo")).strip().upper()
         if s in ["M", "MASCULINO", "HOMBRE", "H"]:
             patient_sex = "M"
-        elif s in ["F", "FEMENINO", "MUJER", "M"]:
+        elif s in ["F", "FEMENINO", "MUJER", "F"]:
             patient_sex = "F"
     if patient_age is None and demo.get("edad"):
         try:
@@ -81,6 +106,9 @@ def _run_pipeline(
     except Exception as e:
         print(f"[Pipeline] Error al renderizar nota médica: {e}")
         record["nota_medica_html"] = None
+
+    if curp:
+        _last_consultation_records[curp] = record
 
     return record
 
@@ -138,6 +166,15 @@ async def get_nota_medica(curp: str):
     Para notas persistidas específicas por consulta, usar:
     GET /api/consultations/{consulta_id}/nota
     """
+    if curp in _last_consultation_records:
+        rec = _last_consultation_records[curp]
+        if rec.get("nota_medica_html"):
+            return HTMLResponse(content=rec["nota_medica_html"])
+        try:
+            return HTMLResponse(content=render_nota_medica(rec))
+        except Exception as e:
+            print(f"[get_nota_medica] Error renderizando borrador: {e}")
+
     patient_data = get_patient_by_curp(curp)
     if not patient_data:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
