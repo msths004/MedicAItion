@@ -10,7 +10,7 @@ const API = '';  // Same-origin global API path
 const AppState = {
   // ── Modo de entrada ─────────────────────────────────────────────
   currentMode: 'audio',        // 'audio' | 'text'
-  mainTab: 'consulta',         // 'consulta' | 'expedientes'
+  mainTab: 'dashboard',        // 'dashboard' | 'consulta' | 'expedientes'
   llmMode: 'auto',             // 'auto' | 'claude' | 'local'
 
   // ── Grabación de audio ─────────────────────────────────────────

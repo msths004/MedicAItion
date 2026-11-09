@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MedicAItion — Asistente Clínico Inteligente</title>
   
-  <!-- FAVICON SVG EMBEDDED -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='36' y2='36' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0%25' stop-color='%23ef4444'/%3E%3Cstop offset='100%25' stop-color='%23f43f5e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='36' height='36' rx='9' fill='url(%23g)'/%3E%3Crect x='14' y='7' width='8' height='22' rx='2.5' fill='%23ffffff'/%3E%3Crect x='7' y='14' width='22' height='8' rx='2.5' fill='%23ffffff'/%3E%3Ccircle cx='18' cy='18' r='3' fill='%2306b6d4'/%3E%3Ccircle cx='18' cy='18' r='1.2' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <!-- FAVICON: Modern 3D Red Cross with Silver Stethoscope -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='cg' x1='20' y1='10' x2='80' y2='90'%3E%3Cstop offset='0%25' stop-color='%23ff334b'/%3E%3Cstop offset='100%25' stop-color='%23c9182e'/%3E%3C/linearGradient%3E%3ClinearGradient id='sg' x1='0' y1='0' x2='100' y2='100'%3E%3Cstop offset='0%25' stop-color='%23ffffff'/%3E%3Cstop offset='50%25' stop-color='%2394a3b8'/%3E%3Cstop offset='100%25' stop-color='%2364748b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M38 16C38 12.7 40.7 10 44 10H56C59.3 10 62 12.7 62 16V38H84C87.3 38 90 40.7 90 44V56C90 59.3 87.3 62 84 62H62V84C62 87.3 59.3 90 56 90H44C40.7 90 38 87.3 38 84V62H16C12.7 62 10 59.3 10 44V44C10 40.7 12.7 38 16 38H38V16Z' fill='url(%23cg)'/%3E%3Cpath d='M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88' stroke='url(%23sg)' stroke-width='6' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='68' cy='86' r='9' fill='url(%23sg)'/%3E%3Ccircle cx='68' cy='86' r='4' fill='%2306b6d4'/%3E%3C/svg%3E" />
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -15,27 +15,50 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=3.5.2" />
+  <link rel="stylesheet" href="style.css?v=4.0.0" />
 </head>
-<body class="mode-consulta">
+<body class="mode-dashboard">
 
   <!-- LOADING SCREEN -->
   <div id="loading-screen" class="loading-screen">
     <div class="loading-content">
       <div class="loading-logo-glow">
         <div class="loading-logo">
-          <svg width="52" height="52" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 3D Red Cross & Silver Stethoscope Logo -->
+          <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="load-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#ef4444" />
-                <stop offset="100%" stop-color="#f43f5e" />
+              <linearGradient id="load-cg" x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ff3b53" />
+                <stop offset="50%" stop-color="#ee2a42" />
+                <stop offset="100%" stop-color="#c9182e" />
               </linearGradient>
+              <linearGradient id="load-sg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ffffff" />
+                <stop offset="35%" stop-color="#e2e8f0" />
+                <stop offset="70%" stop-color="#94a3b8" />
+                <stop offset="100%" stop-color="#64748b" />
+              </linearGradient>
+              <linearGradient id="load-glow" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#0284c7" />
+              </linearGradient>
+              <filter id="load-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#ee2a42" flood-opacity="0.4" />
+              </filter>
             </defs>
-            <rect width="36" height="36" rx="9" fill="url(#load-grad)" />
-            <rect x="14" y="7" width="8" height="22" rx="2.5" fill="#ffffff" />
-            <rect x="7" y="14" width="22" height="8" rx="2.5" fill="#ffffff" />
-            <circle cx="18" cy="18" r="3" fill="#06b6d4" />
-            <circle cx="18" cy="18" r="1.2" fill="#ffffff" />
+            <g filter="url(#load-shadow)">
+              <path d="M38 16C38 12.6863 40.6863 10 44 10H56C59.3137 10 62 12.6863 62 16V38H84C87.3137 38 90 40.6863 90 44V56C90 59.3137 87.3137 62 84 62H62V84C62 87.3137 59.3137 90 56 90H44C40.6863 90 38 87.3137 38 84V62H16C12.6863 62 10 59.3137 10 44V44C10 40.6863 12.6863 38 16 38H38V16Z" fill="url(#load-cg)" />
+              <path d="M44 11H56C58.8 11 61 13.2 61 16V38.5H84C86.8 38.5 89 40.7 89 43.5V45C89 43 87 40 84 40H60V16C60 13 58 11 56 11H44C42 11 40 13 40 16V40H16C13 40 11 43 11 45V43.5C11 40.7 13.2 38.5 16 38.5H39V16C39 13.2 41.2 11 44 11Z" fill="white" opacity="0.3" />
+            </g>
+            <path d="M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76" stroke="url(#load-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
+            <path d="M50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88" stroke="url(#load-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
+            <circle cx="68" cy="86" r="9" fill="url(#load-sg)" />
+            <circle cx="68" cy="86" r="6" fill="#0f172a" />
+            <circle cx="68" cy="86" r="3.5" fill="url(#load-glow)" />
+            <path d="M35 24 C36 18 42 16 45 18" stroke="url(#load-sg)" stroke-width="3" stroke-linecap="round" fill="none" />
+            <circle cx="45" cy="18" r="2.5" fill="#e2e8f0" />
+            <path d="M30 28 C29 20 23 18 20 20" stroke="url(#load-sg)" stroke-width="3" stroke-linecap="round" fill="none" />
+            <circle cx="20" cy="20" r="2.5" fill="#e2e8f0" />
           </svg>
         </div>
       </div>
@@ -48,409 +71,523 @@
     </div>
   </div>
 
-  <!-- HEADER -->
-  <header class="header">
-    <div class="header-inner">
-      <div class="logo">
-        <div class="logo-icon">
-          <svg width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- APP SHELL: SIDEBAR + MAIN CONTENT (Behance / Dribbble Next-Gen Layout) -->
+  <div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="app-sidebar">
+      <!-- SIDEBAR BRAND LOGO -->
+      <div class="sidebar-brand">
+        <div class="brand-logo-3d">
+          <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="header-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#ef4444" />
-                <stop offset="100%" stop-color="#f43f5e" />
+              <linearGradient id="side-cg" x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ff3b53" />
+                <stop offset="50%" stop-color="#ee2a42" />
+                <stop offset="100%" stop-color="#c9182e" />
               </linearGradient>
+              <linearGradient id="side-sg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ffffff" />
+                <stop offset="35%" stop-color="#e2e8f0" />
+                <stop offset="70%" stop-color="#94a3b8" />
+                <stop offset="100%" stop-color="#64748b" />
+              </linearGradient>
+              <linearGradient id="side-cyan" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#0284c7" />
+              </linearGradient>
+              <filter id="side-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#ee2a42" flood-opacity="0.35" />
+              </filter>
             </defs>
-            <rect width="36" height="36" rx="9" fill="url(#header-grad)" />
-            <rect x="14.5" y="7.5" width="7" height="21" rx="2.5" fill="#ffffff" />
-            <rect x="7.5" y="14.5" width="21" height="7" rx="2.5" fill="#ffffff" />
-            <circle cx="18" cy="18" r="2.8" fill="#06b6d4" />
-            <circle cx="18" cy="18" r="1" fill="#ffffff" />
+            <g filter="url(#side-shadow)">
+              <path d="M38 16C38 12.6863 40.6863 10 44 10H56C59.3137 10 62 12.6863 62 16V38H84C87.3137 38 90 40.6863 90 44V56C90 59.3137 87.3137 62 84 62H62V84C62 87.3137 59.3137 90 56 90H44C40.6863 90 38 87.3137 38 84V62H16C12.6863 62 10 59.3137 10 44V44C10 40.6863 12.6863 38 16 38H38V16Z" fill="url(#side-cg)" />
+              <path d="M44 11H56C58.8 11 61 13.2 61 16V38.5H84C86.8 38.5 89 40.7 89 43.5V45C89 43 87 40 84 40H60V16C60 13 58 11 56 11H44C42 11 40 13 40 16V40H16C13 40 11 43 11 45V43.5C11 40.7 13.2 38.5 16 38.5H39V16C39 13.2 41.2 11 44 11Z" fill="white" opacity="0.3" />
+            </g>
+            <path d="M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76" stroke="url(#side-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
+            <path d="M50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88" stroke="url(#side-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
+            <circle cx="68" cy="86" r="8.5" fill="url(#side-sg)" />
+            <circle cx="68" cy="86" r="5.5" fill="#0f172a" />
+            <circle cx="68" cy="86" r="3" fill="url(#side-cyan)" />
+            <path d="M35 24 C36 18 42 16 45 18" stroke="url(#side-sg)" stroke-width="3" stroke-linecap="round" fill="none" />
+            <circle cx="45" cy="18" r="2.5" fill="#e2e8f0" />
+            <path d="M30 28 C29 20 23 18 20 20" stroke="url(#side-sg)" stroke-width="3" stroke-linecap="round" fill="none" />
+            <circle cx="20" cy="20" r="2.5" fill="#e2e8f0" />
           </svg>
         </div>
-        <div class="logo-text">
-          <div class="logo-title-row">
-            <span class="logo-main">Medic<span class="ai-gradient">AI</span>tion</span>
-            <span class="logo-badge-pill">v3.0</span>
-          </div>
-          <span class="logo-sub">Cruz Roja Mérida &bull; NOM-004</span>
+        <div class="brand-text">
+          <div class="brand-title">Medic<span class="ai-gradient">AI</span>tion</div>
+          <div class="brand-subtitle">CRUZ ROJA MÉRIDA</div>
         </div>
       </div>
 
-      <!-- MAIN NAVIGATION TABS -->
-      <div class="main-nav-tabs">
-        <button class="nav-tab active" id="nav-btn-consulta" onclick="switchMainTab('consulta')" title="Captura y procesamiento clínico">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Nueva Consulta
+      <!-- NAVIGATION MENU -->
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Menú Principal</div>
+        
+        <button class="sidebar-nav-btn active" id="nav-btn-dashboard" onclick="switchMainTab('dashboard')" title="Resumen general y métricas clínicas">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1.5"/><rect width="7" height="5" x="14" y="3" rx="1.5"/><rect width="7" height="9" x="14" y="12" rx="1.5"/><rect width="7" height="5" x="3" y="16" rx="1.5"/></svg>
+          <span>Resumen</span>
         </button>
-        <button class="nav-tab" id="nav-btn-expedientes" onclick="switchMainTab('expedientes')" title="Gestión de pacientes y expedientes">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Directorio de Pacientes
+
+        <button class="sidebar-nav-btn" id="nav-btn-consulta" onclick="switchMainTab('consulta')" title="Captura y procesamiento clínico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+          <span>Nueva Consulta</span>
         </button>
-      </div>
 
-      <div class="header-right">
-        <!-- THEME TOGGLE -->
-        <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema claro / oscuro">
-          <!-- Moon (dark mode) -->
-          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-          <!-- Sun (light mode) -->
-          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-          </svg>
+        <button class="sidebar-nav-btn" id="nav-btn-expedientes" onclick="switchMainTab('expedientes')" title="Gestión de pacientes y expedientes">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Pacientes</span>
         </button>
-        <div class="status-badge" id="status-badge">
-          <span class="status-dot"></span>
-          <span id="status-text">Sistema listo</span>
-        </div>
-      </div>
-    </div>
-  </header>
+      </nav>
 
-  <!-- MAIN LAYOUT -->
-  <main class="main-layout">
-
-    <!-- LEFT: INPUT PANEL (Only in Consulta mode) -->
-    <section class="panel panel-input">
-      <div class="panel-header">
-        <div class="panel-header-icon-title">
-          <div class="panel-badge-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <!-- USER PROFILE FOOTER -->
+      <div class="sidebar-profile">
+        <div class="profile-card">
+          <div class="profile-avatar">DR</div>
+          <div class="profile-info">
+            <div class="profile-name">Dr. Roberto M.</div>
+            <div class="profile-role">Medicina General</div>
           </div>
-          <div>
-            <h2>Entrada de Consulta</h2>
-            <p class="panel-desc">Captura clínica estructurada y dictado IA</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Patient Meta -->
-      <div class="form-grid-2">
-        <div class="form-group">
-          <label for="curp-input">
-            CURP / ID Paciente
-            <span class="label-hint">18 caracteres</span>
-          </label>
-          <div class="input-with-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><line x1="15" y1="8" x2="17" y2="8"/><line x1="15" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
-            <input id="curp-input" type="text" placeholder="Ej: GOPC790814HYNCLN04" maxlength="18" class="input-field monospace-input" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="clues-input">
-            CLUES Institución
-            <span class="label-hint">Centro</span>
-          </label>
-          <div class="input-with-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <input id="clues-input" type="text" value="YUC-CR-001" class="input-field" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Selección de Método -->
-      <div class="method-section-label">Modalidad de Captura</div>
-      <div class="method-cards-row">
-        <button class="method-card active" id="btn-audio" onclick="setMode('audio')" title="Dictar consulta por micrófono">
-          <div class="method-card-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          </div>
-          <span class="method-card-label">Audio</span>
-        </button>
-        <button class="method-card" id="btn-text" onclick="setMode('text')" title="Escribir o pegar texto del caso">
-          <div class="method-card-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          </div>
-          <span class="method-card-label">Texto</span>
-        </button>
-        <button class="method-card method-card-ia" id="btn-llm-mode" onclick="openLlmModal()" title="Configurar motor de IA">
-          <div class="method-card-icon ia-brain-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.44-4.16Z"/>
-              <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.44-4.16Z"/>
-            </svg>
-          </div>
-          <div class="method-card-ia-text">
-            <span class="method-card-label">Cerebro IA</span>
-            <span class="method-card-sublabel" id="llm-mode-label">Auto</span>
-          </div>
-        </button>
-      </div>
-
-      <!-- AUDIO MODE -->
-      <div id="audio-panel" class="input-panel">
-        <div class="recorder-area" id="recorder-area">
-          <div class="waveform" id="waveform">
-            <div class="wave-bars" id="wave-bars">
-              <span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span>
-            </div>
-          </div>
-          <button class="record-btn" id="record-btn" onclick="toggleRecord()" title="Iniciar / Detener grabación del dictado">
-            <div class="record-icon" id="record-icon">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
-            </div>
+          <button class="profile-settings-btn" onclick="openLlmModal()" title="Configuración de IA">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
-          <p class="record-label" id="record-label">Presiona para comenzar a dictar</p>
-          <p class="record-timer" id="record-timer" style="display:none">00:00</p>
-        </div>
-        <div id="audio-preview" style="display:none" class="audio-preview">
-          <audio id="audio-playback" controls></audio>
         </div>
       </div>
+    </aside>
 
-      <!-- TEXT MODE -->
-      <div id="text-panel" class="input-panel" style="display:none">
-        <div class="textarea-wrapper">
-          <textarea id="text-input" class="textarea-field" rows="6"
-            placeholder="Describe el caso clínico: síntomas, signos vitales, antecedentes, diagnóstico presuntivo, tratamiento indicado y medicamentos..."></textarea>
-          <div class="textarea-footer">
-            <span class="textarea-hint">El extractor IA procesará signos vitales, CIE-10 y receta automáticamente</span>
+    <!-- MAIN WRAPPER -->
+    <div class="app-main-wrapper">
+      
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="status-badge" id="status-badge">
+            <span class="status-dot"></span>
+            <span id="status-text">Sistema en línea</span>
           </div>
         </div>
-      </div>
 
-      <!-- Event Status Indicator -->
-      <div class="event-status-indicator" id="event-status-indicator">
-        <div class="event-status-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <span id="event-status-text">Evento Clínico: Sin crear</span>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="input-actions-group">
-        <button class="btn-create-event" id="btn-create-event" onclick="openCreateEventModal()" title="Crear un nuevo Evento Clínico para este paciente">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-          Nuevo Evento Clínico
-        </button>
-
-        <button class="submit-btn" id="submit-btn" onclick="submitData()" title="Procesar la entrada clínica y generar notas médicas con IA">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span id="submit-label">Crear Notas con IA</span>
-          <div class="spinner" id="spinner" style="display:none"></div>
-        </button>
-      </div>
-    </section>
-
-    <!-- PATIENTS PANEL — Full width in Expedientes mode -->
-    <section class="panel panel-patients" id="panel-patients-section">
-      <!-- STICKY HEADER -->
-      <div class="panel-sticky-header">
-        <div class="patients-page-header">
-          <div>
-            <h1 class="patients-page-title">Directorio de Pacientes</h1>
-            <p class="patients-page-sub">Consulta expedientes, antecedentes clínicos y auditoría de consultas registradas.</p>
+        <div class="topbar-right">
+          <!-- SEARCH BOX -->
+          <div class="topbar-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="Búsqueda rápida (⌘K)" onfocus="switchMainTab('expedientes')" />
           </div>
-        </div>
-        <div class="patients-toolbar">
-          <button class="btn-register-patient" id="btn-register-patient" onclick="openRegisterPatientModal()" title="Registrar un nuevo paciente">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            + Registrar Paciente
-          </button>
-          <div class="patients-search-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="search-input" placeholder="Buscar por nombre, CURP, profesión o síntoma..." oninput="handleSearch()" class="patients-search-input" />
-          </div>
-          <label class="semantic-check-label" title="Activa búsqueda semántica vectorial con embeddings de IA">
-            <input type="checkbox" id="search-semantic-check" onchange="handleSearch()" />
-            <div class="semantic-check-visual">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </div>
-            <span>Búsqueda Semántica IA</span>
-          </label>
-        </div>
-        <!-- TABLE HEADER -->
-        <div class="patients-table-header">
-          <div class="pt-col-patient">PACIENTE</div>
-          <div class="pt-col-id">ID / CURP</div>
-          <div class="pt-col-date">FECHA DE REGISTRO</div>
-          <div class="pt-col-actions">ACCIONES</div>
-        </div>
-      </div>
-      <!-- SCROLLABLE LIST -->
-      <div id="patients-list" class="patients-list">
-        <div class="loading-patients">Cargando pacientes...</div>
-      </div>
-    </section>
 
-    <!-- CENTER/RIGHT: RESULTS PANEL -->
-    <section class="panel panel-results" id="panel-results">
-      <div class="panel-header">
-        <div class="panel-header-icon-title">
-          <div class="panel-badge-icon panel-badge-results">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          </div>
-          <div>
-            <h2 id="results-panel-title">Borrador de Notas Médicas</h2>
-            <p class="panel-desc" id="results-panel-desc">Estandarización automática NOM-004 y CIE-10</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab Toggle -->
-      <div class="results-tabs" id="results-tabs" style="display:none">
-        <button class="results-tab active" id="tab-original" onclick="setResultTab('original')" title="Transcripción y resumen clínico">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Original
-        </button>
-        <button class="results-tab" id="tab-nota" onclick="setResultTab('nota')" title="Nota médica de evolución oficial NOM-004">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          NOM-004
-        </button>
-        <button class="results-tab" id="tab-receta" onclick="setResultTab('receta')" title="Receta médica lista para entrega al paciente">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-          Receta Médica
-        </button>
-        <button class="print-btn" id="print-btn" onclick="printActiveTab()" title="Imprimir la vista seleccionada">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          Imprimir
-        </button>
-      </div>
-
-      <div class="empty-state" id="empty-state">
-        <div class="empty-icon-wrap">
-          <div class="empty-icon">
-            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-              <rect x="9" y="3" width="6" height="4" rx="2"/>
+          <!-- THEME TOGGLE -->
+          <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema claro / oscuro">
+            <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
             </svg>
-          </div>
+            <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </button>
         </div>
-        <h3>Esperando captura de datos clínicos</h3>
-        <p>Escribe o dicta el caso en el panel izquierdo. Al presionar <strong>"Crear Notas con IA"</strong>, el borrador normativo y la receta médica se estructurarán aquí en tiempo real.</p>
-      </div>
+      </header>
 
-      <!-- Associate Note & Prescription Button (visible after results) -->
-      <button class="btn-associate-note" id="btn-associate-note" onclick="openAssociateNoteModal()" style="display:none" title="Asociar las notas y recetas generadas con un Evento Clínico existente">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Asociar Nota y Recetas a Evento Clínico
-      </button>
+      <!-- DYNAMIC VIEWS CONTAINER -->
+      <main class="view-viewport">
 
-      <!-- TAB: ORIGINAL -->
-      <div id="original-content" class="tab-content" style="display:none">
+        <!-- VIEW 1: DASHBOARD (Resumen Bento Grid) -->
+        <section class="view-panel" id="panel-dashboard-section">
+          <div class="dashboard-container">
+            <div class="dashboard-greeting">
+              <h1>Buenos días, Roberto</h1>
+              <p>Aquí tienes el resumen de tu actividad clínica para hoy.</p>
+            </div>
 
-        <!-- Transcript -->
-        <div class="result-section">
-          <h3 class="section-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Texto Original del Dictado
-          </h3>
-          <p id="result-text" class="result-text-content"></p>
-        </div>
+            <!-- BENTO GRID -->
+            <div class="bento-grid">
+              
+              <!-- Bento Card 1: Pacientes Hoy -->
+              <div class="bento-card bento-card-light">
+                <div class="bento-card-bg-icon">
+                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="bento-label">Pacientes Hoy</div>
+                <div class="bento-value">12</div>
+                <div class="bento-delta positive">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                  <span>+2 desde ayer</span>
+                </div>
+              </div>
 
-        <!-- Texto Re-redactado -->
-        <div class="result-section" id="result-section-redactado" style="display:none">
-          <h3 class="section-title title-cyan">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Texto Re-redactado (Resumen Clínico IA)
-          </h3>
-          <p id="result-text-redactado" class="result-text-content redactado-box"></p>
-        </div>
+              <!-- Bento Card 2: Cerebro IA Activo -->
+              <div class="bento-card bento-card-dark">
+                <div class="bento-card-bg-icon">
+                  <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
+                </div>
+                <div class="bento-label">Cerebro IA Activo</div>
+                <div class="bento-value">98<span class="bento-unit">%</span></div>
+                <div class="bento-delta ia-delta">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  <span>Precisión en notas y CIE-10</span>
+                </div>
+              </div>
 
-        <!-- Demographics -->
-        <div class="result-section">
-          <h3 class="section-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Datos Demográficos Identificados
-          </h3>
-          <div id="result-demo" class="tags-row"></div>
-        </div>
+              <!-- Bento Card 3: Acción Rápida -->
+              <div class="bento-card bento-card-action">
+                <div>
+                  <div class="bento-label">Acción Rápida</div>
+                  <p class="bento-desc">Inicia una nueva consulta médica o dicta una nota rápida al expediente oficial.</p>
+                </div>
+                <button class="bento-btn-primary" onclick="switchMainTab('consulta')">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+                  Iniciar Consulta
+                </button>
+              </div>
 
-        <!-- CIE-10 Codes -->
-        <div class="result-section">
-          <h3 class="section-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            Códigos Estandarizados (CIE-10 / CIE-9MC)
-          </h3>
-          <div id="result-cie10"></div>
-        </div>
+            </div>
 
-        <!-- Raw JSON toggle -->
-        <details class="json-details">
-          <summary>Ver JSON estructurado de la respuesta</summary>
-          <pre id="result-json" class="json-block"></pre>
-        </details>
-
-      </div>
-
-      <!-- TAB: NOM-004 -->
-      <div id="nota-content" class="tab-content" style="display:none">
-        <iframe id="nota-iframe" class="nota-iframe" title="Nota Médica NOM-004"></iframe>
-      </div>
-
-      <!-- TAB: RECETA MÉDICA -->
-      <div id="receta-content" class="tab-content" style="display:none">
-        <div class="receta-card" id="receta-card">
-          <div class="receta-header">
-            <div class="receta-logo">
-              <svg width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="rec-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stop-color="#ef4444" />
-                    <stop offset="100%" stop-color="#dc2626" />
-                  </linearGradient>
-                </defs>
-                <rect width="36" height="36" rx="8" fill="url(#rec-grad)" />
-                <rect x="14.5" y="7.5" width="7" height="21" rx="2" fill="#ffffff" />
-                <rect x="7.5" y="14.5" width="21" height="7" rx="2" fill="#ffffff" />
-                <circle cx="18" cy="18" r="2.5" fill="#06b6d4" />
-              </svg>
-              <div class="receta-title">
-                <h4>Cruz Roja Mérida</h4>
-                <span>Expediente Clínico Electrónico &bull; Receta Oficial</span>
+            <!-- SHOWCASE 3D PREVIEW BANNER -->
+            <div class="dashboard-showcase-card">
+              <div class="showcase-content">
+                <div class="showcase-badge">NEXT-GEN CLINICAL UI</div>
+                <h2>MedicAItion v4.0 &bull; Estándar NOM-004</h2>
+                <p>Estandarización automática de notas médicas de evolución, codificación CIE-10 y generación de recetas con inteligencia artificial local y en la nube.</p>
+                <div class="showcase-features">
+                  <span class="feature-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Dictado por Voz y Reducción de Ruido</span>
+                  <span class="feature-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Cumplimiento NOM-004-SSA3-2012</span>
+                  <span class="feature-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Base Vectorial ChromaDB</span>
+                </div>
+              </div>
+              <div class="showcase-img-wrap">
+                <img src="assets/showcase.jpg" alt="Presentación UI/UX MedicAItion" class="showcase-img" />
               </div>
             </div>
-            <div class="receta-meta">
-              <span id="receta-folio">Folio: —</span><br />
-              <span id="receta-fecha">Fecha: —</span>
+          </div>
+        </section>
+
+        <!-- VIEW 2: NUEVA CONSULTA (Floating Glass Cards: Input + Results) -->
+        <section class="view-panel" id="consulta-layout" style="display:none">
+          
+          <!-- LEFT PANEL: Entrada de Caso -->
+          <div class="panel panel-input">
+            <div class="panel-header">
+              <div class="panel-header-icon-title">
+                <div class="panel-badge-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <div>
+                  <h2>Entrada de Caso</h2>
+                  <p class="panel-desc">Identificación y captura clínica</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- FLOATING INPUTS -->
+            <div class="form-grid-2">
+              <div class="floating-group">
+                <input id="curp-input" type="text" placeholder=" " maxlength="18" class="floating-input monospace-input" />
+                <label for="curp-input" class="floating-label">CURP / ID del Paciente</label>
+              </div>
+
+              <div class="floating-group">
+                <input id="clues-input" type="text" value="YUC-CR-001" placeholder=" " class="floating-input" />
+                <label for="clues-input" class="floating-label">CLUES de la Institución</label>
+              </div>
+            </div>
+
+            <!-- SEGMENTED METHOD SELECTOR -->
+            <div class="method-section-wrap">
+              <div class="method-section-label">Método de Captura</div>
+              <div class="segmented-control">
+                <button class="segmented-btn active" id="btn-audio" onclick="setMode('audio')">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                  <span>Audio</span>
+                </button>
+                <button class="segmented-btn" id="btn-text" onclick="setMode('text')">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Texto</span>
+                </button>
+                <button class="segmented-btn segmented-btn-ai" id="btn-llm-mode" onclick="openLlmModal()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.44-4.16Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.44-4.16Z"/></svg>
+                  <span>Cerebro IA</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- AUDIO CAPTURE CARD -->
+            <div id="audio-panel" class="input-panel">
+              <div class="recorder-card" id="recorder-area">
+                
+                <!-- Modern Waveform Animation -->
+                <div class="waveform-container" id="waveform">
+                  <div class="wave-bars" id="wave-bars">
+                    <span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span>
+                  </div>
+                </div>
+
+                <!-- Sleek Recording Button with Pulse Glow -->
+                <div class="record-btn-wrapper">
+                  <button class="record-btn-futuristic" id="record-btn" onclick="toggleRecord()" title="Iniciar / Detener grabación del dictado">
+                    <div class="record-core" id="record-icon"></div>
+                  </button>
+                </div>
+
+                <div class="record-meta">
+                  <span class="record-state-text" id="record-label">Presiona para comenzar a dictar</span>
+                  <div class="record-timer-digital" id="record-timer" style="display:none">00:00</div>
+                </div>
+
+                <div id="audio-preview" style="display:none" class="audio-preview">
+                  <audio id="audio-playback" controls></audio>
+                </div>
+              </div>
+            </div>
+
+            <!-- TEXT CAPTURE CARD -->
+            <div id="text-panel" class="input-panel" style="display:none">
+              <div class="textarea-card">
+                <textarea id="text-input" class="textarea-field" rows="7"
+                  placeholder="Describe el caso clínico: síntomas, signos vitales, antecedentes, diagnósticos presuntivos, medicamentos con dosis y plan de seguimiento..."></textarea>
+                <div class="textarea-footer">
+                  <span class="textarea-hint">El extractor inteligente identificará signos vitales, CIE-10 y receta automáticamente</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Event Status Indicator -->
+            <div class="event-status-indicator" id="event-status-indicator">
+              <div class="event-status-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <span id="event-status-text">Evento Clínico: Sin crear</span>
+            </div>
+
+            <!-- Actions Group -->
+            <div class="input-actions-group">
+              <button class="btn-create-event" id="btn-create-event" onclick="openCreateEventModal()" title="Crear un nuevo Evento Clínico para este paciente">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                Nuevo Evento Clínico
+              </button>
+
+              <button class="submit-btn" id="submit-btn" onclick="submitData()" title="Procesar la entrada clínica y generar notas médicas con IA">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+                <span id="submit-label">Procesar con IA</span>
+                <div class="spinner" id="spinner" style="display:none"></div>
+              </button>
             </div>
           </div>
 
-          <div class="receta-paciente-info">
-            <div><strong>Paciente:</strong> <span id="receta-paciente-nombre">—</span></div>
-            <div><strong>CURP:</strong> <span id="receta-paciente-curp">—</span></div>
-            <div><strong>Edad / Sexo:</strong> <span id="receta-paciente-edad-sexo">—</span></div>
-          </div>
-
-          <div class="receta-body">
-            <h5>Rp. Indicación Farmacológica</h5>
-            <table class="receta-table">
-              <thead>
-                <tr>
-                  <th>Medicamento</th>
-                  <th>Dosis</th>
-                  <th>Vía</th>
-                  <th>Periodicidad</th>
-                  <th>Duración</th>
-                </tr>
-              </thead>
-              <tbody id="receta-meds-list">
-                <!-- medicamentos list -->
-              </tbody>
-            </table>
-
-            <h5>Indicaciones y Cuidados Generales</h5>
-            <div class="receta-instructions" id="receta-instructions-text">
-              <!-- receta indicaciones -->
+          <!-- RIGHT PANEL: Previsualización de Notas -->
+          <div class="panel panel-results" id="panel-results">
+            <div class="panel-header">
+              <div class="panel-header-icon-title">
+                <div class="panel-badge-icon panel-badge-results">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </div>
+                <div>
+                  <h2 id="results-panel-title">Previsualización de Notas</h2>
+                  <p class="panel-desc" id="results-panel-desc">Sincronización en tiempo real con motor CIE-10</p>
+                </div>
+              </div>
             </div>
+
+            <!-- Tab Toggle -->
+            <div class="results-tabs" id="results-tabs" style="display:none">
+              <button class="results-tab active" id="tab-original" onclick="setResultTab('original')" title="Transcripción y resumen clínico">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Original
+              </button>
+              <button class="results-tab" id="tab-nota" onclick="setResultTab('nota')" title="Nota médica de evolución oficial NOM-004">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                NOM-004
+              </button>
+              <button class="results-tab" id="tab-receta" onclick="setResultTab('receta')" title="Receta médica lista para entrega al paciente">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                Receta Médica
+              </button>
+              <button class="print-btn" id="print-btn" onclick="printActiveTab()" title="Imprimir la vista seleccionada">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimir
+              </button>
+            </div>
+
+            <!-- EMPTY STATE: Sleek floating 3D clipboard -->
+            <div class="empty-state" id="empty-state">
+              <div class="empty-icon-wrap">
+                <div class="empty-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+                  </svg>
+                </div>
+              </div>
+              <h3>Panel en Espera</h3>
+              <p>Capture el caso médico en el panel izquierdo. Al presionar <strong>"Procesar con IA"</strong>, el borrador normativo NOM-004 y la receta médica se estructurarán automáticamente aquí.</p>
+            </div>
+
+            <!-- ASSOCIATE TO EVENT BUTTON -->
+            <button class="btn-associate-note" id="btn-associate-note" onclick="openAssociateNoteModal()" style="display:none" title="Asociar las notas y recetas generadas con un Evento Clínico existente">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Asociar Nota y Recetas como consulta a Evento Clínico
+            </button>
+
+            <!-- TAB: ORIGINAL -->
+            <div id="original-content" class="tab-content" style="display:none">
+              
+              <!-- Texto Original -->
+              <div class="result-section">
+                <h3 class="section-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Texto Original del Dictado
+                </h3>
+                <p id="result-text" class="result-text-content"></p>
+              </div>
+
+              <!-- Texto Re-redactado -->
+              <div class="result-section" id="result-section-redactado" style="display:none">
+                <h3 class="section-title title-cyan">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  Texto Re-redactado (Resumen Clínico IA)
+                </h3>
+                <p id="result-text-redactado" class="result-text-content redactado-box"></p>
+              </div>
+
+              <!-- Demográficos -->
+              <div class="result-section">
+                <h3 class="section-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Datos Demográficos Identificados
+                </h3>
+                <div id="result-demo" class="tags-row"></div>
+              </div>
+
+              <!-- Códigos CIE-10 -->
+              <div class="result-section">
+                <h3 class="section-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  Códigos Estandarizados (CIE-10 / CIE-9MC)
+                </h3>
+                <div id="result-cie10"></div>
+              </div>
+
+              <!-- JSON Detalles -->
+              <details class="json-details">
+                <summary>Ver JSON estructurado de la respuesta</summary>
+                <pre id="result-json" class="json-block"></pre>
+              </details>
+            </div>
+
+            <!-- TAB: NOM-004 (Official Iframe) -->
+            <div id="nota-content" class="tab-content" style="display:none">
+              <iframe id="nota-iframe" class="nota-iframe" title="Nota Médica NOM-004"></iframe>
+            </div>
+
+            <!-- TAB: RECETA MÉDICA -->
+            <div id="receta-content" class="tab-content" style="display:none">
+              <div class="receta-card" id="receta-card">
+                <div class="receta-header">
+                  <div class="receta-logo">
+                    <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M38 16C38 12.7 40.7 10 44 10H56C59.3 10 62 12.7 62 16V38H84C87.3 38 90 40.7 90 44V56C90 59.3 87.3 62 84 62H62V84C62 87.3 59.3 90 56 90H44C40.7 90 38 87.3 38 84V62H16C12.7 62 10 59.3 10 44V44C10 40.7 12.7 38 16 38H38V16Z" fill="#ee2a42" />
+                      <circle cx="68" cy="86" r="8" fill="#94a3b8" />
+                      <circle cx="68" cy="86" r="3" fill="#06b6d4" />
+                    </svg>
+                    <div class="receta-title">
+                      <h4>Cruz Roja Mérida</h4>
+                      <span>Expediente Clínico Electrónico &bull; Receta Oficial</span>
+                    </div>
+                  </div>
+                  <div class="receta-meta">
+                    <span id="receta-folio">Folio: —</span><br />
+                    <span id="receta-fecha">Fecha: —</span>
+                  </div>
+                </div>
+
+                <div class="receta-paciente-info">
+                  <div><strong>Paciente:</strong> <span id="receta-paciente-nombre">—</span></div>
+                  <div><strong>CURP:</strong> <span id="receta-paciente-curp">—</span></div>
+                  <div><strong>Edad / Sexo:</strong> <span id="receta-paciente-edad-sexo">—</span></div>
+                </div>
+
+                <div class="receta-body">
+                  <h5>Rp. Indicación Farmacológica</h5>
+                  <table class="receta-table">
+                    <thead>
+                      <tr>
+                        <th>Medicamento</th>
+                        <th>Dosis</th>
+                        <th>Vía</th>
+                        <th>Periodicidad</th>
+                        <th>Duración</th>
+                      </tr>
+                    </thead>
+                    <tbody id="receta-meds-list"></tbody>
+                  </table>
+
+                  <h5>Indicaciones y Cuidados Generales</h5>
+                  <div class="receta-instructions" id="receta-instructions-text"></div>
+                </div>
+
+                <div class="receta-footer">
+                  <div class="receta-firma-line"></div>
+                  <span>Firma y Cédula del Médico Tratante</span>
+                </div>
+              </div>
+            </div>
+
           </div>
+        </section>
 
-          <div class="receta-footer">
-            <div class="receta-firma-line"></div>
-            <span>Firma y Cédula del Médico Tratante</span>
+        <!-- VIEW 3: PACIENTES (Directorio Moderno con Filas Flotantes) -->
+        <section class="view-panel" id="panel-patients-section" style="display:none">
+          <div class="patients-container">
+            
+            <div class="patients-top-action-bar">
+              <div>
+                <h1 class="patients-page-title">Directorio de Pacientes</h1>
+                <p class="patients-page-sub">Gestión integral de expedientes clínicos y auditoría de consultas.</p>
+              </div>
+              <button class="btn-register-patient-modern" id="btn-register-patient" onclick="openRegisterPatientModal()" title="Registrar un nuevo paciente">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Registrar Paciente
+              </button>
+            </div>
+
+            <!-- SEARCH & FILTER FLOATING BAR -->
+            <div class="patients-floating-bar">
+              <div class="patients-search-input-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="search-input" placeholder="Buscar por nombre, CURP, profesión o síntoma..." oninput="handleSearch()" class="patients-search-input" />
+              </div>
+              <div class="patients-search-actions">
+                <label class="semantic-check-badge" title="Activa búsqueda semántica vectorial con embeddings de IA">
+                  <input type="checkbox" id="search-semantic-check" onchange="handleSearch()" />
+                  <div class="semantic-badge-content">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span>Búsqueda IA</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- TABLE HEADER PSEUDO ROW -->
+            <div class="patients-pseudo-table-header">
+              <div class="col-ident">IDENTIFICACIÓN</div>
+              <div class="col-exp">EXPEDIENTE / FOLIO</div>
+              <div class="col-date">ÚLTIMA ACTIVIDAD</div>
+              <div class="col-actions">ACCIONES</div>
+            </div>
+
+            <!-- DETACHED ROW CARDS LIST -->
+            <div id="patients-list" class="patients-detached-list">
+              <div class="loading-patients">Cargando pacientes...</div>
+            </div>
+
           </div>
-        </div>
-      </div>
+        </section>
 
-    </section>
+      </main>
 
-  </main>
+    </div>
+  </div>
 
   <!-- LLM MODE MODAL -->
   <div class="llm-modal-overlay" id="llm-modal-overlay">
@@ -458,38 +595,40 @@
       <div class="modal-top-badge">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       </div>
-      <h3>Motor de Inteligencia Artificial</h3>
-      <p>Selecciona la modalidad de procesamiento para la extracción clínica.</p>
-      
-      <div class="llm-option selected" id="opt-auto" onclick="setLlmMode('auto')">
-        <div class="llm-opt-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          Automático Híbrido (Recomendado)
+      <h2>Configuración de Inteligencia Artificial</h2>
+      <p class="modal-sub">Selecciona el motor para la extracción de entidades y la redacción clínica.</p>
+
+      <div class="llm-options-grid">
+        <div class="llm-opt active" id="opt-auto" onclick="setLlmMode('auto')">
+          <div class="llm-opt-radio"></div>
+          <div class="llm-opt-body">
+            <div class="llm-opt-title">Automático (Recomendado)</div>
+            <div class="llm-opt-desc">Usa IA en la nube si hay API Key disponible; conmuta al extractor inteligente local si opera offline.</div>
+          </div>
         </div>
-        <div class="llm-opt-desc">Prioriza procesamiento local seguro y conmuta a Claude en caso de requerir redacción extendida.</div>
+
+        <div class="llm-opt" id="opt-claude" onclick="setLlmMode('claude')">
+          <div class="llm-opt-radio"></div>
+          <div class="llm-opt-body">
+            <div class="llm-opt-title">Nube — Claude 3 Haiku</div>
+            <div class="llm-opt-desc">Máxima calidad de redacción narrativa NOM-004. Requiere conexión a internet y API Key.</div>
+          </div>
+        </div>
+
+        <div class="llm-opt" id="opt-local" onclick="setLlmMode('local')">
+          <div class="llm-opt-radio"></div>
+          <div class="llm-opt-body">
+            <div class="llm-opt-title">Local — GGUF / Llama.cpp</div>
+            <div class="llm-opt-desc">100% privado en tu equipo. No envía datos fuera del hospital. Requiere modelo GGUF descargado.</div>
+          </div>
+        </div>
       </div>
 
-      <div class="llm-option" id="opt-claude" onclick="setLlmMode('claude')">
-        <div class="llm-opt-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19c2.485 0 4.5-2.015 4.5-4.5S19.985 10 17.5 10c-.16 0-.317.013-.47.038A7.001 7.001 0 0 0 3 10.5c0 3.328 2.32 6.12 5.434 6.815A4 4 0 0 0 12 21c2.146 0 3.9-1.69 3.98-3.81z"/></svg>
-          Claude 3 (Nube)
-        </div>
-        <div class="llm-opt-desc">Máxima fluidez y lenguaje médico complejo. Requiere conexión a internet y API Key.</div>
-      </div>
-
-      <div class="llm-option" id="opt-local" onclick="setLlmMode('local')">
-        <div class="llm-opt-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Local Edge (Offline 100% Privado)
-        </div>
-        <div class="llm-opt-desc">Soberanía de datos absoluta. Ejecución en CPU/GPU local sin enviar información al exterior.</div>
-      </div>
-
-      <div class="api-key-group">
-        <label for="api-key-input" class="api-key-label">
+      <div class="api-key-section">
+        <label for="api-key-input">
           Anthropic API Key (Opcional)
           <div class="info-icon" title="Llave de API para activar funciones avanzadas en la nube. Si no cuentas con una, el motor opera con los extractores locales incorporados.">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="16" x2="12" y2="12"></line>
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -503,16 +642,16 @@
     </div>
   </div>
 
-  <!-- GENERIC OVERLAY CONTAINER -->
+  <!-- GENERIC OVERLAY CONTAINER (Expediente Clínico & Consultas) -->
   <div class="app-overlay" id="app-overlay">
     <div class="app-overlay-content" id="app-overlay-content">
-      <!-- Dynamic content injected by JS -->
+      <!-- Dynamic content injected by overlays.js -->
     </div>
   </div>
 
-  <script src="state.js?v=3.5.2"></script>
-  <script src="overlays.js?v=3.5.2"></script>
-  <script src="modals.js?v=3.5.2"></script>
-  <script src="app.js?v=3.5.2"></script>
+  <script src="state.js?v=4.0.0"></script>
+  <script src="overlays.js?v=4.0.0"></script>
+  <script src="modals.js?v=4.0.0"></script>
+  <script src="app.js?v=4.0.0"></script>
 </body>
 </html>

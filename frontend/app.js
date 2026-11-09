@@ -15,23 +15,32 @@
 function switchMainTab(tab) {
   AppState.mainTab = tab;
 
-  document.getElementById('nav-btn-consulta').classList.toggle('active', tab === 'consulta');
-  document.getElementById('nav-btn-expedientes').classList.toggle('active', tab === 'expedientes');
+  const btnDash = document.getElementById('nav-btn-dashboard');
+  const btnCons = document.getElementById('nav-btn-consulta');
+  const btnExpe = document.getElementById('nav-btn-expedientes');
+
+  if (btnDash) btnDash.classList.toggle('active', tab === 'dashboard');
+  if (btnCons) btnCons.classList.toggle('active', tab === 'consulta');
+  if (btnExpe) btnExpe.classList.toggle('active', tab === 'expedientes');
 
   document.body.className = `mode-${tab}`;
-  // panel-history no longer exists in the DOM, only panel-patients-section matters
+
+  const dashSection = document.getElementById('panel-dashboard-section');
+  const consultaLayout = document.getElementById('consulta-layout');
   const patientSection = document.getElementById('panel-patients-section');
-  if (patientSection) patientSection.style.display = tab === 'expedientes' ? 'flex' : 'none';
+
+  if (dashSection) dashSection.style.display = tab === 'dashboard' ? 'block' : 'none';
+  if (consultaLayout) consultaLayout.style.display = tab === 'consulta' ? 'grid' : 'none';
+  if (patientSection) {
+    patientSection.style.display = tab === 'expedientes' ? 'flex' : 'none';
+    if (tab === 'expedientes') loadPatients();
+  }
 
   const titleEl = document.getElementById('results-panel-title');
   const descEl  = document.getElementById('results-panel-desc');
   if (tab === 'consulta') {
-    if (titleEl) titleEl.textContent = 'Borrador de Notas Médicas';
-    if (descEl)  descEl.textContent  = 'Datos estandarizados con CIE-10';
-  }
-
-  if (tab === 'expedientes') {
-    loadPatients();
+    if (titleEl) titleEl.textContent = 'Previsualización de Notas';
+    if (descEl)  descEl.textContent  = 'Sincronización en tiempo real con motor CIE-10';
   }
 }
 
