@@ -590,22 +590,121 @@ function showToast(msg, type = 'info') {
 /* ── THEME TOGGLE ── */
 function toggleTheme() {
   const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'dark';
+  const current = html.getAttribute('data-theme') || 'light';
   const next = current === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
-  localStorage.setItem('medicaition-theme', next);
+  localStorage.setItem('medicaition-theme-v5', next);
 }
 
 function _applyStoredTheme() {
-  const saved = localStorage.getItem('medicaition-theme');
-  if (saved && saved !== 'dark') {
-    document.documentElement.setAttribute('data-theme', saved);
+  const saved = localStorage.getItem('medicaition-theme-v5') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+}
+
+/* ── DASHBOARD BENTO INTERACTIONS (Agenda, Wearables, Boceto Rápido) ── */
+function startQuickConsultation(curp, patientName, sampleText) {
+  switchMainTab('consulta');
+  const curpEl = document.getElementById('curp-input');
+  if (curpEl && curp) curpEl.value = curp;
+  if (sampleText) {
+    setMode('text');
+    const txtEl = document.getElementById('text-input');
+    if (txtEl) txtEl.value = sampleText;
+  }
+  showToast(`Consulta iniciada para ${patientName}`, 'success');
+}
+
+function openWearableModal() {
+  document.getElementById('wearable-modal-overlay')?.classList.add('open');
+}
+
+function closeWearableModal() {
+  document.getElementById('wearable-modal-overlay')?.classList.remove('open');
+}
+
+function importWearableHealthData() {
+  switchMainTab('consulta');
+  setMode('text');
+  const curpEl = document.getElementById('curp-input');
+  if (curpEl && !curpEl.value.trim()) {
+    curpEl.value = 'GOPC790814HYNCLN04';
+  }
+  const txtEl = document.getElementById('text-input');
+  const vitalsNote = 'Signos vitales sincronizados desde Smartwatch (Garmin Active / BLE): Presión arterial 122/78 mmHg, frecuencia cardíaca 72 lpm, frecuencia respiratoria 16 rpm, temperatura 36.5 °C, saturación de oxígeno 98%. ';
+  if (txtEl) {
+    txtEl.value = vitalsNote + (txtEl.value ? txtEl.value : 'Paciente masculino de 47 años en consulta de seguimiento. Consciente, orientado, campos pulmonares bien ventilados, abdomen blando depresible sin dolor.');
+  }
+  showToast('Datos biométricos del reloj importados a la consulta', 'success');
+}
+
+let _quickDictationActive = false;
+function toggleQuickDictation() {
+  const btn = document.getElementById('quick-voice-btn');
+  const wave = document.getElementById('quick-waveform');
+  const status = document.getElementById('quick-dictation-status');
+  const input = document.getElementById('quick-dictation-input');
+
+  _quickDictationActive = !_quickDictationActive;
+  if (_quickDictationActive) {
+    btn?.classList.add('dictating');
+    wave?.classList.add('active-wave');
+    if (status) status.textContent = '🔴 Escuchando dictado clínico en vivo (NOM-004)...';
+    if (input && input.value.includes('45 años refiere dolor...')) {
+      input.value = 'Paciente masculino de 45 años refiere dolor de cabeza moderado, sed intensa y cansancio de 4 días. Presión 135/85, frecuencia cardíaca 78, respiratoria 18, temperatura 36.6, oxígeno 98%. Bien orientado, abdomen blando no doloroso. Diagnóstico de diabetes mellitus tipo 2 en ajuste con metformina 850 mg cada 12 horas.';
+    }
+    showToast('Dictado rápido IA activado', 'info');
+  } else {
+    btn?.classList.remove('dictating');
+    wave?.classList.remove('active-wave');
+    if (status) status.textContent = 'Dictado IA capturado — Listo para estructurar NOM-004';
+    showToast('Dictado capturado. Procesando nota...', 'success');
+    processQuickNote();
+  }
+}
+
+function processQuickNote() {
+  const input = document.getElementById('quick-dictation-input');
+  const text = input?.value?.trim() || 'Paciente masculino de 45 años refiere dolor de cabeza moderado. Presión 130/85, frecuencia cardíaca 76, temperatura 36.5, oxígeno 98%.';
+  switchMainTab('consulta');
+  setMode('text');
+  const txtEl = document.getElementById('text-input');
+  if (txtEl) txtEl.value = text;
+  const curpEl = document.getElementById('curp-input');
+  if (curpEl && !curpEl.value.trim()) curpEl.value = 'GOPC790814HYNCLN04';
+  submitData();
+}
+
+function focusAgendaSection() {
+  switchMainTab('dashboard');
+  const card = document.getElementById('bento-agenda-card');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.style.boxShadow = '0 0 0 3px #3b82f6, 0 12px 32px rgba(59, 130, 246, 0.2)';
+    setTimeout(() => { card.style.boxShadow = ''; }, 1800);
+  }
+}
+
+function focusEpidemiologiaSection() {
+  switchMainTab('dashboard');
+  const card = document.getElementById('bento-epidemiologia-card');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showToast('Alertas epidemiológicas en tiempo real — Yucatán (SINAVE / IA)', 'info');
+  }
+}
+
+function focusTasksSection() {
+  switchMainTab('dashboard');
+  const card = document.getElementById('bento-tasks-card');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
 /* ── INITIALIZATION ── */
 document.addEventListener('DOMContentLoaded', () => {
   _applyStoredTheme();
+  switchMainTab(AppState.mainTab || 'dashboard');
   waitForBackend();
 });
 

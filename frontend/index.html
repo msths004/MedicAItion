@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MedicAItion — Asistente Clínico Inteligente</title>
+  <title>MedicAItion — CRUZ ROJA MÉRIDA | Sistema Clínico ECE/HIS</title>
   
-  <!-- FAVICON: Modern 3D Red Cross with Silver Stethoscope -->
+  <!-- FAVICON: 3D Red Cross intertwined with Silver Stethoscope -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='cg' x1='20' y1='10' x2='80' y2='90'%3E%3Cstop offset='0%25' stop-color='%23ff334b'/%3E%3Cstop offset='100%25' stop-color='%23c9182e'/%3E%3C/linearGradient%3E%3ClinearGradient id='sg' x1='0' y1='0' x2='100' y2='100'%3E%3Cstop offset='0%25' stop-color='%23ffffff'/%3E%3Cstop offset='50%25' stop-color='%2394a3b8'/%3E%3Cstop offset='100%25' stop-color='%2364748b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M38 16C38 12.7 40.7 10 44 10H56C59.3 10 62 12.7 62 16V38H84C87.3 38 90 40.7 90 44V56C90 59.3 87.3 62 84 62H62V84C62 87.3 59.3 90 56 90H44C40.7 90 38 87.3 38 84V62H16C12.7 62 10 59.3 10 44V44C10 40.7 12.7 38 16 38H38V16Z' fill='url(%23cg)'/%3E%3Cpath d='M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88' stroke='url(%23sg)' stroke-width='6' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='68' cy='86' r='9' fill='url(%23sg)'/%3E%3Ccircle cx='68' cy='86' r='4' fill='%2306b6d4'/%3E%3C/svg%3E" />
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -14,8 +14,8 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=4.0.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=5.0.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -24,8 +24,7 @@
     <div class="loading-content">
       <div class="loading-logo-glow">
         <div class="loading-logo">
-          <!-- 3D Red Cross & Silver Stethoscope Logo -->
-          <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="62" height="62" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="load-cg" x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stop-color="#ff3b53" />
@@ -48,65 +47,59 @@
             </defs>
             <g filter="url(#load-shadow)">
               <path d="M38 16C38 12.6863 40.6863 10 44 10H56C59.3137 10 62 12.6863 62 16V38H84C87.3137 38 90 40.6863 90 44V56C90 59.3137 87.3137 62 84 62H62V84C62 87.3137 59.3137 90 56 90H44C40.6863 90 38 87.3137 38 84V62H16C12.6863 62 10 59.3137 10 44V44C10 40.6863 12.6863 38 16 38H38V16Z" fill="url(#load-cg)" />
-              <path d="M44 11H56C58.8 11 61 13.2 61 16V38.5H84C86.8 38.5 89 40.7 89 43.5V45C89 43 87 40 84 40H60V16C60 13 58 11 56 11H44C42 11 40 13 40 16V40H16C13 40 11 43 11 45V43.5C11 40.7 13.2 38.5 16 38.5H39V16C39 13.2 41.2 11 44 11Z" fill="white" opacity="0.3" />
             </g>
-            <path d="M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76" stroke="url(#load-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
-            <path d="M50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88" stroke="url(#load-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
+            <path d="M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88" stroke="url(#load-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
             <circle cx="68" cy="86" r="9" fill="url(#load-sg)" />
             <circle cx="68" cy="86" r="6" fill="#0f172a" />
             <circle cx="68" cy="86" r="3.5" fill="url(#load-glow)" />
-            <path d="M35 24 C36 18 42 16 45 18" stroke="url(#load-sg)" stroke-width="3" stroke-linecap="round" fill="none" />
-            <circle cx="45" cy="18" r="2.5" fill="#e2e8f0" />
-            <path d="M30 28 C29 20 23 18 20 20" stroke="url(#load-sg)" stroke-width="3" stroke-linecap="round" fill="none" />
-            <circle cx="20" cy="20" r="2.5" fill="#e2e8f0" />
           </svg>
         </div>
       </div>
       <div class="loading-text-wrap">
         <h1 class="loading-title">Medic<span class="ai-gradient">AI</span>tion</h1>
-        <p class="loading-subtitle">Cruz Roja Mérida &bull; Sistema Clínico NOM-004</p>
+        <p class="loading-subtitle">CRUZ ROJA MÉRIDA &bull; Sistema ECE / HIS NOM-004</p>
       </div>
       <div class="loading-spinner-ring"></div>
-      <p class="loading-status" id="loading-status">Iniciando motor de Inteligencia Artificial...</p>
+      <p class="loading-status" id="loading-status">Sincronizando sistema y dispositivos médicos...</p>
     </div>
   </div>
 
-  <!-- APP SHELL: SIDEBAR + MAIN CONTENT (Behance / Dribbble Next-Gen Layout) -->
+  <!-- APP SHELL: SIDEBAR + MAIN WORKSPACE -->
   <div class="app-shell">
 
-    <!-- SIDEBAR -->
+    <!-- LEFT SIDEBAR (Navigation) -->
     <aside class="app-sidebar">
-      <!-- SIDEBAR BRAND LOGO -->
-      <div class="sidebar-brand">
+      <!-- Top Brand: 3D Red Medical Cross + Silver Stethoscope -->
+      <div class="sidebar-brand" onclick="switchMainTab('dashboard')" style="cursor:pointer">
         <div class="brand-logo-3d">
-          <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="side-cg" x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stop-color="#ff3b53" />
                 <stop offset="50%" stop-color="#ee2a42" />
-                <stop offset="100%" stop-color="#c9182e" />
+                <stop offset="100%" stop-color="#b91529" />
               </linearGradient>
               <linearGradient id="side-sg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stop-color="#ffffff" />
-                <stop offset="35%" stop-color="#e2e8f0" />
+                <stop offset="35%" stop-color="#cbd5e1" />
                 <stop offset="70%" stop-color="#94a3b8" />
-                <stop offset="100%" stop-color="#64748b" />
+                <stop offset="100%" stop-color="#475569" />
               </linearGradient>
               <linearGradient id="side-cyan" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="#38bdf8" />
                 <stop offset="100%" stop-color="#0284c7" />
               </linearGradient>
               <filter id="side-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#ee2a42" flood-opacity="0.35" />
+                <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#ee2a42" flood-opacity="0.38" />
               </filter>
             </defs>
             <g filter="url(#side-shadow)">
               <path d="M38 16C38 12.6863 40.6863 10 44 10H56C59.3137 10 62 12.6863 62 16V38H84C87.3137 38 90 40.6863 90 44V56C90 59.3137 87.3137 62 84 62H62V84C62 87.3137 59.3137 90 56 90H44C40.6863 90 38 87.3137 38 84V62H16C12.6863 62 10 59.3137 10 44V44C10 40.6863 12.6863 38 16 38H38V16Z" fill="url(#side-cg)" />
-              <path d="M44 11H56C58.8 11 61 13.2 61 16V38.5H84C86.8 38.5 89 40.7 89 43.5V45C89 43 87 40 84 40H60V16C60 13 58 11 56 11H44C42 11 40 13 40 16V40H16C13 40 11 43 11 45V43.5C11 40.7 13.2 38.5 16 38.5H39V16C39 13.2 41.2 11 44 11Z" fill="white" opacity="0.3" />
+              <path d="M44 11H56C58.8 11 61 13.2 61 16V38.5H84C86.8 38.5 89 40.7 89 43.5V45C89 43 87 40 84 40H60V16C60 13 58 11 56 11H44C42 11 40 13 40 16V40H16C13 40 11 43 11 45V43.5C11 40.7 13.2 38.5 16 38.5H39V16C39 13.2 41.2 11 44 11Z" fill="white" opacity="0.35" />
             </g>
-            <path d="M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76" stroke="url(#side-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
+            <path d="M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76" stroke="url(#side-sg)" stroke-width="6" stroke-linecap="round" fill="none" />
             <path d="M50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88" stroke="url(#side-sg)" stroke-width="5.5" stroke-linecap="round" fill="none" />
-            <circle cx="68" cy="86" r="8.5" fill="url(#side-sg)" />
+            <circle cx="68" cy="86" r="9" fill="url(#side-sg)" />
             <circle cx="68" cy="86" r="5.5" fill="#0f172a" />
             <circle cx="68" cy="86" r="3" fill="url(#side-cyan)" />
             <path d="M35 24 C36 18 42 16 45 18" stroke="url(#side-sg)" stroke-width="3" stroke-linecap="round" fill="none" />
@@ -116,32 +109,71 @@
           </svg>
         </div>
         <div class="brand-text">
-          <div class="brand-title">Medic<span class="ai-gradient">AI</span>tion</div>
+          <div class="brand-title">Medic<span class="ai-brand-accent">AI</span>tion</div>
           <div class="brand-subtitle">CRUZ ROJA MÉRIDA</div>
         </div>
       </div>
 
-      <!-- NAVIGATION MENU -->
+      <!-- NAVIGATION GROUPS -->
       <nav class="sidebar-nav">
-        <div class="nav-section-label">Menú Principal</div>
+        <!-- GROUP 1: MENÚ PRINCIPAL -->
+        <div class="nav-section-label">MENÚ PRINCIPAL</div>
         
-        <button class="sidebar-nav-btn active" id="nav-btn-dashboard" onclick="switchMainTab('dashboard')" title="Resumen general y métricas clínicas">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1.5"/><rect width="7" height="5" x="14" y="3" rx="1.5"/><rect width="7" height="9" x="14" y="12" rx="1.5"/><rect width="7" height="5" x="3" y="16" rx="1.5"/></svg>
+        <button class="sidebar-nav-btn active" id="nav-btn-dashboard" onclick="switchMainTab('dashboard')" title="Panel principal y resumen clínico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/></svg>
           <span>Resumen</span>
         </button>
 
-        <button class="sidebar-nav-btn" id="nav-btn-consulta" onclick="switchMainTab('consulta')" title="Captura y procesamiento clínico">
+        <button class="sidebar-nav-btn" id="nav-btn-consulta" onclick="switchMainTab('consulta')" title="Iniciar captura de consulta médica">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
           <span>Nueva Consulta</span>
         </button>
 
-        <button class="sidebar-nav-btn" id="nav-btn-expedientes" onclick="switchMainTab('expedientes')" title="Gestión de pacientes y expedientes">
+        <button class="sidebar-nav-btn" id="nav-btn-agenda" onclick="focusAgendaSection()" title="Agenda de citas programadas hoy">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          <span>Agenda / Citas</span>
+          <span class="nav-badge-red">3</span>
+        </button>
+
+        <button class="sidebar-nav-btn" id="nav-btn-expedientes" onclick="switchMainTab('expedientes')" title="Directorio de pacientes registrados">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Pacientes</span>
         </button>
+
+        <!-- GROUP 2: CLÍNICA -->
+        <div class="nav-section-label nav-section-spaced">CLÍNICA</div>
+
+        <button class="sidebar-nav-btn" id="nav-btn-clinica-exp" onclick="switchMainTab('expedientes')" title="Expedientes clínicos electrónicos NOM-004">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+          <span>Expedientes</span>
+          <span class="nav-dot-green"></span>
+        </button>
+
+        <button class="sidebar-nav-btn nav-wearable-pill" id="nav-btn-wearables" onclick="openWearableModal()" title="Monitoreo biométrico y relojes inteligentes conectados">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="12" height="12" x="6" y="6" rx="3"/><path d="M9 6V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/><path d="M9 18v3a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-3"/><path d="M9 12h2l1-2 1 4 1-2h1"/></svg>
+          <span>Dispositivos Médicos</span>
+        </button>
+
+        <button class="sidebar-nav-btn" id="nav-btn-ia-tools" onclick="openLlmModal()" title="Configuración del Cerebro IA y extractores clínicos">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+          <span>Herramientas IA</span>
+        </button>
+
+        <!-- GROUP 3: ADMINISTRACIÓN -->
+        <div class="nav-section-label nav-section-spaced">ADMINISTRACIÓN</div>
+
+        <button class="sidebar-nav-btn" id="nav-btn-reportes" onclick="focusEpidemiologiaSection()" title="Estadísticas epidemiológicas y métricas hospitalarias">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 17v-5"/><path d="M12 17V7"/><path d="M16 17v-3"/></svg>
+          <span>Reportes y Estadísticas</span>
+        </button>
+
+        <button class="sidebar-nav-btn" id="nav-btn-config" onclick="openLlmModal()" title="Preferencias y ajustes del sistema">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Configuración</span>
+        </button>
       </nav>
 
-      <!-- USER PROFILE FOOTER -->
+      <!-- DOCTOR PROFILE FOOTER -->
       <div class="sidebar-profile">
         <div class="profile-card">
           <div class="profile-avatar">DR</div>
@@ -149,34 +181,54 @@
             <div class="profile-name">Dr. Roberto M.</div>
             <div class="profile-role">Medicina General</div>
           </div>
-          <button class="profile-settings-btn" onclick="openLlmModal()" title="Configuración de IA">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <button class="profile-settings-btn" onclick="openLlmModal()" title="Configuración del perfil médico">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
         </div>
       </div>
     </aside>
 
-    <!-- MAIN WRAPPER -->
+    <!-- MAIN CONTENT AREA -->
     <div class="app-main-wrapper">
       
       <!-- TOP BAR -->
       <header class="topbar">
         <div class="topbar-left">
-          <div class="status-badge" id="status-badge">
-            <span class="status-dot"></span>
-            <span id="status-text">Sistema en línea</span>
+          <!-- Search Bar -->
+          <div class="topbar-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="global-quick-search" placeholder="Búsqueda rápida (⌘K)" onkeydown="if(event.key==='Enter'){switchMainTab('expedientes'); document.getElementById('search-input').value=this.value; handleSearch();}" />
           </div>
+
+          <!-- Sync Status -->
+          <div class="status-sync-wrap" id="status-badge">
+            <span class="status-dot"></span>
+            <div class="status-sync-text">
+              <span class="status-main-line" id="status-text">Sistema listo</span>
+              <span class="status-sub-line">(sincronizado)</span>
+            </div>
+          </div>
+
+          <!-- Bluetooth / Wearable Hub Button -->
+          <button class="topbar-icon-btn bt-active-btn" onclick="openWearableModal()" title="Bluetooth & Hub de Relojes Médicos Conectados (2 activos)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+          </button>
         </div>
 
         <div class="topbar-right">
-          <!-- SEARCH BOX -->
-          <div class="topbar-search">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Búsqueda rápida (⌘K)" onfocus="switchMainTab('expedientes')" />
-          </div>
+          <!-- Notifications Bell -->
+          <button class="topbar-icon-btn" onclick="focusTasksSection()" title="Notificaciones y alertas pendientes">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </button>
 
-          <!-- THEME TOGGLE -->
-          <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema claro / oscuro">
+          <!-- Settings with Red Dot -->
+          <button class="topbar-icon-btn has-red-dot" onclick="openLlmModal()" title="Ajustes de IA y Sincronización">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="topbar-red-dot"></span>
+          </button>
+
+          <!-- Theme Switcher -->
+          <button class="topbar-icon-btn theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar modo Claro / Oscuro">
             <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
             </svg>
@@ -187,80 +239,319 @@
         </div>
       </header>
 
-      <!-- DYNAMIC VIEWS CONTAINER -->
+      <!-- DYNAMIC VIEWPORT -->
       <main class="view-viewport">
 
-        <!-- VIEW 1: DASHBOARD (Resumen Bento Grid) -->
+        <!-- =================================================================
+             VIEW 1: DASHBOARD BENTO GRID ("Resumen")
+             ================================================================= -->
         <section class="view-panel" id="panel-dashboard-section">
           <div class="dashboard-container">
+            
+            <!-- Top Banner -->
             <div class="dashboard-greeting">
               <h1>Buenos días, Roberto</h1>
               <p>Aquí tienes el resumen de tu actividad clínica para hoy.</p>
             </div>
 
-            <!-- BENTO GRID -->
-            <div class="bento-grid">
-              
-              <!-- Bento Card 1: Pacientes Hoy -->
-              <div class="bento-card bento-card-light">
-                <div class="bento-card-bg-icon">
-                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <!-- ROW 1: AGENDA + WEARABLES -->
+            <div class="bento-row-top">
+
+              <!-- CARD 1: PRÓXIMOS PACIENTES (AGENDA) -->
+              <div class="bento-card agenda-card" id="bento-agenda-card">
+                <div class="bento-card-header">
+                  <h3>PRÓXIMOS PACIENTES (AGENDA)</h3>
+                  <span class="bento-sub-caption">Todo a hoy</span>
                 </div>
-                <div class="bento-label">Pacientes Hoy</div>
-                <div class="bento-value">12</div>
-                <div class="bento-delta positive">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
-                  <span>+2 desde ayer</span>
+
+                <div class="agenda-list">
+                  <!-- Item 1: 09:00 AM Carlos Manuel G. -->
+                  <div class="agenda-item">
+                    <div class="agenda-time">
+                      <span>09:00</span>
+                      <small>AM</small>
+                    </div>
+                    <div class="agenda-pill-card">
+                      <div class="agenda-patient-info">
+                        <div class="agenda-patient-title">09:00 AM - Carlos Manuel G.</div>
+                        <div class="agenda-patient-sub">
+                          <span class="heart-beat-inline">❤️ <strong>72 lpm</strong></span>
+                          <span class="agenda-dot-sep">&bull;</span>
+                          <span>Consulta de seguimiento</span>
+                        </div>
+                      </div>
+                      <div class="agenda-watch-badge watch-green" title="Garmin Active conectado — Telemetría activa">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="12" height="12" x="6" y="6" rx="2.5"/><path d="M9 6V3h6v3"/><path d="M9 18v3h6v-3"/><path d="M9 12h2l1-2 1 4 1-2h1"/></svg>
+                      </div>
+                      <button class="btn-dark-pill" onclick="openPatientProfile('GOPC790814HYNCLN04')">Ver Expediente</button>
+                    </div>
+                  </div>
+
+                  <!-- Item 2: 09:45 AM Kevin Enrique M. -->
+                  <div class="agenda-item">
+                    <div class="agenda-time">
+                      <span>09:45</span>
+                      <small>AM</small>
+                    </div>
+                    <div class="agenda-pill-card">
+                      <div class="agenda-patient-info">
+                        <div class="agenda-patient-title">09:45 AM - Kevin Enrique M.</div>
+                        <div class="agenda-patient-sub">Dolor abdominal &bull; Wearable conectado</div>
+                      </div>
+                      <div class="agenda-watch-badge watch-blue" title="Smartwatch conectado — Recibiendo biometría">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="12" height="12" x="6" y="6" rx="2.5"/><path d="M9 6V3h6v3"/><path d="M9 18v3h6v-3"/><path d="M9 12h2l1-2 1 4 1-2h1"/></svg>
+                      </div>
+                      <button class="btn-dark-pill" onclick="startQuickConsultation('MOBK070228HYNRTVA3', 'Kevin Enrique M.', 'Paciente masculino de 19 años que acude por dolor abdominal moderado de 24 horas de evolución. Signos vitales recibidos de wearable conectado: TA 120/78 mmHg, frecuencia cardíaca 82 lpm, frecuencia respiratoria 17 rpm, temperatura 36.8 °C, oxígeno 98%. Abdomen blando con dolor a la palpación media, sin datos de irritación peritoneal.')">Iniciar</button>
+                    </div>
+                  </div>
+
+                  <!-- Item 3: 10:30 AM Juan Pérez G. -->
+                  <div class="agenda-item">
+                    <div class="agenda-time">
+                      <span>10:30</span>
+                      <small>AM</small>
+                    </div>
+                    <div class="agenda-pill-card">
+                      <div class="agenda-patient-info">
+                        <div class="agenda-patient-title">10:30 AM - Juan Pérez G.</div>
+                        <div class="agenda-patient-sub">Control general</div>
+                      </div>
+                      <button class="btn-dark-pill" onclick="startQuickConsultation('TESTCURP1234567890', 'Juan Pérez G.', 'Paciente masculino en consulta de control general y seguimiento preventivo. Signos vitales sincronizados desde Galaxy Watch: TA 122/80 mmHg, frecuencia cardíaca 74 lpm, respiratoria 16 rpm, temperatura 36.5 °C, oxígeno 99%. Consciente, orientado, cardiopulmonar sin compromiso, abdomen blando no doloroso.')">Iniciar</button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Bento Card 2: Cerebro IA Activo -->
-              <div class="bento-card bento-card-dark">
-                <div class="bento-card-bg-icon">
-                  <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
+              <!-- CARD 2: MONITOREO DE WEARABLES (RELOJES) -->
+              <div class="bento-card wearables-card" id="bento-wearables-card">
+                <div class="bento-card-header">
+                  <h3>MONITOREO DE WEARABLES (RELOJES)</h3>
                 </div>
-                <div class="bento-label">Cerebro IA Activo</div>
-                <div class="bento-value">98<span class="bento-unit">%</span></div>
-                <div class="bento-delta ia-delta">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                  <span>Precisión en notas y CIE-10</span>
-                </div>
-              </div>
 
-              <!-- Bento Card 3: Acción Rápida -->
-              <div class="bento-card bento-card-action">
-                <div>
-                  <div class="bento-label">Acción Rápida</div>
-                  <p class="bento-desc">Inicia una nueva consulta médica o dicta una nota rápida al expediente oficial.</p>
+                <!-- Upper visual: Smartwatch 3D illustration + ECG link + Telemetry Card -->
+                <div class="wearables-visual-grid">
+                  
+                  <!-- Smartwatch & ECG Link -->
+                  <div class="smartwatch-illustration-wrap">
+                    <div class="smartwatch-3d">
+                      <!-- Realistic SVG Smartwatch -->
+                      <svg width="115" height="135" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                          <linearGradient id="band-grad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#334155"/>
+                            <stop offset="100%" stop-color="#0f172a"/>
+                          </linearGradient>
+                          <linearGradient id="case-grad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#64748b"/>
+                            <stop offset="50%" stop-color="#1e293b"/>
+                            <stop offset="100%" stop-color="#0f172a"/>
+                          </linearGradient>
+                          <linearGradient id="screen-grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#090d16"/>
+                            <stop offset="100%" stop-color="#111c2d"/>
+                          </linearGradient>
+                        </defs>
+                        <!-- Watch Straps -->
+                        <path d="M36 6 H74 L78 28 H32 Z" fill="url(#band-grad)" rx="6"/>
+                        <path d="M32 112 H78 L74 134 H36 Z" fill="url(#band-grad)" rx="6"/>
+                        <!-- Watch Crown / Side Button -->
+                        <rect x="92" y="48" width="6" height="16" rx="3" fill="#475569"/>
+                        <rect x="92" y="72" width="4" height="10" rx="2" fill="#334155"/>
+                        <!-- Watch Metallic Case -->
+                        <rect x="18" y="24" width="76" height="90" rx="20" fill="url(#case-grad)" stroke="#94a3b8" stroke-width="1.5"/>
+                        <!-- Watch OLED Screen -->
+                        <rect x="23" y="29" width="66" height="80" rx="16" fill="url(#screen-grad)" stroke="#38bdf8" stroke-opacity="0.3"/>
+                        <!-- Watch UI Elements -->
+                        <text x="30" y="52" fill="#38bdf8" font-family="Plus Jakarta Sans" font-weight="800" font-size="16">08</text>
+                        <text x="30" y="68" fill="#ffffff" font-family="Plus Jakarta Sans" font-weight="800" font-size="16">30</text>
+                        <!-- Biometric Body Figure / Rings -->
+                        <circle cx="70" cy="54" r="11" stroke="#ec4899" stroke-width="2.5" stroke-dasharray="50 20"/>
+                        <circle cx="70" cy="54" r="7.5" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="35 15"/>
+                        <circle cx="70" cy="54" r="4" fill="#10b981"/>
+                        <!-- Mini Heart Rate Wave on Watch -->
+                        <path d="M30 84 H42 L46 76 L51 92 L56 80 L60 84 H80" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <text x="30" y="100" fill="#94a3b8" font-family="JetBrains Mono" font-weight="700" font-size="9">♥ 72 BPM  98%</text>
+                      </svg>
+                    </div>
+
+                    <!-- Animated ECG Connection Line -->
+                    <div class="ecg-bridge">
+                      <svg width="85" height="36" viewBox="0 0 85 36" fill="none">
+                        <path d="M0 18 H18 L24 6 L30 30 L36 4 L42 26 L46 18 H60" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="67" cy="18" r="2.2" fill="#0284c7"/>
+                        <circle cx="75" cy="18" r="2.2" fill="#0284c7" opacity="0.6"/>
+                        <circle cx="82" cy="18" r="2.2" fill="#0284c7" opacity="0.3"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- Telemetry Metrics Sub-Card -->
+                  <div class="wearable-telemetry-box">
+                    <div class="telemetry-header-row">
+                      <span class="telemetry-label">Ritmo Cardíaco (bpm)</span>
+                      <span class="telemetry-heart" id="live-bpm-badge">❤️ <strong id="live-bpm-val">72</strong></span>
+                    </div>
+                    <!-- Heart Rate Area Chart -->
+                    <div class="telemetry-chart">
+                      <svg width="100%" height="38" viewBox="0 0 220 38" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="hr-area" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"/>
+                            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+                          </linearGradient>
+                        </defs>
+                        <path d="M0 28 Q 15 26, 25 12 T 50 22 T 75 16 T 105 25 T 135 14 T 165 22 T 195 15 T 220 24 L 220 38 L 0 38 Z" fill="url(#hr-area)"/>
+                        <path d="M0 28 Q 15 26, 25 12 T 50 22 T 75 16 T 105 25 T 135 14 T 165 22 T 195 15 T 220 24" fill="none" stroke="#2563eb" stroke-width="2"/>
+                      </svg>
+                    </div>
+
+                    <div class="telemetry-stat-row">
+                      <span class="telemetry-label">Oxigenación (SpO2)</span>
+                      <span class="telemetry-spo2">💧 <strong id="live-spo2-val">98%</strong></span>
+                    </div>
+
+                    <div class="telemetry-stat-row">
+                      <span class="telemetry-label">Actividad física</span>
+                      <div class="telemetry-bars">
+                        <span style="height:6px"></span>
+                        <span style="height:10px"></span>
+                        <span style="height:5px"></span>
+                        <span style="height:12px"></span>
+                        <span style="height:8px"></span>
+                        <span class="bar-active" style="height:16px"></span>
+                        <span class="bar-active" style="height:19px"></span>
+                        <span style="height:11px"></span>
+                        <span style="height:7px"></span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <button class="bento-btn-primary" onclick="switchMainTab('consulta')">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
-                  Iniciar Consulta
-                </button>
+
+                <!-- Lower section: Connected Devices List + Action Buttons -->
+                <div class="wearables-bottom-grid">
+                  <div class="connected-devices-list" id="connected-devices-list">
+                    <div class="device-item">
+                      <div class="device-title">Reloj de Carlos Manuel</div>
+                      <div class="device-sub">(Garmin Active) - <span class="status-connected">Conectado ✅</span></div>
+                    </div>
+                    <div class="device-item">
+                      <div class="device-title">Reloj de Juan Pérez</div>
+                      <div class="device-sub">(Galaxy Watch) - <span class="status-synced">Sincronizado 🔄</span></div>
+                    </div>
+                  </div>
+
+                  <div class="wearables-actions-stack">
+                    <button class="btn-dark-pill btn-full" onclick="openWearableModal()">Vincular nuevo dispositivo</button>
+                    <button class="btn-dark-pill btn-full" onclick="importWearableHealthData()">Importar datos de salud</button>
+                  </div>
+                </div>
               </div>
 
             </div>
 
-            <!-- SHOWCASE 3D PREVIEW BANNER -->
-            <div class="dashboard-showcase-card">
-              <div class="showcase-content">
-                <div class="showcase-badge">NEXT-GEN CLINICAL UI</div>
-                <h2>MedicAItion v4.0 &bull; Estándar NOM-004</h2>
-                <p>Estandarización automática de notas médicas de evolución, codificación CIE-10 y generación de recetas con inteligencia artificial local y en la nube.</p>
-                <div class="showcase-features">
-                  <span class="feature-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Dictado por Voz y Reducción de Ruido</span>
-                  <span class="feature-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Cumplimiento NOM-004-SSA3-2012</span>
-                  <span class="feature-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Base Vectorial ChromaDB</span>
+            <!-- ROW 2: BOCETO RÁPIDO (NOTAS DE VOZ) + ALERTAS EPIDEMIOLÓGICAS + TAREAS PENDIENTES -->
+            <div class="bento-row-bottom">
+
+              <!-- CARD 3: BOCETO RÁPIDO / NOTAS DE VOZ (Dark Slate Card) -->
+              <div class="bento-card voice-sketch-card">
+                <div class="voice-card-header">
+                  <span>BOCETO RÁPIDO / NOTAS DE VOZ</span>
+                  <button class="voice-more-btn" onclick="switchMainTab('consulta')" title="Abrir panel completo de Nueva Consulta">&bull;&bull;&bull;</button>
+                </div>
+
+                <div class="voice-visualizer-row">
+                  <button class="voice-red-mic-btn" id="quick-voice-btn" onclick="toggleQuickDictation()" title="Iniciar / Detener dictado rápido NOM-004">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                  </button>
+
+                  <div class="voice-spectrum" id="quick-waveform">
+                    <span class="bar-red" style="height:12px"></span>
+                    <span class="bar-red" style="height:22px"></span>
+                    <span class="bar-red" style="height:34px"></span>
+                    <span class="bar-red" style="height:18px"></span>
+                    <span class="bar-slate" style="height:14px"></span>
+                    <span class="bar-slate" style="height:26px"></span>
+                    <span class="bar-red" style="height:38px"></span>
+                    <span class="bar-red" style="height:24px"></span>
+                    <span class="bar-slate" style="height:16px"></span>
+                    <span class="bar-slate" style="height:30px"></span>
+                    <span class="bar-red" style="height:42px"></span>
+                    <span class="bar-red" style="height:20px"></span>
+                    <span class="bar-slate" style="height:14px"></span>
+                    <span class="bar-slate" style="height:28px"></span>
+                    <span class="bar-red" style="height:36px"></span>
+                    <span class="bar-slate" style="height:22px"></span>
+                    <span class="bar-slate" style="height:12px"></span>
+                    <span class="bar-red" style="height:30px"></span>
+                    <span class="bar-slate" style="height:18px"></span>
+                    <span class="bar-slate" style="height:10px"></span>
+                  </div>
+                </div>
+
+                <div class="voice-caption" id="quick-dictation-status">Dictado IA en tiempo real (NOM-004)...</div>
+
+                <div class="voice-transcript-pill">
+                  <input type="text" id="quick-dictation-input" value="Paciente masculino de 45 años refiere dolor..." aria-label="Transcripción rápida" />
+                  <button class="voice-send-btn" onclick="processQuickNote()" title="Generar Nota NOM-004 y Receta con IA">
+                    <span class="mini-wave-icon">|||</span>
+                  </button>
                 </div>
               </div>
-              <div class="showcase-img-wrap">
-                <img src="assets/showcase.jpg" alt="Presentación UI/UX MedicAItion" class="showcase-img" />
+
+              <!-- CARD 4: ALERTAS EPIDEMIOLÓGICAS & INSIGHTS IA -->
+              <div class="epidemiologia-column" id="bento-epidemiologia-card">
+                <h3 class="epidemiologia-section-title">ALERTAS EPIDEMIOLÓGICAS<br/>&amp; INSIGHTS IA</h3>
+                <div class="bento-card epidemiologia-inner-card">
+                  <div class="epi-top-row">
+                    <span class="epi-brand">Cerebro IA</span>
+                    <span class="epi-live-badge">En tiempo real</span>
+                  </div>
+                  <p class="epi-topic">Dengue en Mérida -<br/>Alertas rápidas:</p>
+                  <div class="epi-stats-grid">
+                    <div class="epi-stat">
+                      <div class="epi-stat-val">35%</div>
+                      <div class="epi-stat-lbl">Alertas rápidas</div>
+                    </div>
+                    <div class="epi-stat">
+                      <div class="epi-stat-val">+5.3%</div>
+                      <div class="epi-stat-lbl">Rápido/drástico</div>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              <!-- CARD 5: ALERTAS Y TAREAS PENDIENTES -->
+              <div class="bento-card tasks-card" id="bento-tasks-card">
+                <div class="bento-card-header">
+                  <h3>ALERTAS Y TAREAS PENDIENTES</h3>
+                </div>
+
+                <div class="tasks-list">
+                  <div class="task-item" onclick="switchMainTab('consulta')">
+                    <span class="task-icon task-alert">!</span>
+                    <span class="task-text">3 notas médicas pendientes de firmar</span>
+                  </div>
+
+                  <div class="task-item" onclick="openPatientProfile('GOPC790814HYNCLN04')">
+                    <span class="task-icon task-done">✓</span>
+                    <span class="task-text">Validar resultados de laboratorio (Paciente X)</span>
+                  </div>
+
+                  <div class="task-item" onclick="showToast('Sincronización con la nube completada y verificada', 'success')">
+                    <span class="task-icon task-done">✓</span>
+                    <span class="task-text">Sincronización con la nube (Sistema listo)</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
+
           </div>
         </section>
 
-        <!-- VIEW 2: NUEVA CONSULTA (Floating Glass Cards: Input + Results) -->
+        <!-- =================================================================
+             VIEW 2: NUEVA CONSULTA (Captura + Previsualización NOM-004)
+             ================================================================= -->
         <section class="view-panel" id="consulta-layout" style="display:none">
           
           <!-- LEFT PANEL: Entrada de Caso -->
@@ -272,7 +563,7 @@
                 </div>
                 <div>
                   <h2>Entrada de Caso</h2>
-                  <p class="panel-desc">Identificación y captura clínica</p>
+                  <p class="panel-desc">Identificación del paciente y captura clínica NOM-004</p>
                 </div>
               </div>
             </div>
@@ -304,7 +595,7 @@
                 </button>
                 <button class="segmented-btn segmented-btn-ai" id="btn-llm-mode" onclick="openLlmModal()">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.44-4.16Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.44-4.16Z"/></svg>
-                  <span>Cerebro IA</span>
+                  <span>Cerebro IA (<span id="llm-mode-label">Auto</span>)</span>
                 </button>
               </div>
             </div>
@@ -312,8 +603,6 @@
             <!-- AUDIO CAPTURE CARD -->
             <div id="audio-panel" class="input-panel">
               <div class="recorder-card" id="recorder-area">
-                
-                <!-- Modern Waveform Animation -->
                 <div class="waveform-container" id="waveform">
                   <div class="wave-bars" id="wave-bars">
                     <span></span><span></span><span></span><span></span><span></span>
@@ -322,7 +611,6 @@
                   </div>
                 </div>
 
-                <!-- Sleek Recording Button with Pulse Glow -->
                 <div class="record-btn-wrapper">
                   <button class="record-btn-futuristic" id="record-btn" onclick="toggleRecord()" title="Iniciar / Detener grabación del dictado">
                     <div class="record-core" id="record-icon"></div>
@@ -383,7 +671,7 @@
                 </div>
                 <div>
                   <h2 id="results-panel-title">Previsualización de Notas</h2>
-                  <p class="panel-desc" id="results-panel-desc">Sincronización en tiempo real con motor CIE-10</p>
+                  <p class="panel-desc" id="results-panel-desc">Sincronización en tiempo real con motor CIE-10 y NOM-004</p>
                 </div>
               </div>
             </div>
@@ -408,7 +696,7 @@
               </button>
             </div>
 
-            <!-- EMPTY STATE: Sleek floating 3D clipboard -->
+            <!-- EMPTY STATE -->
             <div class="empty-state" id="empty-state">
               <div class="empty-icon-wrap">
                 <div class="empty-icon">
@@ -431,8 +719,6 @@
 
             <!-- TAB: ORIGINAL -->
             <div id="original-content" class="tab-content" style="display:none">
-              
-              <!-- Texto Original -->
               <div class="result-section">
                 <h3 class="section-title">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -441,7 +727,6 @@
                 <p id="result-text" class="result-text-content"></p>
               </div>
 
-              <!-- Texto Re-redactado -->
               <div class="result-section" id="result-section-redactado" style="display:none">
                 <h3 class="section-title title-cyan">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -450,7 +735,6 @@
                 <p id="result-text-redactado" class="result-text-content redactado-box"></p>
               </div>
 
-              <!-- Demográficos -->
               <div class="result-section">
                 <h3 class="section-title">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -459,7 +743,6 @@
                 <div id="result-demo" class="tags-row"></div>
               </div>
 
-              <!-- Códigos CIE-10 -->
               <div class="result-section">
                 <h3 class="section-title">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -468,14 +751,13 @@
                 <div id="result-cie10"></div>
               </div>
 
-              <!-- JSON Detalles -->
               <details class="json-details">
                 <summary>Ver JSON estructurado de la respuesta</summary>
                 <pre id="result-json" class="json-block"></pre>
               </details>
             </div>
 
-            <!-- TAB: NOM-004 (Official Iframe) -->
+            <!-- TAB: NOM-004 -->
             <div id="nota-content" class="tab-content" style="display:none">
               <iframe id="nota-iframe" class="nota-iframe" title="Nota Médica NOM-004"></iframe>
             </div>
@@ -536,7 +818,9 @@
           </div>
         </section>
 
-        <!-- VIEW 3: PACIENTES (Directorio Moderno con Filas Flotantes) -->
+        <!-- =================================================================
+             VIEW 3: PACIENTES / EXPEDIENTES (Directorio)
+             ================================================================= -->
         <section class="view-panel" id="panel-patients-section" style="display:none">
           <div class="patients-container">
             
@@ -551,7 +835,6 @@
               </button>
             </div>
 
-            <!-- SEARCH & FILTER FLOATING BAR -->
             <div class="patients-floating-bar">
               <div class="patients-search-input-wrap">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -568,7 +851,6 @@
               </div>
             </div>
 
-            <!-- TABLE HEADER PSEUDO ROW -->
             <div class="patients-pseudo-table-header">
               <div class="col-ident">IDENTIFICACIÓN</div>
               <div class="col-exp">EXPEDIENTE / FOLIO</div>
@@ -576,7 +858,6 @@
               <div class="col-actions">ACCIONES</div>
             </div>
 
-            <!-- DETACHED ROW CARDS LIST -->
             <div id="patients-list" class="patients-detached-list">
               <div class="loading-patients">Cargando pacientes...</div>
             </div>
@@ -586,6 +867,45 @@
 
       </main>
 
+    </div>
+  </div>
+
+  <!-- WEARABLES / DISPOSITIVOS MÉDICOS MODAL -->
+  <div class="llm-modal-overlay" id="wearable-modal-overlay">
+    <div class="llm-modal wearable-modal-box">
+      <div class="modal-top-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="12" height="12" x="6" y="6" rx="3"/><path d="M9 6V3h6v3"/><path d="M9 18v3h6v-3"/><path d="M9 12h2l1-2 1 4 1-2h1"/></svg>
+      </div>
+      <h2>Central de Dispositivos Médicos (Wearables)</h2>
+      <p class="modal-sub">Sincronización Bluetooth Low Energy (BLE) con relojes inteligentes y sensores biométricos de pacientes.</p>
+
+      <div class="llm-options-grid">
+        <div class="llm-opt active">
+          <div class="llm-opt-body">
+            <div class="llm-opt-title">⌚ Reloj de Carlos Manuel — Garmin Active (Conectado ✅)</div>
+            <div class="llm-opt-desc">FC: <strong>72 lpm</strong> &bull; SpO2: <strong>98%</strong> &bull; TA estimada: <strong>122/78 mmHg</strong> &bull; Temp: <strong>36.5 °C</strong></div>
+          </div>
+        </div>
+
+        <div class="llm-opt">
+          <div class="llm-opt-body">
+            <div class="llm-opt-title">⌚ Reloj de Kevin Enrique — Apple Watch S9 (Conectado ✅)</div>
+            <div class="llm-opt-desc">FC: <strong>82 lpm</strong> &bull; SpO2: <strong>98%</strong> &bull; Nivel de estrés: Moderado &bull; Temp: <strong>36.8 °C</strong></div>
+          </div>
+        </div>
+
+        <div class="llm-opt">
+          <div class="llm-opt-body">
+            <div class="llm-opt-title">⌚ Reloj de Juan Pérez — Galaxy Watch 6 (Sincronizado 🔄)</div>
+            <div class="llm-opt-desc">FC: <strong>74 lpm</strong> &bull; SpO2: <strong>99%</strong> &bull; Actividad física: 6,420 pasos hoy</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="llm-modal-close" style="background:#0f172a;" onclick="importWearableHealthData(); closeWearableModal();">Importar Signos Vitales a Consulta</button>
+        <button class="llm-modal-close" style="background:#64748b;" onclick="closeWearableModal()">Cerrar</button>
+      </div>
     </div>
   </div>
 
@@ -649,9 +969,9 @@
     </div>
   </div>
 
-  <script src="state.js?v=4.0.0"></script>
-  <script src="overlays.js?v=4.0.0"></script>
-  <script src="modals.js?v=4.0.0"></script>
-  <script src="app.js?v=4.0.0"></script>
+  <script src="state.js?v=5.0.0"></script>
+  <script src="overlays.js?v=5.0.0"></script>
+  <script src="modals.js?v=5.0.0"></script>
+  <script src="app.js?v=5.0.0"></script>
 </body>
 </html>
