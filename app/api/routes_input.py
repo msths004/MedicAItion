@@ -109,6 +109,8 @@ def _run_pipeline(
 
     if curp:
         _last_consultation_records[curp] = record
+        _last_consultation_records[curp.strip().upper()] = record
+    _last_consultation_records["__latest__"] = record
 
     return record
 
@@ -166,8 +168,12 @@ async def get_nota_medica(curp: str):
     Para notas persistidas específicas por consulta, usar:
     GET /api/consultations/{consulta_id}/nota
     """
-    if curp in _last_consultation_records:
-        rec = _last_consultation_records[curp]
+    clean_curp = curp.strip().upper() if curp else ""
+    rec = _last_consultation_records.get(curp) or _last_consultation_records.get(clean_curp)
+    if not rec and "__latest__" in _last_consultation_records:
+        rec = _last_consultation_records["__latest__"]
+
+    if rec:
         if rec.get("nota_medica_html"):
             return HTMLResponse(content=rec["nota_medica_html"])
         try:

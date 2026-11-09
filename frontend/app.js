@@ -84,16 +84,17 @@ function setResultTab(tab) {
 /* ── NOTA MÉDICA (iframe) ── */
 function loadNotaMedica(curp) {
   const iframe = document.getElementById('nota-iframe');
-  if (AppState.lastProcessedRecord && AppState.lastProcessedRecord.nota_medica_html && AppState.lastProcessedRecord.curp === curp) {
+  if (AppState.lastProcessedRecord && AppState.lastProcessedRecord.nota_medica_html) {
     iframe.srcdoc = AppState.lastProcessedRecord.nota_medica_html;
-    iframe.setAttribute('data-loaded-curp', curp);
+    iframe.setAttribute('data-loaded-curp', curp || '');
     return;
   }
-  const url = `${API}/api/input/nota-medica/${encodeURIComponent(curp)}`;
-  if (iframe.getAttribute('data-loaded-curp') !== curp) {
+  const cleanCurp = (curp || '').trim().toUpperCase();
+  const url = `${API}/api/input/nota-medica/${encodeURIComponent(cleanCurp)}`;
+  if (iframe.getAttribute('data-loaded-curp') !== cleanCurp) {
     iframe.removeAttribute('srcdoc');
     iframe.src = url;
-    iframe.setAttribute('data-loaded-curp', curp);
+    iframe.setAttribute('data-loaded-curp', cleanCurp);
   }
 }
 
