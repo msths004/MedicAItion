@@ -50,7 +50,7 @@ function _pulsoEsc(str) {
  * Robot cápsula turquesa (#14B8A6, borde #0F766E), visor oscuro (#0F172A),
  * ojos #5EEAD3, antena con punto ámbar (#F59E0B), chip y línea de pulso en el pecho.
  */
-function PulsoAvatar({ state = 'reposo', size = 84 } = {}) {
+function PulsoAvatar({ state = 'reposo', size = 94 } = {}) {
   const st = ['reposo', 'escuchando', 'pensando', 'alerta', 'contento'].includes(state)
     ? state
     : 'reposo';
@@ -66,100 +66,151 @@ function PulsoAvatar({ state = 'reposo', size = 84 } = {}) {
   if (isThinking) {
     visorContent = `
       <g class="pulso-thinking-dots" fill="#5EEAD3">
-        <circle class="pulso-dot d1" cx="47" cy="48" r="3.6" />
-        <circle class="pulso-dot d2" cx="60" cy="48" r="3.6" />
-        <circle class="pulso-dot d3" cx="73" cy="48" r="3.6" />
+        <circle class="pulso-dot d1" cx="46" cy="48" r="4" />
+        <circle class="pulso-dot d2" cx="60" cy="48" r="4" />
+        <circle class="pulso-dot d3" cx="74" cy="48" r="4" />
       </g>
     `;
   } else {
     visorContent = `
-      <g class="pulso-eyes ${st === 'reposo' ? 'can-blink' : ''}">
-        <ellipse cx="47" cy="46" rx="6.2" ry="7.4" fill="${eyeColor}" />
-        <ellipse cx="73" cy="46" rx="6.2" ry="7.4" fill="${eyeColor}" />
-        ${!isAlert ? `
-          <circle cx="45" cy="43.5" r="2.1" fill="#FFFFFF" />
-          <circle cx="71" cy="43.5" r="2.1" fill="#FFFFFF" />
-        ` : ''}
+      <g class="pulso-eyes-group">
+        <g class="pulso-eyes ${st === 'reposo' || st === 'contento' ? 'can-blink' : ''}">
+          <ellipse cx="46.5" cy="46" rx="6.6" ry="7.8" fill="${eyeColor}" />
+          <ellipse cx="73.5" cy="46" rx="6.6" ry="7.8" fill="${eyeColor}" />
+          ${!isAlert ? `
+            <circle class="pulso-pupil" cx="44.5" cy="43.2" r="2.4" fill="#FFFFFF" />
+            <circle class="pulso-pupil" cx="71.5" cy="43.2" r="2.4" fill="#FFFFFF" />
+            <circle cx="48.5" cy="49" r="1.1" fill="#FFFFFF" opacity="0.8" />
+            <circle cx="75.5" cy="49" r="1.1" fill="#FFFFFF" opacity="0.8" />
+          ` : ''}
+        </g>
+        <ellipse cx="38" cy="53" rx="4" ry="2.1" fill="#F472B6" opacity="${isAlert ? '0' : (isHappy ? '0.95' : '0.65')}" />
+        <ellipse cx="82" cy="53" rx="4" ry="2.1" fill="#F472B6" opacity="${isAlert ? '0' : (isHappy ? '0.95' : '0.65')}" />
+        ${isAlert
+          ? `<line x1="51" y1="57" x2="69" y2="57" stroke="#F59E0B" stroke-width="3.2" stroke-linecap="round" />`
+          : `<path class="pulso-mouth" d="${isHappy ? 'M 50 53.5 Q 60 63 70 53.5' : 'M 52 55 Q 60 61 68 55'}" fill="none" stroke="#5EEAD3" stroke-width="2.9" stroke-linecap="round" />`
+        }
       </g>
-      ${isHappy ? `
-        <ellipse cx="38" cy="53" rx="3.8" ry="2" fill="#F472B6" opacity="0.85" />
-        <ellipse cx="82" cy="53" rx="3.8" ry="2" fill="#F472B6" opacity="0.85" />
-      ` : ''}
-      ${isAlert
-        ? `<line x1="52" y1="57" x2="68" y2="57" stroke="#F59E0B" stroke-width="3" stroke-linecap="round" />`
-        : `<path d="M 52 55 Q 60 61.5 68 55" fill="none" stroke="#5EEAD3" stroke-width="2.8" stroke-linecap="round" />`
-      }
     `;
   }
 
   const soundWaves = isListening ? `
-    <g class="pulso-sound-waves" fill="none" stroke="#0F766E" stroke-width="2.4" stroke-linecap="round">
-      <path class="wave w1" d="M 103 38 Q 109 46 103 54" />
-      <path class="wave w2" d="M 109 33 Q 117 46 109 59" />
-      <path class="wave w1" d="M 17 38 Q 11 46 17 54" />
+    <g class="pulso-sound-waves" fill="none" stroke="#0F766E" stroke-width="2.6" stroke-linecap="round">
+      <path class="wave w1" d="M 103 38 Q 110 46 103 54" />
+      <path class="wave w2" d="M 109 32 Q 118 46 109 60" />
+      <path class="wave w1" d="M 17 38 Q 10 46 17 54" />
+      <path class="wave w2" d="M 11 32 Q 2 46 11 60" />
     </g>
   ` : '';
 
   return `
-    <svg class="pulso-avatar-svg state-${st}" width="${size}" height="${size}" viewBox="0 0 120 132" role="img" aria-label="Avatar de Pulso en estado ${st}">
-      <!-- Sombra inferior -->
-      <ellipse cx="60" cy="124" rx="30" ry="4.5" fill="#CBD5E1" opacity="0.65" />
+    <svg class="pulso-avatar-svg state-${st}" width="${size}" height="${size}" viewBox="0 0 120 136" role="img" aria-label="Avatar de Pulso en estado ${st}">
+      <defs>
+        <linearGradient id="pulsoBodyGrad" x1="20" y1="15" x2="95" y2="115" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#2DD4BF" />
+          <stop offset="55%" stop-color="#14B8A6" />
+          <stop offset="100%" stop-color="#0D9488" />
+        </linearGradient>
+        <linearGradient id="pulsoVisorGrad" x1="33" y1="28" x2="87" y2="64" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#1E293B" />
+          <stop offset="100%" stop-color="#0F172A" />
+        </linearGradient>
+      </defs>
 
-      <!-- Antena con punto ámbar (#F59E0B) -->
-      <line x1="60" y1="12" x2="60" y2="24" stroke="#0F766E" stroke-width="3" stroke-linecap="round" />
-      <circle class="pulso-antenna-tip" cx="60" cy="9" r="5.5" fill="#F59E0B" stroke="#0F766E" stroke-width="2" />
+      <!-- Sombra en el piso que reacciona al flotar/saltar -->
+      <ellipse class="pulso-floor-shadow" cx="60" cy="127" rx="28" ry="5" fill="#0F172A" opacity="0.22" />
 
-      <!-- Orejas laterales -->
-      <circle cx="24" cy="46" r="6" fill="#0F766E" />
-      <circle cx="96" cy="46" r="6" fill="#0F766E" />
+      <!-- Cuerpo completo del muñequito (flota, respira y salta al hacer clic) -->
+      <g class="pulso-character-rig">
+        <!-- Pies articulados -->
+        <ellipse class="pulso-foot-left" cx="48" cy="117" rx="11.5" ry="6" fill="#0F766E" stroke="#0B4F4A" stroke-width="1.8" />
+        <ellipse class="pulso-foot-right" cx="72" cy="117" rx="11.5" ry="6" fill="#0F766E" stroke="#0B4F4A" stroke-width="1.8" />
 
-      <!-- Cabeza cápsula turquesa (#14B8A6, borde #0F766E) -->
-      <rect x="26" y="23" width="68" height="46" rx="22" fill="#14B8A6" stroke="#0F766E" stroke-width="2.6" />
+        <!-- Torso cápsula turquesa con volumen 3D -->
+        <g class="pulso-torso-rig">
+          <rect x="35" y="70" width="50" height="44" rx="20" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.8" />
+          <!-- Brillo lateral 3D en torso -->
+          <path d="M 42 76 Q 39 88 42 103" fill="none" stroke="#99F6E4" stroke-width="2.2" stroke-linecap="round" opacity="0.65" />
 
-      <!-- Visor oscuro (#0F172A) -->
-      <rect x="33" y="30" width="54" height="32" rx="15" fill="#0F172A" />
+          <!-- Ventana de pecho con línea de pulso ECG animada y chip -->
+          <rect x="44" y="76" width="32" height="31" rx="8.5" fill="#CCFBF1" stroke="#0F766E" stroke-width="1.5" />
+          <polyline class="pulso-ecg-line" points="46,84 52,84 55,78 58.5,90 61.5,84 74,84" fill="none" stroke="#0F766E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          <!-- Chip clínico en el pecho -->
+          <rect x="53" y="90" width="14" height="13" rx="2.5" fill="#E6FFFA" stroke="#0F766E" stroke-width="1.8" />
+          <rect class="pulso-chip-core" x="56.5" y="93.5" width="7" height="6" rx="1.2" fill="#0F766E" />
+          <line x1="56" y1="88" x2="56" y2="90" stroke="#0F766E" stroke-width="1.5" />
+          <line x1="60" y1="88" x2="60" y2="90" stroke="#0F766E" stroke-width="1.5" />
+          <line x1="64" y1="88" x2="64" y2="90" stroke="#0F766E" stroke-width="1.5" />
+          <line x1="56" y1="103" x2="56" y2="105" stroke="#0F766E" stroke-width="1.5" />
+          <line x1="60" y1="103" x2="60" y2="105" stroke="#0F766E" stroke-width="1.5" />
+          <line x1="64" y1="103" x2="64" y2="105" stroke="#0F766E" stroke-width="1.5" />
+        </g>
 
-      ${visorContent}
-      ${soundWaves}
+        <!-- Brazo izquierdo articulado -->
+        <g class="pulso-arm-left">
+          <rect x="21" y="73" width="13" height="28" rx="6.5" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.6" />
+        </g>
 
-      <!-- Brazos cápsula -->
-      <rect class="pulso-arm-left" x="22" y="75" width="12" height="27" rx="6" fill="#14B8A6" stroke="#0F766E" stroke-width="2.4" />
-      <g class="pulso-arm-right" transform="rotate(-24 92 80)">
-        <rect x="86" y="74" width="12" height="27" rx="6" fill="#14B8A6" stroke="#0F766E" stroke-width="2.4" />
+        <!-- Brazo derecho articulado (saluda alegremente) -->
+        <g class="pulso-arm-right">
+          <rect x="86" y="72" width="13" height="28" rx="6.5" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.6" />
+        </g>
+
+        <!-- Cabeza articulada (se inclina, asiente y gira ligeramente) -->
+        <g class="pulso-head-rig">
+          <!-- Antena con punto ámbar (#F59E0B) -->
+          <g class="pulso-antenna-rig">
+            <line x1="60" y1="11" x2="60" y2="23" stroke="#0F766E" stroke-width="3.2" stroke-linecap="round" />
+            <circle class="pulso-antenna-tip" cx="60" cy="8.5" r="5.8" fill="#F59E0B" stroke="#0F766E" stroke-width="2.2" />
+            <circle cx="58.2" cy="6.8" r="1.6" fill="#FEF3C7" />
+          </g>
+
+          <!-- Orejas cápsula -->
+          <circle cx="24" cy="46" r="6.5" fill="#0F766E" />
+          <circle cx="96" cy="46" r="6.5" fill="#0F766E" />
+
+          <!-- Cabeza cápsula turquesa (#14B8A6, borde #0F766E) -->
+          <rect x="25" y="22" width="70" height="47" rx="23" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.8" />
+          <!-- Brillo superior 3D en el casco -->
+          <path d="M 39 27 Q 60 23.5 81 27" fill="none" stroke="#CCFBF1" stroke-width="2.5" stroke-linecap="round" opacity="0.75" />
+
+          <!-- Visor oscuro (#0F172A) -->
+          <rect x="32" y="29" width="56" height="33" rx="16" fill="url(#pulsoVisorGrad)" stroke="#0B4F4A" stroke-width="1.5" />
+
+          ${visorContent}
+          ${soundWaves}
+        </g>
       </g>
-
-      <!-- Pies -->
-      <ellipse cx="49" cy="117" rx="11" ry="5.5" fill="#0F766E" />
-      <ellipse cx="71" cy="117" rx="11" ry="5.5" fill="#0F766E" />
-
-      <!-- Torso cápsula turquesa -->
-      <rect x="35" y="71" width="50" height="43" rx="20" fill="#14B8A6" stroke="#0F766E" stroke-width="2.6" />
-
-      <!-- Ventana de pecho con línea de pulso y chip -->
-      <rect x="44" y="77" width="32" height="30" rx="8" fill="#CCFBF1" />
-      <!-- Línea ECG de pulso -->
-      <polyline points="47,84 53,84 56,79 59,89 62,84 73,84" fill="none" stroke="#0F766E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-      <!-- Chip en el pecho -->
-      <rect x="53" y="90" width="14" height="13" rx="2.5" fill="none" stroke="#0F766E" stroke-width="1.8" />
-      <rect x="56.5" y="93.5" width="7" height="6" rx="1" fill="#0F766E" />
-      <line x1="56" y1="88" x2="56" y2="90" stroke="#0F766E" stroke-width="1.5" />
-      <line x1="60" y1="88" x2="60" y2="90" stroke="#0F766E" stroke-width="1.5" />
-      <line x1="64" y1="88" x2="64" y2="90" stroke="#0F766E" stroke-width="1.5" />
-      <line x1="56" y1="103" x2="56" y2="105" stroke="#0F766E" stroke-width="1.5" />
-      <line x1="60" y1="103" x2="60" y2="105" stroke="#0F766E" stroke-width="1.5" />
-      <line x1="64" y1="103" x2="64" y2="105" stroke="#0F766E" stroke-width="1.5" />
     </svg>
   `;
 }
 
 window.PulsoAvatar = PulsoAvatar;
 
+function triggerPulsoClickReaction() {
+  const fab = document.getElementById('pulso-fab-btn');
+  if (fab) {
+    fab.classList.remove('pulso-clicked-boing');
+    void fab.offsetWidth; // Force reflow to restart keyframe
+    fab.classList.add('pulso-clicked-boing');
+    setTimeout(() => fab.classList.remove('pulso-clicked-boing'), 780);
+  }
+  if (!_PulsoState.isStreaming && !_PulsoState.isListening) {
+    setPulsoAvatarState('contento');
+    setTimeout(() => {
+      if (!_PulsoState.isStreaming && !_PulsoState.isListening) {
+        setPulsoAvatarState('reposo');
+      }
+    }, 1100);
+  }
+}
+
 function setPulsoAvatarState(newState) {
   _PulsoState.avatarState = newState;
   const fabIcon = document.getElementById('pulso-fab-avatar');
-  if (fabIcon) fabIcon.innerHTML = PulsoAvatar({ state: newState, size: 74 });
+  if (fabIcon) fabIcon.innerHTML = PulsoAvatar({ state: newState, size: 96 });
   const headerIcon = document.getElementById('pulso-header-avatar');
-  if (headerIcon) headerIcon.innerHTML = PulsoAvatar({ state: newState, size: 44 });
+  if (headerIcon) headerIcon.innerHTML = PulsoAvatar({ state: newState, size: 46 });
 
   document.querySelectorAll('.pulso-state-chip').forEach(btn => {
     const active = btn.dataset.state === newState;
@@ -602,6 +653,7 @@ function _initPulsoDraggable() {
       suppressNextClick = false;
       return;
     }
+    triggerPulsoClickReaction();
     togglePulsoPanel();
   });
 
@@ -615,9 +667,9 @@ function _initPulsoDraggable() {
 
 function initPulsoAssistant() {
   const fabAvatar = document.getElementById('pulso-fab-avatar');
-  if (fabAvatar) fabAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 74 });
+  if (fabAvatar) fabAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 96 });
   const headerAvatar = document.getElementById('pulso-header-avatar');
-  if (headerAvatar) headerAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 44 });
+  if (headerAvatar) headerAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 46 });
 
   const urlInp = document.getElementById('cfg-pulso-url');
   if (urlInp) urlInp.value = _PulsoState.ollamaUrl;
