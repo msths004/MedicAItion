@@ -171,8 +171,9 @@ class Consulta(Base):
     evento_id    = Column(String, ForeignKey("eventos_clinicos.id"), nullable=False, index=True)
     patient_curp = Column(String, ForeignKey("patients.curp"), nullable=False, index=True)
 
-    doctor_nombre   = Column(String, nullable=True)
-    fecha_hora      = Column(DateTime, default=datetime.utcnow)
+    doctor_nombre      = Column(String, nullable=True)
+    cedula_profesional = Column(String, nullable=True)
+    fecha_hora         = Column(DateTime, default=datetime.utcnow)
     resumen_doctor  = Column(Text, nullable=True)    # Notas del doctor (opcional)
 
     # ── Documentos médicos (columnas separadas) ──────────────────
@@ -319,6 +320,23 @@ class PatientDailyLog(Base):
     recorded_at      = Column(DateTime, default=datetime.utcnow, index=True)
 
 
+class PractitionerProfile(Base):
+    """
+    Perfiles profesionales y control de acceso por roles (Médico, Enfermería, Recepción, Administrador)
+    con registro de Cédula Profesional para trazabilidad NOM-004 / NOM-024.
+    """
+    __tablename__ = "practitioner_profiles"
+
+    id                 = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    role               = Column(String, nullable=False, unique=True, index=True)
+    full_name          = Column(String, nullable=False)
+    cedula_profesional = Column(String, nullable=True)
+    specialty          = Column(String, nullable=True)
+    clues_institucion  = Column(String, nullable=True, default="YUC-CR-001")
+    is_active          = Column(Boolean, default=False)
+    updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 def _seed_sprint2_defaults():
     """Siembra citas y lecturas iniciales si las tablas nuevas están vacías."""
     db = SessionLocal()
@@ -456,6 +474,10 @@ def create_tables():
             conn.execute(text("ALTER TABLE consultas ADD COLUMN texto_redactado TEXT;"))
         print("[DB] Migración completada: Columna 'texto_redactado' agregada ✅")
 
+    if "cedula_profesional" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE consultas ADD COLUMN cedula_profesional TEXT;"))
+
     p_columns = [col["name"] for col in inspector.get_columns("patients")]
     if "tipo_sangre" not in p_columns:
         with engine.begin() as conn:
@@ -463,6 +485,7 @@ def create_tables():
 
     _seed_sprint2_defaults()
     _seed_sprint3_defaults()
+    _seed_sprint4_defaults()
     print("[DB] Tablas verificadas/creadas correctamente.")
 
 
@@ -1059,6 +1082,7 @@ def create_consulta(data: dict) -> dict:
             evento_id=evento_id,
             patient_curp=evento.patient_curp,
             doctor_nombre=data.get("doctor_nombre"),
+            cedula_profesional=data.get("cedula_profesional"),
             fecha_hora=fecha_hora,
             resumen_doctor=data.get("resumen_doctor"),
             nota_medica_json=json.dumps(data.get("nota_medica", {}), ensure_ascii=False),
@@ -1071,6 +1095,23 @@ def create_consulta(data: dict) -> dict:
 
         # Actualizar updated_at del evento padre
         evento.updated_at = datetime.utcnow()
+
+        op_label = data.get("doctor_nombre") or "Médico"
+        if data.get("cedula_profesional"):
+            op_label = f"{op_label} (Céd. {data.get('cedula_profesional')})"
+        log_audit_action(
+            action="FIRMA_CONSULTA",
+            patient_curp=evento.patient_curp,
+            operator=op_label,
+            details_dict={
+                "consulta_id": consulta.id,
+                "evento_id": evento_id,
+                "doctor_nombre": consulta.doctor_nombre,
+                "cedula_profesional": consulta.cedula_profesional,
+            },
+            db=db,
+        )
+
         db.commit()
         db.refresh(consulta)
         return _consulta_to_dict(consulta)
@@ -1118,6 +1159,7 @@ def _consulta_to_dict(consulta: Consulta) -> dict:
         "evento_id": consulta.evento_id,
         "patient_curp": consulta.patient_curp,
         "doctor_nombre": consulta.doctor_nombre,
+        "cedula_profesional": consulta.cedula_profesional,
         "fecha_hora": consulta.fecha_hora.isoformat() if consulta.fecha_hora else None,
         "resumen_doctor": consulta.resumen_doctor,
         "nota_medica": _safe_parse(consulta.nota_medica_json),
@@ -1562,5 +1604,180 @@ def _seed_sprint3_defaults():
     except Exception as e:
         db.rollback()
         print(f"[DB] Error sembrando datos iniciales Sprint 3: {e}")
+    finally:
+        db.close()
+
+
+
+# ─────────────────────────────────────────────────────────────────
+# SPRINT 4: PERFILES DE ROL, CÉDULA PROFESIONAL Y BITÁCORA NOM-024
+# ─────────────────────────────────────────────────────────────────
+
+def _profile_to_dict(p: PractitionerProfile) -> dict:
+    return {
+        "id": p.id,
+        "role": p.role,
+        "full_name": p.full_name,
+        "cedula_profesional": p.cedula_profesional or "",
+        "specialty": p.specialty or "",
+        "clues_institucion": p.clues_institucion or "YUC-CR-001",
+        "is_active": bool(p.is_active),
+        "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+    }
+
+
+def _seed_sprint4_defaults():
+    """Siembra los 4 roles profesionales por defecto si la tabla está vacía."""
+    db = SessionLocal()
+    try:
+        if db.query(PractitionerProfile).count() == 0:
+            seeds = [
+                PractitionerProfile(
+                    role="Médico",
+                    full_name="Dr. Roberto Morales",
+                    cedula_profesional="CED-9482710",
+                    specialty="Medicina General / Urgencias",
+                    clues_institucion="YUC-CR-001",
+                    is_active=True,
+                ),
+                PractitionerProfile(
+                    role="Enfermería / Triaje",
+                    full_name="Enf. Mariana López",
+                    cedula_profesional="ENF-7319042",
+                    specialty="Enfermería y Triaje Hospitalario",
+                    clues_institucion="YUC-CR-001",
+                    is_active=False,
+                ),
+                PractitionerProfile(
+                    role="Recepción",
+                    full_name="Lic. Sofía Hernández",
+                    cedula_profesional="ADM-REC-014",
+                    specialty="Admisión y Agenda Clínica",
+                    clues_institucion="YUC-CR-001",
+                    is_active=False,
+                ),
+                PractitionerProfile(
+                    role="Administrador",
+                    full_name="Dir. Alejandro Pech",
+                    cedula_profesional="DIR-0012026",
+                    specialty="Dirección Médica NOM-024",
+                    clues_institucion="YUC-CR-001",
+                    is_active=False,
+                ),
+            ]
+            db.add_all(seeds)
+            db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[DB] Error sembrando roles Sprint 4: {e}")
+    finally:
+        db.close()
+
+
+def get_practitioner_profiles() -> list:
+    db = SessionLocal()
+    try:
+        rows = db.query(PractitionerProfile).all()
+        return [_profile_to_dict(r) for r in rows]
+    finally:
+        db.close()
+
+
+def get_active_practitioner() -> dict:
+    db = SessionLocal()
+    try:
+        row = db.query(PractitionerProfile).filter(PractitionerProfile.is_active == True).first()
+        if not row:
+            row = db.query(PractitionerProfile).first()
+        if row:
+            return _profile_to_dict(row)
+        return {
+            "role": "Médico",
+            "full_name": "Dr. Roberto Morales",
+            "cedula_profesional": "CED-9482710",
+            "specialty": "Medicina General / Urgencias",
+            "clues_institucion": "YUC-CR-001",
+            "is_active": True,
+        }
+    finally:
+        db.close()
+
+
+def upsert_practitioner_profile(data: dict) -> dict:
+    """Actualiza datos/cédula del rol indicado y opcionalmente lo activa como sesión actual."""
+    db = SessionLocal()
+    try:
+        role = (data.get("role") or "Médico").strip()
+        row = db.query(PractitionerProfile).filter(PractitionerProfile.role == role).first()
+        if not row:
+            row = PractitionerProfile(
+                id=str(uuid.uuid4()),
+                role=role,
+                full_name=(data.get("full_name") or role).strip(),
+                cedula_profesional=(data.get("cedula_profesional") or "").strip(),
+                specialty=(data.get("specialty") or "").strip(),
+                clues_institucion=(data.get("clues_institucion") or "YUC-CR-001").strip(),
+                is_active=True,
+            )
+            db.add(row)
+        else:
+            if data.get("full_name") is not None and str(data.get("full_name")).strip():
+                row.full_name = str(data.get("full_name")).strip()
+            if "cedula_profesional" in data and data.get("cedula_profesional") is not None:
+                row.cedula_profesional = str(data.get("cedula_profesional")).strip()
+            if "specialty" in data and data.get("specialty") is not None:
+                row.specialty = str(data.get("specialty")).strip()
+            if "clues_institucion" in data and data.get("clues_institucion") is not None:
+                row.clues_institucion = str(data.get("clues_institucion")).strip() or "YUC-CR-001"
+
+        if data.get("activate", True):
+            db.query(PractitionerProfile).update({"is_active": False})
+            row.is_active = True
+
+        row.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(row)
+
+        log_audit_action(
+            action="CAMBIO_PERFIL_ROL",
+            patient_curp="SISTEMA",
+            operator=f"{row.full_name} [{row.role}]",
+            details_dict={
+                "role": row.role,
+                "cedula_profesional": row.cedula_profesional,
+                "clues_institucion": row.clues_institucion,
+            },
+            db=db,
+        )
+        return _profile_to_dict(row)
+    finally:
+        db.close()
+
+
+def get_all_audit_logs(limit: int = 100, action: str | None = None, curp: str | None = None) -> list:
+    """Devuelve registros globales de la bitácora de auditoría NOM-024."""
+    db = SessionLocal()
+    try:
+        q = db.query(AuditLog)
+        if action and action.strip() and action.strip().upper() != "ALL":
+            q = q.filter(AuditLog.action == action.strip().upper())
+        if curp and curp.strip():
+            q = q.filter(AuditLog.patient_curp.ilike(f"%{curp.strip().upper()}%"))
+        logs = q.order_by(AuditLog.timestamp.desc()).limit(max(1, min(limit, 500))).all()
+        out = []
+        for log in logs:
+            try:
+                details = json.loads(log.details) if log.details else {}
+            except Exception:
+                details = {"raw": log.details}
+            out.append({
+                "id": log.id,
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                "action": log.action,
+                "patient_curp": log.patient_curp,
+                "operator": log.operator,
+                "details": details,
+            })
+        return out
     finally:
         db.close()

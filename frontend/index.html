@@ -167,7 +167,7 @@
           <span>Reportes y Estadísticas</span>
         </button>
 
-        <button class="sidebar-nav-btn" id="nav-btn-config" onclick="openLlmModal()" title="Preferencias y ajustes del sistema">
+        <button class="sidebar-nav-btn" id="nav-btn-config" onclick="switchMainTab('config')" title="Roles (RBAC), Cédula Profesional, Offline y Bitácora NOM-024">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span>Configuración</span>
         </button>
@@ -176,12 +176,12 @@
       <!-- DOCTOR PROFILE FOOTER -->
       <div class="sidebar-profile">
         <div class="profile-card">
-          <div class="profile-avatar">DR</div>
+          <div class="profile-avatar" id="sidebar-profile-avatar">DR</div>
           <div class="profile-info">
-            <div class="profile-name">Dr. Roberto M.</div>
-            <div class="profile-role">Medicina General</div>
+            <div class="profile-name" id="sidebar-profile-name">Dr. Roberto Morales</div>
+            <div class="profile-role" id="sidebar-profile-role">Médico • CED-9482710</div>
           </div>
-          <button class="profile-settings-btn" onclick="openLlmModal()" title="Configuración del perfil médico">
+          <button class="profile-settings-btn" onclick="switchMainTab('config')" title="Configuración del perfil y cédula profesional">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
         </div>
@@ -216,13 +216,18 @@
         </div>
 
         <div class="topbar-right">
+          <button type="button" class="topbar-role-pill" id="topbar-role-pill" onclick="switchMainTab('config')" title="Cambiar rol activo o cédula profesional (RBAC NOM-024)">
+            <span class="role-dot"></span>
+            <span id="topbar-role-label">Médico • CED-9482710</span>
+          </button>
+
           <!-- Notifications Bell -->
           <button class="topbar-icon-btn" onclick="focusTasksSection()" title="Notificaciones y alertas pendientes">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           </button>
 
           <!-- Settings with Red Dot -->
-          <button class="topbar-icon-btn has-red-dot" onclick="openLlmModal()" title="Ajustes de IA y Sincronización">
+          <button class="topbar-icon-btn has-red-dot" onclick="switchMainTab('config')" title="Roles RBAC, Cédula, Offline y Auditoría NOM-024">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             <span class="topbar-red-dot"></span>
           </button>
@@ -747,6 +752,122 @@
                     <div id="tool-ped-out" class="calc-output">Ingresa peso y dosis mg/kg/día.</div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================================
+             VIEW: CONFIGURACIÓN, ROLES (RBAC) Y AUDITORÍA NOM-024 (SPRINT 4)
+             ================================================================= -->
+        <section class="view-panel" id="panel-config-section" style="display:none">
+          <div class="config-container">
+            <div class="reports-header">
+              <div>
+                <h1>Configuración, Roles (RBAC) y Auditoría NOM-024</h1>
+                <p>Control de acceso clínico por rol, registro de Cédula Profesional para firma NOM-004, verificación 100% offline y bitácora inmutable de auditoría.</p>
+              </div>
+              <div class="reports-header-actions">
+                <button class="btn-outline-pill" onclick="openLlmModal()">🤖 Ajustes Motor IA</button>
+                <button class="btn-dark-pill" onclick="runOfflineDiagnostics()">🔌 Verificar Modo Offline</button>
+              </div>
+            </div>
+
+            <!-- Selector rápido de rol -->
+            <div class="cfg-role-pills" id="cfg-role-pills">
+              <button type="button" class="cfg-role-pill active" data-role="Médico" onclick="selectConfigRole('Médico')">🩺 Médico</button>
+              <button type="button" class="cfg-role-pill" data-role="Enfermería / Triaje" onclick="selectConfigRole('Enfermería / Triaje')">🩹 Enfermería / Triaje</button>
+              <button type="button" class="cfg-role-pill" data-role="Recepción" onclick="selectConfigRole('Recepción')">📋 Recepción</button>
+              <button type="button" class="cfg-role-pill" data-role="Administrador" onclick="selectConfigRole('Administrador')">🛡️ Administrador</button>
+            </div>
+
+            <div class="cfg-two-col">
+              <!-- COLUMNA 1: Perfil y RBAC -->
+              <div class="bento-card cfg-card">
+                <div class="bento-card-header">
+                  <h3>🪪 PERFIL PROFESIONAL Y CÉDULA (SELLO NOM-004)</h3>
+                  <span class="epi-live-badge" id="cfg-active-role-badge">Médico</span>
+                </div>
+                <div class="cfg-form-grid">
+                  <label>Rol Operativo
+                    <input type="text" id="cfg-role-name" class="input-field" readonly />
+                  </label>
+                  <label>Cédula Profesional / ID
+                    <input type="text" id="cfg-cedula" class="input-field" placeholder="CED-9482710" />
+                  </label>
+                  <label>Nombre completo del operador
+                    <input type="text" id="cfg-full-name" class="input-field" placeholder="Dr. Roberto Morales" />
+                  </label>
+                  <label>Especialidad / Área
+                    <input type="text" id="cfg-specialty" class="input-field" placeholder="Medicina General / Urgencias" />
+                  </label>
+                  <label>CLUES Institución (SSA)
+                    <input type="text" id="cfg-clues" class="input-field" placeholder="YUC-CR-001" />
+                  </label>
+                </div>
+
+                <div class="cfg-perms-box">
+                  <h4>Permisos de seguridad asignados a este rol</h4>
+                  <div class="cfg-perms-grid" id="cfg-perms-grid"></div>
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+                  <button type="button" class="btn-dark-pill" onclick="saveSecurityProfile()">💾 Activar Rol y Guardar Cédula</button>
+                  <button type="button" class="btn-outline-pill" onclick="testCurrentRoleBoundary()">🧪 Probar Restricción en Servidor</button>
+                </div>
+                <div id="cfg-rbac-test-result" class="calc-output" style="display:none; margin-top:10px;"></div>
+              </div>
+
+              <!-- COLUMNA 2: Diagnóstico 100% Offline -->
+              <div class="bento-card cfg-card">
+                <div class="bento-card-header">
+                  <h3>📡 VERIFICADOR DE RESILIENCIA 100% OFFLINE</h3>
+                  <span class="epi-live-badge" id="offline-overall-badge">Pendiente</span>
+                </div>
+                <p style="font-size:12.5px; opacity:0.78; margin:4px 0 12px;">
+                  Comprueba que SQLite, ChromaDB CIE-10/CIE-9MC, el Guardián Clínico CDSS, los QR SVG y el exportador HL7 FHIR R4 funcionen localmente sin conexión a internet.
+                </p>
+                <div id="offline-checks-list" class="offline-checks-list">
+                  <div class="wearable-empty">Haz clic en "Verificar Modo Offline" para auditar los subsistemas locales.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FULL WIDTH: Bitácora NOM-024 -->
+            <div class="bento-card cfg-card" style="margin-top:18px;">
+              <div class="bento-card-header" style="flex-wrap:wrap; gap:10px;">
+                <h3>📜 BITÁCORA DE AUDITORÍA INMUTABLE (NOM-024-SSA3-2012)</h3>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <select id="audit-filter-action" class="input-field" style="width:auto; padding:6px 10px;" onchange="loadAuditLogsView()">
+                    <option value="ALL">Todas las acciones</option>
+                    <option value="FIRMA_CONSULTA">FIRMA_CONSULTA</option>
+                    <option value="ADDENDUM">ADDENDUM</option>
+                    <option value="CAMBIO_PERFIL_ROL">CAMBIO_PERFIL_ROL</option>
+                    <option value="REGISTRO">REGISTRO</option>
+                    <option value="ACTUALIZACION">ACTUALIZACION</option>
+                    <option value="ELIMINACION">ELIMINACION</option>
+                  </select>
+                  <input type="text" id="audit-filter-curp" class="input-field" style="width:185px; padding:6px 10px;" placeholder="Filtrar CURP..." oninput="loadAuditLogsView()" />
+                  <button type="button" class="btn-outline-pill" onclick="loadAuditLogsView()">↻ Actualizar</button>
+                  <button type="button" class="btn-dark-pill" onclick="exportAuditLogsCsv()">⬇ CSV</button>
+                </div>
+              </div>
+              <div id="audit-summary-row" class="audit-summary-row"></div>
+              <div class="audit-table-wrap">
+                <table class="audit-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha / Hora (UTC)</th>
+                      <th>Acción</th>
+                      <th>Paciente / CURP</th>
+                      <th>Operador y Cédula</th>
+                      <th>Detalle</th>
+                    </tr>
+                  </thead>
+                  <tbody id="audit-logs-tbody">
+                    <tr><td colspan="5" style="text-align:center; padding:18px; opacity:0.7;">Cargando bitácora NOM-024...</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1452,11 +1573,11 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.5.0"></script>
-  <script src="overlays.js?v=5.5.0"></script>
-  <script src="modals.js?v=5.5.0"></script>
-  <script src="calendar.js?v=5.5.0"></script>
-  <script src="clinical_ops.js?v=5.5.0"></script>
-  <script src="app.js?v=5.5.1"></script>
+  <script src="state.js?v=5.6.0"></script>
+  <script src="overlays.js?v=5.6.0"></script>
+  <script src="modals.js?v=5.6.0"></script>
+  <script src="calendar.js?v=5.6.0"></script>
+  <script src="clinical_ops.js?v=5.6.0"></script>
+  <script src="app.js?v=5.6.0"></script>
 </body>
 </html>

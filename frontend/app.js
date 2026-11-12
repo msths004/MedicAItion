@@ -21,6 +21,7 @@ function switchMainTab(tab) {
   const btnAgnd = document.getElementById('nav-btn-agenda');
   const btnRep  = document.getElementById('nav-btn-reportes');
   const btnIa   = document.getElementById('nav-btn-ia-tools');
+  const btnCfg  = document.getElementById('nav-btn-config');
 
   if (btnDash) btnDash.classList.toggle('active', tab === 'dashboard');
   if (btnCons) btnCons.classList.toggle('active', tab === 'consulta');
@@ -28,6 +29,7 @@ function switchMainTab(tab) {
   if (btnAgnd) btnAgnd.classList.toggle('active', tab === 'agenda');
   if (btnRep)  btnRep.classList.toggle('active', tab === 'reportes');
   if (btnIa)   btnIa.classList.toggle('active', tab === 'herramientas');
+  if (btnCfg)  btnCfg.classList.toggle('active', tab === 'config');
 
   document.body.className = `mode-${tab}`;
 
@@ -37,6 +39,7 @@ function switchMainTab(tab) {
   const agendaSection = document.getElementById('panel-agenda-section');
   const reportsSection = document.getElementById('panel-reports-section');
   const toolsSection = document.getElementById('panel-herramientas-section');
+  const configSection = document.getElementById('panel-config-section');
 
   if (dashSection) {
     dashSection.style.display = tab === 'dashboard' ? 'block' : 'none';
@@ -49,6 +52,10 @@ function switchMainTab(tab) {
   if (toolsSection) {
     toolsSection.style.display = tab === 'herramientas' ? 'block' : 'none';
     if (tab === 'herramientas' && typeof initHerramientasView === 'function') initHerramientasView();
+  }
+  if (configSection) {
+    configSection.style.display = tab === 'config' ? 'block' : 'none';
+    if (tab === 'config' && typeof loadSecurityConfigView === 'function') loadSecurityConfigView();
   }
   if (consultaLayout) consultaLayout.style.display = tab === 'consulta' ? 'grid' : 'none';
   if (patientSection) {
@@ -1010,6 +1017,7 @@ function waitForBackend() {
         setTimeout(() => {
           loadingScreen.classList.add('hidden');
           loadPatients();
+          if (typeof loadActiveOperatorProfile === 'function') loadActiveOperatorProfile();
           if (typeof loadAppointments === 'function') loadAppointments();
           if (typeof refreshDashboard === 'function') refreshDashboard();
         }, 600);

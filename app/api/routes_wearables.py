@@ -22,8 +22,9 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Request
 
+from app.api.routes_security import require_permission
 from app.db.local_db import SessionLocal, VitalReading
 
 router = APIRouter(prefix="/api/wearables", tags=["Wearables"])
@@ -154,7 +155,8 @@ def list_readings(curp: Optional[str] = None, limit: int = 60):
 
 
 @router.post("/readings", status_code=201)
-def create_reading(data: dict = Body(...)):
+def create_reading(request: Request, data: dict = Body(...)):
+    require_permission(request, "record_vitals")
     db = SessionLocal()
     try:
         r = _store_reading(db, data)
@@ -169,12 +171,13 @@ def create_reading(data: dict = Body(...)):
 
 
 @router.post("/import", status_code=201)
-def import_readings(data: dict = Body(...)):
+def import_readings(request: Request, data: dict = Body(...)):
     """
     Importa un lote de lecturas desde contenido de archivo.
     Body: { "format": "csv" | "json", "content": "...", "curp": "...", "patientName": "...", "device": "..." }
     CSV con encabezados (cualquiera de): timestamp, heart_rate|hr|bpm, spo2, systolic|sys, diastolic|dia, temperature|temp, steps
     """
+    require_permission(request, "record_vitals")
     fmt = (data.get("format") or "csv").lower()
     content = data.get("content") or ""
     if not content.strip():

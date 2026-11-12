@@ -514,8 +514,10 @@ def _evaluate_medications_safety(
     allergy_sources: List[Tuple[str, str]] = []
     if patient_data and isinstance(patient_data.get("alergias"), list):
         for al in patient_data["alergias"]:
-            if isinstance(al, dict) and al.get("sustancia"):
-                allergy_sources.append((al["sustancia"], f"Expediente ({al.get('severidad', 'Registrada')})"))
+            if isinstance(al, dict):
+                subst = al.get("sustancia") or al.get("descripcion")
+                if subst:
+                    allergy_sources.append((subst, f"Expediente ({al.get('severidad', 'Registrada')})"))
             elif isinstance(al, str):
                 allergy_sources.append((al, "Expediente"))
 

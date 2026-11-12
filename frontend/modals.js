@@ -255,7 +255,12 @@ async function openAssociateNoteModal() {
 
     <div class="overlay-field">
       <label>Doctor que realizó la consulta (*obligatorio)</label>
-      <input type="text" id="modal-assoc-doctor" class="input-field" placeholder="Selecciona o ingresa el nombre del doctor" />
+      <input type="text" id="modal-assoc-doctor" class="input-field" value="${_modalEsc(AppState.operatorProfile?.full_name || 'Dr. Roberto Morales')}" placeholder="Selecciona o ingresa el nombre del doctor" />
+    </div>
+
+    <div class="overlay-field">
+      <label>Cédula Profesional (Sello NOM-004)</label>
+      <input type="text" id="modal-assoc-cedula" class="input-field" value="${_modalEsc(AppState.operatorProfile?.cedula_profesional || '')}" placeholder="CED-9482710" />
     </div>
 
     <div class="overlay-field">
@@ -282,6 +287,7 @@ async function handleAssociateNote() {
   const eventoId = document.getElementById('modal-assoc-event')?.value;
   const desc     = document.getElementById('modal-assoc-desc')?.value.trim();
   const doctor   = document.getElementById('modal-assoc-doctor')?.value.trim();
+  const cedula   = document.getElementById('modal-assoc-cedula')?.value.trim();
   const datetime = document.getElementById('modal-assoc-datetime')?.value;
   const btn      = document.getElementById('modal-assoc-btn');
 
@@ -308,6 +314,7 @@ async function handleAssociateNote() {
     const payload = {
       evento_id:     eventoId,
       doctor_nombre: doctor,
+      cedula_profesional: cedula || AppState.operatorProfile?.cedula_profesional || null,
       fecha_hora:    datetime ? new Date(datetime).toISOString() : new Date().toISOString(),
       resumen_doctor: desc || null,
       justificacion_seguridad: justificacion,

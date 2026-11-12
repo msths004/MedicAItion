@@ -54,8 +54,10 @@ function refreshDashboard() {
 function _renderGreeting() {
   const h = new Date().getHours();
   const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const rawName = (window.AppState?.operatorProfile?.full_name || 'Dr. Roberto Morales').trim();
+  const cleanFirst = rawName.replace(/^(Dr\.|Dra\.|Enf\.|Lic\.|Dir\.)\s*/i, '').split(/\s+/)[0] || rawName;
   const t = document.getElementById('dashboard-greeting-title');
-  if (t) t.textContent = `${saludo}, Roberto`;
+  if (t) t.textContent = `${saludo}, ${cleanFirst}`;
   const s = document.getElementById('dashboard-greeting-sub');
   if (s) {
     const fecha = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -1012,4 +1014,254 @@ function calcSuitePed() {
   } else {
     out.textContent = 'Ingresa peso y dosis mg/kg/día.';
   }
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// SPRINT 4: ROLES (RBAC), CÉDULA PROFESIONAL, OFFLINE & AUDITORÍA NOM-024
+// ─────────────────────────────────────────────────────────────────
+
+const _Sprint4State = {
+  profiles: [],
+  permissionsMatrix: {},
+  selectedRole: 'Médico',
+  auditLogs: [],
+};
+
+async function loadActiveOperatorProfile() {
+  try {
+    const res = await _getJson(`${API}/api/security/profile`);
+    _Sprint4State.profiles = res.profiles || [];
+    _Sprint4State.permissionsMatrix = res.permissions_matrix || {};
+    if (res.active) {
+      AppState.operatorProfile = res.active;
+      _Sprint4State.selectedRole = res.active.role || 'Médico';
+      _syncOperatorUi();
+    }
+    return res;
+  } catch (e) {
+    console.warn('[Security] Error cargando perfil:', e);
+    return null;
+  }
+}
+
+function _syncOperatorUi() {
+  const op = AppState.operatorProfile || {};
+  const role = op.role || 'Médico';
+  const name = op.full_name || 'Dr. Roberto Morales';
+  const cedula = op.cedula_profesional || 'Sin cédula';
+
+  const words = name.replace(/^(Dr\.|Dra\.|Enf\.|Lic\.|Dir\.)\s*/i, '').trim().split(/\s+/);
+  const initials = words.length >= 2
+    ? `${words[0][0] || ''}${words[1][0] || ''}`.toUpperCase()
+    : name.slice(0, 2).toUpperCase();
+
+  _setText('sidebar-profile-avatar', initials || 'DR');
+  _setText('sidebar-profile-name', name);
+  _setText('sidebar-profile-role', `${role} • ${cedula}`);
+  _setText('topbar-role-label', `${role} • ${cedula}`);
+
+  const badge = document.getElementById('cfg-active-role-badge');
+  if (badge) badge.textContent = `Activo: ${role}`;
+
+  const perms = _Sprint4State.permissionsMatrix[role] || {};
+  const btnNueva = document.getElementById('nav-btn-consulta');
+  if (btnNueva) {
+    const canSign = perms.sign_consultation !== false;
+    btnNueva.title = canSign
+      ? 'Nueva consulta y nota médica NOM-004'
+      : `Modo consulta limitado para ${role} (firma bloqueada por RBAC)`;
+  }
+
+  _renderGreeting();
+}
+
+async function loadSecurityConfigView() {
+  const data = await loadActiveOperatorProfile();
+  if (data) {
+    selectConfigRole(AppState.operatorProfile.role || 'Médico');
+  }
+  loadAuditLogsView();
+}
+
+function selectConfigRole(role) {
+  _Sprint4State.selectedRole = role;
+  document.querySelectorAll('#cfg-role-pills .cfg-role-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.role === role);
+  });
+  const prof = _Sprint4State.profiles.find(p => p.role === role) || AppState.operatorProfile || {};
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  setVal('cfg-role-name', role);
+  setVal('cfg-full-name', prof.full_name || '');
+  setVal('cfg-cedula', prof.cedula_profesional || '');
+  setVal('cfg-specialty', prof.specialty || '');
+  setVal('cfg-clues', prof.clues_institucion || 'YUC-CR-001');
+  _renderPermissionsMatrix(role);
+
+  const testOut = document.getElementById('cfg-rbac-test-result');
+  if (testOut) testOut.style.display = 'none';
+}
+
+function _renderPermissionsMatrix(role) {
+  const grid = document.getElementById('cfg-perms-grid');
+  if (!grid) return;
+  const perms = _Sprint4State.permissionsMatrix[role] || {};
+  const labels = [
+    ['view_clinical', 'Consultar expedientes'],
+    ['register_patient', 'Registrar / editar pacientes'],
+    ['manage_appointments', 'Agenda y sala de triaje'],
+    ['record_vitals', 'Signos vitales y wearables'],
+    ['sign_consultation', 'Firmar notas NOM-004'],
+    ['prescribe', 'Emitir recetas médicas'],
+    ['add_addendum', 'Agregar addenda inmutables'],
+    ['read_audit', 'Bitácora NOM-024'],
+  ];
+  grid.innerHTML = labels.map(([k, txt]) => {
+    const ok = !!perms[k];
+    return `<div class="cfg-perm-chip ${ok ? 'perm-allow' : 'perm-deny'}">${ok ? '✅' : '🔒'} ${txt}</div>`;
+  }).join('');
+}
+
+async function saveSecurityProfile() {
+  const payload = {
+    role: document.getElementById('cfg-role-name')?.value || _Sprint4State.selectedRole,
+    full_name: document.getElementById('cfg-full-name')?.value.trim() || 'Operador',
+    cedula_profesional: document.getElementById('cfg-cedula')?.value.trim() || '',
+    specialty: document.getElementById('cfg-specialty')?.value.trim() || '',
+    clues_institucion: document.getElementById('cfg-clues')?.value.trim() || 'YUC-CR-001',
+    activate: true,
+  };
+  try {
+    const res = await fetch(`${API}/api/security/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al guardar perfil');
+    _Sprint4State.profiles = data.profiles || _Sprint4State.profiles;
+    _Sprint4State.permissionsMatrix = data.permissions_matrix || _Sprint4State.permissionsMatrix;
+    AppState.operatorProfile = data.active;
+    _syncOperatorUi();
+    loadAuditLogsView();
+    showToast(`Rol activado: ${data.active.role} (${data.active.cedula_profesional || 'sin cédula'})`, 'success');
+  } catch (e) {
+    showToast(e.message || 'No se pudo actualizar el rol', 'error');
+  }
+}
+
+async function testCurrentRoleBoundary() {
+  const out = document.getElementById('cfg-rbac-test-result');
+  const activeRole = AppState.operatorProfile?.role || 'Médico';
+  if (out) {
+    out.style.display = 'block';
+    out.textContent = `Probando autorización RBAC en servidor para "${activeRole}"...`;
+  }
+  try {
+    const res = await fetch(`${API}/api/consultations/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Operator-Role': encodeURIComponent(activeRole),
+      },
+      body: JSON.stringify({ evento_id: '__rbac_probe__', doctor_nombre: 'Probe' }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 403) {
+      if (out) out.innerHTML = `🔒 <strong>RBAC Bloqueado (HTTP 403):</strong> ${_opsEsc(body.detail || 'Acceso denegado para firmar consultas.')}`;
+    } else if (res.status === 404) {
+      if (out) out.innerHTML = `✅ <strong>RBAC Autorizado (pase clínico validado):</strong> El rol <em>${_opsEsc(activeRole)}</em> tiene permiso de firma NOM-004.`;
+    } else {
+      if (out) out.innerHTML = `ℹ️ Respuesta HTTP ${res.status}: ${_opsEsc(JSON.stringify(body.detail || body))}`;
+    }
+  } catch (e) {
+    if (out) out.textContent = `Error probando RBAC: ${e.message}`;
+  }
+}
+
+async function runOfflineDiagnostics() {
+  const listEl = document.getElementById('offline-checks-list');
+  const badge = document.getElementById('offline-overall-badge');
+  if (listEl) listEl.innerHTML = '<div class="wearable-empty">Ejecutando auditoría local (0 llamadas externas)...</div>';
+  try {
+    const res = await _getJson(`${API}/api/security/offline-readiness`);
+    if (badge) {
+      badge.textContent = res.offline_capable ? `100% OFFLINE OK (${res.checked_at_ms} ms)` : 'Requiere atención';
+      badge.style.background = res.offline_capable ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)';
+      badge.style.color = res.offline_capable ? '#059669' : '#dc2626';
+    }
+    if (listEl) {
+      listEl.innerHTML = (res.checks || []).map(c => `
+        <div class="offline-check-item ${c.ok ? 'chk-ok' : 'chk-fail'}">
+          <span class="chk-icon">${c.ok ? '✅' : '❌'}</span>
+          <div>
+            <div class="chk-name">${_opsEsc(c.name)}</div>
+            <div class="chk-detail">${_opsEsc(c.detail)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    showToast(res.offline_capable ? 'Resiliencia 100% Offline verificada ✅' : 'Algún subsistema requiere revisión', res.offline_capable ? 'success' : 'error');
+  } catch (e) {
+    if (listEl) listEl.innerHTML = `<div class="wearable-empty">Error verificando subsistemas: ${_opsEsc(e.message)}</div>`;
+  }
+}
+
+async function loadAuditLogsView() {
+  const tbody = document.getElementById('audit-logs-tbody');
+  const sumRow = document.getElementById('audit-summary-row');
+  const action = document.getElementById('audit-filter-action')?.value || 'ALL';
+  const curp = document.getElementById('audit-filter-curp')?.value.trim() || '';
+  try {
+    const qs = new URLSearchParams({ limit: '80', action });
+    if (curp) qs.set('curp', curp);
+    const data = await _getJson(`${API}/api/security/audit-logs?${qs.toString()}`);
+    const logs = data.logs || [];
+    _Sprint4State.auditLogs = logs;
+
+    if (sumRow && data.summary) {
+      sumRow.innerHTML = `
+        <span class="audit-sum-pill">🗂️ Eventos auditados: <strong>${data.summary.total_audit_events}</strong></span>
+        <span class="audit-sum-pill">🔒 Consultas inmutables: <strong>${data.summary.total_consultas_inmutables}</strong></span>
+        <span class="audit-sum-pill">👥 Expedientes: <strong>${data.summary.total_pacientes}</strong></span>
+      `;
+    }
+
+    if (!tbody) return;
+    if (!logs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:18px; opacity:0.7;">Sin registros de auditoría para este filtro.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.map(l => {
+      const ts = (l.timestamp || '').replace('T', ' ').slice(0, 19);
+      const det = Object.entries(l.details || {}).slice(0, 3).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' • ');
+      return `
+        <tr>
+          <td style="white-space:nowrap; font-family:monospace; font-size:11.5px;">${_opsEsc(ts)}</td>
+          <td><span class="audit-action-badge">${_opsEsc(l.action)}</span></td>
+          <td style="font-family:monospace; font-size:12px;">${_opsEsc(l.patient_curp)}</td>
+          <td>${_opsEsc(l.operator)}</td>
+          <td style="font-size:12px; opacity:0.82; max-width:340px; overflow:hidden; text-overflow:ellipsis;">${_opsEsc(det || '—')}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Error cargando bitácora: ${_opsEsc(e.message)}</td></tr>`;
+  }
+}
+
+function exportAuditLogsCsv() {
+  const logs = _Sprint4State.auditLogs || [];
+  if (!logs.length) return showToast('No hay registros en bitácora para exportar', 'error');
+  const header = ['timestamp_utc', 'action', 'patient_curp', 'operator', 'details'];
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [header.join(',')].concat(
+    logs.map(l => [l.timestamp, l.action, l.patient_curp, l.operator, JSON.stringify(l.details || {})].map(esc).join(','))
+  );
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Medicaition_Bitacora_NOM024_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }

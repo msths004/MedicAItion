@@ -23,6 +23,7 @@ import html
 
 from app.core.safety_engine import evaluate_clinical_safety
 from app.core.qr_svg import generate_qr_svg
+from app.api.routes_security import require_permission
 from app.db.local_db import (
     create_consulta,
     get_consultas_by_evento,
@@ -31,6 +32,7 @@ from app.db.local_db import (
     index_consulta_semantically,
     index_evento_semantically,
     get_patient_events,
+    log_audit_action,
     SessionLocal,
     EventoClinico,
     Consulta,
@@ -92,6 +94,7 @@ def list_consultas(evento_id: str):
 
 @router.post("/", status_code=201)
 async def create_consulta_endpoint(
+    request: Request,
     data: dict = Body(...),
     background_tasks: BackgroundTasks = None,
 ):
@@ -112,6 +115,11 @@ async def create_consulta_endpoint(
       "texto_original": "Transcripción cruda..."
     }
     """
+    op = require_permission(request, "sign_consultation")
+    if not data.get("doctor_nombre") and op.get("name"):
+        data["doctor_nombre"] = op["name"]
+    if not data.get("cedula_profesional") and op.get("cedula_profesional"):
+        data["cedula_profesional"] = op["cedula_profesional"]
     try:
         # Verificación de seguridad clínica en servidor antes de firmar consulta inmutable
         evento_id = data.get("evento_id")
@@ -276,6 +284,7 @@ def verify_receta_html(consulta_id: str):
     <div class="meta">
       <div><strong>Folio:</strong> {folio}</div>
       <div><strong>Médico tratante:</strong> {html.escape(str(consulta.get('doctor_nombre') or 'No especificado'))}</div>
+      {f"<div><strong>Cédula Profesional:</strong> {html.escape(str(consulta.get('cedula_profesional')))}</div>" if consulta.get('cedula_profesional') else ""}
       <div><strong>Fecha de emisión:</strong> {html.escape(str(consulta.get('fecha_hora') or '—'))}</div>
       <div><strong>CURP Paciente:</strong> {html.escape(str(consulta.get('patient_curp') or '—'))}</div>
     </div>
@@ -290,11 +299,12 @@ def verify_receta_html(consulta_id: str):
 # ── ADDENDUM (NOM-004: no modifica la nota original) ─────────────
 
 @router.patch("/{consulta_id}/addendum")
-def add_addendum(consulta_id: str, data: dict = Body(...)):
+def add_addendum(consulta_id: str, request: Request, data: dict = Body(...)):
     """
     Agrega una nota aclaratoria (addendum) a una consulta.
     NUNCA modifica la nota médica o receta original (NOM-004).
     """
+    op = require_permission(request, "add_addendum")
     texto = data.get("texto", "").strip()
     if not texto:
         raise HTTPException(status_code=400, detail="El addendum no puede estar vacío")
@@ -307,13 +317,23 @@ def add_addendum(consulta_id: str, data: dict = Body(...)):
 
         from datetime import datetime
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-        nuevo_addendum = f"[{timestamp}] {texto}"
+        op_sig = op.get("name") or "Médico"
+        if op.get("cedula_profesional"):
+            op_sig = f"{op_sig} (Céd. {op['cedula_profesional']})"
+        nuevo_addendum = f"[{timestamp} | {op_sig}] {texto}"
 
         if consulta.notas_addendum:
             consulta.notas_addendum = consulta.notas_addendum + "\n\n" + nuevo_addendum
         else:
             consulta.notas_addendum = nuevo_addendum
 
+        log_audit_action(
+            action="ADDENDUM",
+            patient_curp=consulta.patient_curp,
+            operator=op_sig,
+            details_dict={"consulta_id": consulta_id, "addendum": texto[:200]},
+            db=db,
+        )
         db.commit()
         return {"status": "success", "addendum": consulta.notas_addendum}
     finally:
