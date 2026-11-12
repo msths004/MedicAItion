@@ -8747,6 +8747,174 @@ body.mode-patient-portal #pulso-floating-root {
   100% { transform: translateY(-10px) scale(0.97, 1.04); }
 }
 
+/* =====================================================================
+   DR. OSO - EL OSO KAWAII (CARACTER MEDICAL KAWAII) ANIMACIONES Y ESTILOS
+   ===================================================================== */
+.dr-oso-avatar {
+  filter: drop-shadow(0 14px 18px rgba(15, 23, 42, 0.22));
+}
+
+.dr-oso-avatar .pulso-character-rig {
+  transform-origin: 70px 105px;
+  animation: drOsoWaddleFloat 2.8s infinite ease-in-out;
+}
+
+@keyframes drOsoWaddleFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25%      { transform: translateY(-3.5px) rotate(-1.5deg); }
+  50%      { transform: translateY(0px) rotate(0deg); }
+  75%      { transform: translateY(-3.5px) rotate(1.5deg); }
+}
+
+.dr-oso-avatar .pulso-floor-shadow {
+  transform-origin: 70px 148px;
+  animation: drOsoShadowPulse 2.8s infinite ease-in-out;
+}
+
+@keyframes drOsoShadowPulse {
+  0%, 50%, 100% { transform: scaleX(1); opacity: 0.22; }
+  25%, 75%      { transform: scaleX(0.84); opacity: 0.13; }
+}
+
+.dr-oso-avatar .dr-oso-head-rig {
+  transform-origin: 70px 72px;
+  animation: drOsoHeadBob 3.4s infinite ease-in-out;
+}
+
+@keyframes drOsoHeadBob {
+  0%, 100% { transform: rotate(-2.5deg) translateY(0); }
+  50%      { transform: rotate(2.5deg) translateY(-1.5px); }
+}
+
+/* Patita derecha saludando con sus almohadillas y garritas tiernas */
+.dr-oso-avatar .dr-oso-arm-right {
+  transform-origin: 94px 92px;
+  animation: drOsoPawWave 1.6s infinite ease-in-out;
+}
+
+@keyframes drOsoPawWave {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50%      { transform: rotate(-22deg) translateY(-3px); }
+}
+
+.dr-oso-wave-line {
+  animation: drOsoWaveLines 1.6s infinite ease-in-out;
+}
+
+@keyframes drOsoWaveLines {
+  0%, 100% { opacity: 0.35; transform: translateX(0); }
+  50%      { opacity: 1; transform: translateX(3px); }
+}
+
+/* Patita izquierda sosteniendo la tablita clínica con el corazón sonriente */
+.dr-oso-avatar .dr-oso-arm-left {
+  transform-origin: 46px 92px;
+  animation: drOsoClipboardBob 2.8s infinite ease-in-out;
+}
+
+@keyframes drOsoClipboardBob {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(3.5deg) translateY(-1px); }
+}
+
+/* Caminata y pasitos de oso tierno (Waddle cycle) */
+.dr-oso-avatar .dr-oso-leg-left {
+  transform-origin: 54px 138px;
+  animation: drOsoStepLeft 1.4s infinite ease-in-out;
+}
+
+.dr-oso-avatar .dr-oso-leg-right {
+  transform-origin: 86px 138px;
+  animation: drOsoStepRight 1.4s infinite ease-in-out;
+}
+
+@keyframes drOsoStepLeft {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50%      { transform: translateY(-3px) scaleY(1.05); }
+}
+
+@keyframes drOsoStepRight {
+  0%, 100% { transform: translateY(-3px) scaleY(1.05); }
+  50%      { transform: translateY(0) scaleY(1); }
+}
+
+/* Ojos grandes kawaii parpadeando */
+.dr-oso-avatar .pulso-eyes.can-blink {
+  transform-origin: 70px 51px;
+  animation: drOsoBlink 4s infinite ease-in-out;
+}
+
+@keyframes drOsoBlink {
+  0%, 45%, 49%, 92%, 100% { transform: scaleY(1); }
+  47%, 95%                { transform: scaleY(0.08); }
+}
+
+/* Estetoscopio con pieza en forma de corazón latiendo con luz rosa */
+.dr-oso-avatar .pulso-steth-heart {
+  transform-origin: 70px 108px;
+  animation: drOsoHeartbeat 1.3s infinite ease-in-out;
+}
+
+@keyframes drOsoHeartbeat {
+  0%, 100% { transform: scale(1); }
+  14%      { transform: scale(1.22); filter: drop-shadow(0 0 5px rgba(244, 114, 182, 0.85)); }
+  28%      { transform: scale(1.06); }
+  42%      { transform: scale(1.18); filter: drop-shadow(0 0 4px rgba(244, 114, 182, 0.75)); }
+}
+
+/* Burbuja de pensamiento (pensando) */
+.dr-oso-thought-bubble {
+  transform-origin: 108px 22px;
+  animation: drOsoThoughtFloat 1.9s infinite ease-in-out;
+}
+
+@keyframes drOsoThoughtFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-4px) scale(1.06); }
+}
+
+/* Destellos auditivos al escuchar */
+.dr-oso-listen-sparkles {
+  animation: drOsoSparklePulse 1.5s infinite ease-in-out;
+}
+
+@keyframes drOsoSparklePulse {
+  0%, 100% { opacity: 0.65; transform: scale(0.96); }
+  50%      { opacity: 1; transform: scale(1.1); }
+}
+
+/* Corazones flotantes de alegría (contento) */
+.dr-oso-happy-hearts {
+  animation: drOsoHeartsFloat 1.8s infinite ease-in-out;
+}
+
+@keyframes drOsoHeartsFloat {
+  0%, 100% { transform: translateY(0) scale(0.95); opacity: 0.8; }
+  50%      { transform: translateY(-6px) scale(1.08); opacity: 1; }
+}
+
+/* Reacción al clic: Salto alegre del Dr. Oso con saludo rápido de su patita */
+.pulso-fab-btn.pulso-clicked-boing .dr-oso-avatar .pulso-character-rig {
+  animation: drOsoClickJoy 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+@keyframes drOsoClickJoy {
+  0%   { transform: translateY(0) scale(1, 1) rotate(0deg); }
+  22%  { transform: translateY(5px) scale(1.14, 0.86) rotate(-4deg); }
+  48%  { transform: translateY(-24px) scale(0.92, 1.12) rotate(6deg); }
+  74%  { transform: translateY(2px) scale(1.05, 0.95) rotate(-2deg); }
+  100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+}
+
+.pulso-fab-btn.pulso-clicked-boing .dr-oso-avatar .dr-oso-arm-right {
+  animation: drOsoPawWaveRapid 0.18s infinite alternate ease-in-out !important;
+}
+
+@keyframes drOsoPawWaveRapid {
+  0%   { transform: rotate(-6deg); }
+  100% { transform: rotate(-38deg); }
+}
+
 /* Respeto estricto a prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .pulso-avatar-svg *,

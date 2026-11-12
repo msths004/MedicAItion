@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=6.3.0" />
+  <link rel="stylesheet" href="style.css?v=6.4.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -2229,18 +2229,18 @@
   <div id="pulso-floating-root" aria-label="Contenedor flotante del asistente clínico Pulso">
     <!-- Burbuja de bienvenida -->
     <div id="pulso-greeting-bubble" class="pulso-greeting-bubble" role="status" aria-live="polite">
-      <button type="button" class="pulso-greeting-close" aria-label="Cerrar saludo de Pulso" onclick="document.getElementById('pulso-greeting-bubble').style.display='none'">✕</button>
-      <div class="pulso-greeting-title">Hola, soy <strong>Pulso</strong>. Estoy listo para ayudarte con tus pacientes.</div>
-      <div class="pulso-greeting-sub">IA local · revisa siempre las sugerencias · <em>Arrástrame a cualquier parte</em></div>
+      <button type="button" class="pulso-greeting-close" aria-label="Cerrar saludo de Dr. Oso" onclick="document.getElementById('pulso-greeting-bubble').style.display='none'">✕</button>
+      <div class="pulso-greeting-title">Hola, soy el <strong>Dr. Oso</strong>. Estoy listo para ayudarte con tus pacientes.</div>
+      <div class="pulso-greeting-sub">IA médica 100% local · revisa siempre las sugerencias · <em>¡Arrástrame a cualquier parte!</em></div>
     </div>
 
     <!-- Panel de Chat de 360 px -->
-    <section id="pulso-chat-panel" class="pulso-chat-panel" role="dialog" aria-modal="false" aria-label="Asistente clínico Pulso con IA local" aria-hidden="true">
+    <section id="pulso-chat-panel" class="pulso-chat-panel" role="dialog" aria-modal="false" aria-label="Asistente clínico Dr. Oso con IA local" aria-hidden="true">
       <header class="pulso-chat-header">
         <div class="pulso-chat-brand">
           <div id="pulso-header-avatar" class="pulso-header-avatar-box"></div>
           <div>
-            <div class="pulso-chat-title">Pulso</div>
+            <div class="pulso-chat-title">Dr. Oso · Pulso</div>
             <div class="pulso-chat-subtitle">
               <span id="pulso-conn-dot" class="pulso-conn-dot is-online" aria-hidden="true"></span>
               <span id="pulso-conn-label">IA local conectada</span>
@@ -2250,7 +2250,7 @@
         <div class="pulso-header-actions">
           <button type="button" class="pulso-icon-btn" onclick="resetPulsoToCorner()" title="Volver a la esquina inferior derecha" aria-label="Volver a la esquina inferior derecha">↘️</button>
           <button type="button" class="pulso-icon-btn" onclick="clearPulsoConversation()" title="Borrar conversación" aria-label="Borrar conversación">🗑️</button>
-          <button type="button" class="pulso-icon-btn" onclick="togglePulsoPanel(false)" title="Cerrar panel de Pulso (Esc o Ctrl+J)" aria-label="Cerrar panel de Pulso">✕</button>
+          <button type="button" class="pulso-icon-btn" onclick="togglePulsoPanel(false)" title="Cerrar panel de Dr. Oso (Esc o Ctrl+J)" aria-label="Cerrar panel de Dr. Oso">✕</button>
         </div>
       </header>
 
@@ -2310,22 +2310,22 @@
       type="button"
       id="pulso-fab-btn"
       class="pulso-fab-btn"
-      aria-label="Abrir asistente clínico Pulso (Ctrl+J). Arrastrable por toda la pantalla"
+      aria-label="Abrir asistente clínico Dr. Oso (Ctrl+J). Arrastrable por toda la pantalla"
       aria-expanded="false"
       aria-controls="pulso-chat-panel"
-      title="Asistente con IA Local (Ctrl+J) · Arrastra para mover"
+      title="Dr. Oso · Asistente con IA Local (Ctrl+J) · Arrastra para mover"
     >
       <span id="pulso-fab-avatar" class="pulso-fab-avatar-wrap"></span>
     </button>
   </div>
 
-  <script src="state.js?v=6.3.0"></script>
-  <script src="overlays.js?v=6.3.0"></script>
-  <script src="modals.js?v=6.3.0"></script>
-  <script src="calendar.js?v=6.3.0"></script>
-  <script src="clinical_ops.js?v=6.3.0"></script>
-  <script src="specialized_care.js?v=6.3.0"></script>
-  <script src="pulso_assistant.js?v=6.3.0"></script>
-  <script src="app.js?v=6.3.0"></script>
+  <script src="state.js?v=6.4.0"></script>
+  <script src="overlays.js?v=6.4.0"></script>
+  <script src="modals.js?v=6.4.0"></script>
+  <script src="calendar.js?v=6.4.0"></script>
+  <script src="clinical_ops.js?v=6.4.0"></script>
+  <script src="specialized_care.js?v=6.4.0"></script>
+  <script src="pulso_assistant.js?v=6.4.0"></script>
+  <script src="app.js?v=6.4.0"></script>
 </body>
 </html>
