@@ -21,6 +21,7 @@ from app.api.routes_citizen import router as citizen_router
 from app.api.routes_security import router as security_router, normalize_role
 from app.api.routes_legal import router as legal_router
 from app.api.routes_auth import router as auth_router
+from app.api.routes_pulso import router as pulso_router
 from app.core.crypto_vault import verify_session_token
 from app.db.local_db import create_tables as create_local_tables
 from app.db.global_db import create_tables as create_global_tables, register_institution
@@ -214,6 +215,7 @@ app.include_router(citizen_router)
 app.include_router(security_router)
 app.include_router(legal_router)
 app.include_router(auth_router)
+app.include_router(pulso_router)
 
 # Servir frontend estático
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

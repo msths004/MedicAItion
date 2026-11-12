@@ -7938,3 +7938,560 @@ body.dark-theme .exp-soap-note-foot {
 }
 body.dark-theme .exp-vital-val { color: #f8fafc; }
 body.dark-theme .exp-sign-cta { background: #2563eb; }
+
+/* =====================================================================
+   PULSO — ASISTENTE CLÍNICO CON IA LOCAL (AVATAR SVG + DRAGGABLE + UI)
+   ===================================================================== */
+
+/* Ocultar Pulso en modo portal básico de paciente */
+body.mode-patient-portal #pulso-floating-root {
+  display: none !important;
+}
+
+#pulso-floating-root {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 9850;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+  user-select: none;
+}
+
+#pulso-floating-root > * {
+  pointer-events: auto;
+}
+
+/* Botón Flotante Arrastrable (FAB) */
+.pulso-fab-btn {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 25%, #ffffff 0%, #f0fdfa 65%, #ccfbf1 100%);
+  border: 2.5px solid #0f766e;
+  box-shadow: 0 12px 28px rgba(15, 118, 110, 0.28), 0 4px 10px rgba(15, 23, 42, 0.12);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  touch-action: none;
+}
+
+.pulso-fab-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 16px 34px rgba(15, 118, 110, 0.36);
+}
+
+.pulso-fab-btn:active {
+  cursor: grabbing;
+}
+
+.pulso-fab-btn:focus-visible,
+.pulso-icon-btn:focus-visible,
+.pulso-state-chip:focus-visible,
+.pulso-quick-btn:focus-visible,
+.pulso-mic-btn:focus-visible,
+.pulso-send-btn:focus-visible,
+.pulso-clear-link:focus-visible,
+.pulso-chat-input:focus-visible,
+.pulso-apply-soap-btn:focus-visible {
+  outline: 3px solid #0f766e !important;
+  outline-offset: 2px !important;
+}
+
+.pulso-fab-avatar-wrap {
+  width: 66px;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pulso-fab-badge {
+  position: absolute;
+  bottom: -6px;
+  background: #0f172a;
+  color: #5eead3;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid #0f766e;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+  pointer-events: none;
+}
+
+/* Burbuja de Saludo Flotante */
+.pulso-greeting-bubble {
+  position: relative;
+  max-width: 285px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 12px 28px 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.pulso-greeting-title {
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.pulso-greeting-sub {
+  font-size: 0.72rem;
+  color: #475569;
+}
+
+.pulso-greeting-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #475569;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 6px;
+}
+
+/* Animaciones SVG del Avatar <PulsoAvatar /> */
+.pulso-avatar-svg {
+  display: block;
+  overflow: visible;
+}
+
+.pulso-avatar-svg.can-blink .pulso-eyes-idle {
+  transform-origin: 60px 45px;
+  animation: pulsoBlink 4.8s infinite ease-in-out;
+}
+
+@keyframes pulsoBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.08); }
+}
+
+.pulso-sound-waves .wave-1 {
+  animation: pulsoWavePulse 1.1s infinite ease-in-out;
+}
+
+.pulso-sound-waves .wave-2 {
+  animation: pulsoWavePulse 1.1s infinite ease-in-out 0.25s;
+}
+
+@keyframes pulsoWavePulse {
+  0%, 100% { opacity: 0.25; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(1.5px); }
+}
+
+.pulso-thinking-dots .dot-1 {
+  animation: pulsoDotBounce 1.2s infinite ease-in-out 0s;
+}
+.pulso-thinking-dots .dot-2 {
+  animation: pulsoDotBounce 1.2s infinite ease-in-out 0.2s;
+}
+.pulso-thinking-dots .dot-3 {
+  animation: pulsoDotBounce 1.2s infinite ease-in-out 0.4s;
+}
+
+@keyframes pulsoDotBounce {
+  0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
+.pulso-avatar-svg.state-alerta .pulso-antenna-tip {
+  animation: pulsoAlertFlash 0.9s infinite alternate ease-in-out;
+}
+
+@keyframes pulsoAlertFlash {
+  0% { fill: #f59e0b; r: 5.5px; }
+  100% { fill: #ef4444; r: 7px; }
+}
+
+/* Respeto estricto a prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .pulso-avatar-svg *,
+  .pulso-fab-btn,
+  .pulso-chat-panel {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Panel de Chat de 360px */
+.pulso-chat-panel {
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  height: 540px;
+  max-height: calc(100vh - 120px);
+  background: #ffffff;
+  border: 2px solid #0f766e;
+  border-radius: 18px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.26);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.pulso-chat-panel.is-open {
+  display: flex;
+}
+
+.pulso-chat-header {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #0f766e;
+  cursor: move;
+}
+
+.pulso-chat-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pulso-header-avatar-box {
+  width: 44px;
+  height: 44px;
+  background: #1e293b;
+  border-radius: 12px;
+  border: 1.5px solid #14b8a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pulso-chat-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.pulso-chat-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.pulso-conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #10b981;
+}
+
+.pulso-conn-dot.is-online {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.pulso-conn-dot.is-local-fallback {
+  background: #14b8a6;
+}
+
+.pulso-conn-dot.is-offline {
+  background: #f59e0b;
+}
+
+.pulso-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pulso-icon-btn {
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.pulso-icon-btn:hover {
+  background: #0f766e;
+  border-color: #5eead3;
+}
+
+/* Barra de Estados */
+.pulso-states-bar {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.pulso-state-chip {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pulso-state-chip.is-active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+/* Acciones Rápidas */
+.pulso-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f0fdfa;
+  border-bottom: 1px solid #ccfbf1;
+}
+
+.pulso-quick-btn {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px solid #0f766e;
+  border-radius: 8px;
+  padding: 5px 6px;
+  font-size: 0.71rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease;
+}
+
+.pulso-quick-btn:hover {
+  background: #ccfbf1;
+}
+
+/* Mensajes del Chat (contraste >= 4.5:1) */
+.pulso-chat-messages {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f8fafc;
+}
+
+.pulso-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 92%;
+}
+
+.pulso-msg-user {
+  align-self: flex-end;
+}
+
+.pulso-msg-assistant {
+  align-self: flex-start;
+}
+
+.pulso-msg-bubble {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.pulso-msg-user .pulso-msg-bubble {
+  background: #0f172a;
+  color: #ffffff;
+  border-bottom-right-radius: 3px;
+}
+
+.pulso-msg-assistant .pulso-msg-bubble {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-bottom-left-radius: 3px;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04);
+}
+
+.pulso-pending-tag {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.74rem;
+}
+
+.pulso-review-tag {
+  display: inline-block;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #f87171;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.74rem;
+}
+
+.pulso-apply-soap-btn {
+  margin-top: 6px;
+  background: #0f766e;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.pulso-apply-soap-btn:hover {
+  background: #115e59;
+}
+
+/* Pie de Entrada y Controles */
+.pulso-chat-footer {
+  padding: 8px 10px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.pulso-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulso-mic-btn,
+.pulso-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid #0f766e;
+  background: #f0fdfa;
+  color: #0f172a;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pulso-mic-btn.is-recording {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+.pulso-send-btn {
+  background: #0f766e;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.pulso-send-btn:hover {
+  background: #115e59;
+}
+
+.pulso-chat-input {
+  flex: 1;
+  border: 1.5px solid #94a3b8;
+  border-radius: 10px;
+  padding: 6px 9px;
+  font-size: 0.8rem;
+  color: #0f172a;
+  background: #ffffff;
+  resize: none;
+  font-family: inherit;
+}
+
+.pulso-footer-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 0.67rem;
+  color: #334155;
+}
+
+.pulso-clear-link {
+  background: none;
+  border: none;
+  color: #0f766e;
+  font-weight: 700;
+  font-size: 0.68rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pulso-cfg-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #14b8a6;
+}
+.pulso-cfg-badge.is-online {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #22c55e;
+}
+.pulso-cfg-badge.is-fallback {
+  background: #ccfbf1;
+  color: #115e59;
+  border-color: #14b8a6;
+}
+
+/* Dark theme adjustments for Pulso */
+body.dark-theme .pulso-chat-panel,
+body.dark-theme .pulso-chat-footer,
+body.dark-theme .pulso-greeting-bubble {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #14b8a6;
+}
+body.dark-theme .pulso-chat-messages,
+body.dark-theme .pulso-states-bar {
+  background: #1e293b;
+  border-color: #334155;
+}
+body.dark-theme .pulso-msg-assistant .pulso-msg-bubble,
+body.dark-theme .pulso-chat-input {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #475569;
+}
+

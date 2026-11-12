@@ -2105,12 +2105,110 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.9.0"></script>
-  <script src="overlays.js?v=5.9.0"></script>
-  <script src="modals.js?v=5.9.0"></script>
-  <script src="calendar.js?v=5.9.0"></script>
-  <script src="clinical_ops.js?v=5.9.0"></script>
-  <script src="specialized_care.js?v=5.9.0"></script>
-  <script src="app.js?v=5.9.0"></script>
+  <!-- ================================================================
+       PULSO — ASISTENTE CLÍNICO CON IA LOCAL (DRAGGABLE & ACCESIBLE)
+       ================================================================ -->
+  <div id="pulso-floating-root" aria-label="Contenedor flotante del asistente clínico Pulso">
+    <!-- Burbuja de bienvenida -->
+    <div id="pulso-greeting-bubble" class="pulso-greeting-bubble" role="status" aria-live="polite">
+      <button type="button" class="pulso-greeting-close" aria-label="Cerrar saludo de Pulso" onclick="document.getElementById('pulso-greeting-bubble').style.display='none'">✕</button>
+      <div class="pulso-greeting-title">Hola, soy <strong>Pulso</strong>. Estoy listo para ayudarte con tus pacientes.</div>
+      <div class="pulso-greeting-sub">IA local · revisa siempre las sugerencias · <em>Arrástrame a cualquier parte</em></div>
+    </div>
+
+    <!-- Panel de Chat de 360 px -->
+    <section id="pulso-chat-panel" class="pulso-chat-panel" role="dialog" aria-modal="false" aria-label="Asistente clínico Pulso con IA local" aria-hidden="true">
+      <header class="pulso-chat-header">
+        <div class="pulso-chat-brand">
+          <div id="pulso-header-avatar" class="pulso-header-avatar-box"></div>
+          <div>
+            <div class="pulso-chat-title">Pulso</div>
+            <div class="pulso-chat-subtitle">
+              <span id="pulso-conn-dot" class="pulso-conn-dot is-online" aria-hidden="true"></span>
+              <span id="pulso-conn-label">IA local conectada</span>
+            </div>
+          </div>
+        </div>
+        <div class="pulso-header-actions">
+          <button type="button" class="pulso-icon-btn" onclick="resetPulsoToCorner()" title="Volver a la esquina inferior derecha" aria-label="Volver a la esquina inferior derecha">↘️</button>
+          <button type="button" class="pulso-icon-btn" onclick="clearPulsoConversation()" title="Borrar conversación" aria-label="Borrar conversación">🗑️</button>
+          <button type="button" class="pulso-icon-btn" onclick="togglePulsoPanel(false)" title="Cerrar panel de Pulso (Esc o Ctrl+J)" aria-label="Cerrar panel de Pulso">✕</button>
+        </div>
+      </header>
+
+      <!-- Barra de estados interactivos + volver a la esquina -->
+      <div class="pulso-states-bar" role="toolbar" aria-label="Estados del avatar Pulso">
+        <button type="button" class="pulso-state-chip is-active" data-state="reposo" onclick="setPulsoAvatarState('reposo')" aria-label="Estado reposo">Reposo</button>
+        <button type="button" class="pulso-state-chip" data-state="escuchando" onclick="setPulsoAvatarState('escuchando')" aria-label="Estado escuchando">Escuchando</button>
+        <button type="button" class="pulso-state-chip" data-state="pensando" onclick="setPulsoAvatarState('pensando')" aria-label="Estado pensando">Pensando</button>
+        <button type="button" class="pulso-state-chip" data-state="alerta" onclick="setPulsoAvatarState('alerta')" aria-label="Estado alerta clínica">Alerta clínica</button>
+        <button type="button" class="pulso-state-chip" data-state="contento" onclick="setPulsoAvatarState('contento')" aria-label="Estado contento">Contento</button>
+        <button type="button" class="pulso-state-chip" onclick="resetPulsoToCorner()" aria-label="Volver a la esquina">Volver a la esquina</button>
+      </div>
+
+      <!-- Acciones clínicas rápidas -->
+      <div class="pulso-quick-actions" role="group" aria-label="Funciones rápidas del asistente Pulso">
+        <button type="button" class="pulso-quick-btn" onclick="runPulsoQuickAction('summary')" aria-label="Generar resumen previo del paciente actual">
+          📋 Resumen previo
+        </button>
+        <button type="button" class="pulso-quick-btn" onclick="runPulsoQuickAction('soap')" aria-label="Generar borrador de nota SOAP a partir del dictado">
+          📝 Borrador SOAP
+        </button>
+        <button type="button" class="pulso-quick-btn" onclick="runPulsoQuickAction('search')" aria-label="Buscar pacientes y citas en lenguaje natural">
+          🔍 Buscar pacientes/citas
+        </button>
+      </div>
+
+      <!-- Historial de mensajes -->
+      <div id="pulso-chat-messages" class="pulso-chat-messages" role="log" aria-live="polite" aria-label="Historial de conversación con Pulso"></div>
+
+      <!-- Pie de controles e input accesible -->
+      <footer class="pulso-chat-footer">
+        <div class="pulso-input-row">
+          <button type="button" id="pulso-mic-btn" class="pulso-mic-btn" onclick="togglePulsoMicDictation()" aria-label="Iniciar dictado por micrófono" aria-pressed="false" title="Dictar con micrófono (es-MX)">
+            🎙️
+          </button>
+          <textarea
+            id="pulso-chat-input"
+            class="pulso-chat-input"
+            rows="2"
+            placeholder="Escribe o dicta una nota clínica, busca un paciente o pide un resumen..."
+            aria-label="Mensaje o dictado clínico para Pulso"
+            onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendPulsoPrompt(); }"
+          ></textarea>
+          <button type="button" id="pulso-send-btn" class="pulso-send-btn" onclick="sendPulsoPrompt()" aria-label="Enviar consulta a Pulso">
+            ➤
+          </button>
+        </div>
+        <div class="pulso-footer-meta">
+          <span>🔒 Datos sólo en memoria local · Bitácora NOM-024 activa</span>
+          <button type="button" class="pulso-clear-link" onclick="clearPulsoConversation()" aria-label="Borrar conversación en memoria">Borrar conversación</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- Botón flotante arrastrable por toda la pantalla -->
+    <button
+      type="button"
+      id="pulso-fab-btn"
+      class="pulso-fab-btn"
+      aria-label="Abrir asistente clínico Pulso (Ctrl+J). Arrastrable por toda la pantalla"
+      aria-expanded="false"
+      aria-controls="pulso-chat-panel"
+      title="Pulso — Asistente con IA Local (Ctrl+J) · Arrastra para mover"
+    >
+      <span id="pulso-fab-avatar" class="pulso-fab-avatar-wrap"></span>
+      <span class="pulso-fab-badge">Pulso IA</span>
+    </button>
+  </div>
+
+  <script src="state.js?v=6.0.0"></script>
+  <script src="overlays.js?v=6.0.0"></script>
+  <script src="modals.js?v=6.0.0"></script>
+  <script src="calendar.js?v=6.0.0"></script>
+  <script src="clinical_ops.js?v=6.0.0"></script>
+  <script src="specialized_care.js?v=6.0.0"></script>
+  <script src="pulso_assistant.js?v=6.0.0"></script>
+  <script src="app.js?v=6.0.0"></script>
 </body>
 </html>
