@@ -546,17 +546,27 @@ async function loadPatients() {
   try {
     const res = await fetch(`${API}/api/patients/`);
     const patients = await res.json();
-    renderPatients(patients);
+    AppState.allPatients = Array.isArray(patients) ? patients : [];
+
+    const activeQuery = (document.getElementById('search-input')?.value || '').trim();
+    if (activeQuery) {
+      handleSearch();
+    } else {
+      renderPatients(AppState.allPatients);
+    }
   } catch {
-    document.getElementById('patients-list').innerHTML =
-      '<div class="no-patients">Error al cargar pacientes</div>';
+    const listEl = document.getElementById('patients-list');
+    if (listEl) listEl.innerHTML = '<div class="no-patients">Error al cargar pacientes</div>';
   }
 }
 
-function renderPatients(patients, isSemantic = false) {
+function renderPatients(patients, isSemantic = false, emptyQuery = '') {
   const el = document.getElementById('patients-list');
   if (!patients.length) {
-    el.innerHTML = `<div class="no-patients">${isSemantic ? 'No se encontraron coincidencias semánticas' : 'Sin pacientes registrados'}</div>`;
+    const msg = emptyQuery
+      ? `No se encontraron pacientes que coincidan con "${esc(emptyQuery)}".`
+      : (isSemantic ? 'No se encontraron coincidencias semánticas.' : 'Sin pacientes registrados.');
+    el.innerHTML = `<div class="no-patients">${msg}</div>`;
     return;
   }
 
@@ -568,9 +578,8 @@ function renderPatients(patients, isSemantic = false) {
     const folio = p.folio_hospital || '';
     const fecha = formatDate(p.created_at);
     const simBadge = isSemantic ? `<span class="sim-badge sim-high" style="font-size:10px;">IA: ${Math.round((p.similitud||0) * 100)}%</span>` : '';
-    const sexoIcon = sexo === 'Femenino' ? '&#9792;' : sexo === 'Masculino' ? '&#9794;' : '';
     return `
-      <div class="patient-row" onclick="openPatientProfile('${esc(curp)}')" role="button" tabindex="0">
+      <div class="patient-row" data-curp="${esc(curp)}" onclick="openPatientProfile('${esc(curp)}')" role="button" tabindex="0">
         <div class="pt-col-patient">
           <div class="patient-row-avatar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -593,7 +602,7 @@ function renderPatients(patients, isSemantic = false) {
           </div>
         </div>
         <div class="pt-col-actions">
-          <button class="patient-row-actions-btn" onclick="event.stopPropagation(); window.showToast?.('Opciones próximamente', 'info')" title="Opciones">
+          <button class="patient-row-actions-btn" onclick="event.stopPropagation(); openPatientProfile('${esc(curp)}')" title="Abrir expediente">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
           </button>
         </div>
@@ -610,30 +619,136 @@ function openPatientProfile(curp) {
   OverlaySystem.open('patient-profile', { curp });
 }
 
+function _normSearchText(str) {
+  return String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function _tokenEditDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (Math.abs(m - n) > 2) return 99;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+      }
+    }
+  }
+  return dp[m][n];
+}
+
+function _filterPatientsLocally(patients, rawQuery) {
+  const normQ = _normSearchText(rawQuery);
+  if (!normQ) return patients;
+  const qTokens = normQ.split(/\s+/).filter(Boolean);
+
+  const scored = [];
+  for (const p of patients) {
+    const fullName = _normSearchText(
+      p.nombre_completo || p.nombre || `${p.primer_apellido || ''} ${p.segundo_apellido || ''} ${p.nombres || ''}`
+    );
+    const curp = _normSearchText(p.curp);
+    const folio = _normSearchText(p.folio_hospital);
+    const searchable = `${fullName} ${curp} ${folio}`.trim();
+    const docTokens = searchable.split(/[\s,.\-_/]+/).filter(Boolean);
+
+    if (searchable.includes(normQ)) {
+      scored.push({ p, score: 1000 });
+      continue;
+    }
+
+    let totalScore = 0;
+    let allMatched = true;
+    for (const qt of qTokens) {
+      let best = 0;
+      for (const dt of docTokens) {
+        if (dt === qt) { best = Math.max(best, 100); break; }
+        if (dt.startsWith(qt)) { best = Math.max(best, 80); continue; }
+        if (dt.includes(qt) && qt.length >= 3) { best = Math.max(best, 65); continue; }
+        if (qt.length >= 4 && dt.length >= 4) {
+          const dist = _tokenEditDistance(qt, dt);
+          const maxAllowed = qt.length >= 6 ? 2 : 1;
+          if (dist <= maxAllowed) {
+            best = Math.max(best, 55 - dist * 10);
+          }
+        }
+      }
+      if (best === 0) {
+        allMatched = false;
+        break;
+      }
+      totalScore += best;
+    }
+
+    if (allMatched && totalScore > 0) {
+      scored.push({ p, score: totalScore });
+    }
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map(x => x.p);
+}
+
+function runQuickTopSearch(queryText) {
+  const q = String(queryText || '').trim();
+  const searchInp = document.getElementById('search-input');
+  if (searchInp) searchInp.value = q;
+  if (AppState.mainTab !== 'expedientes') {
+    switchMainTab('expedientes');
+  } else {
+    handleSearch();
+  }
+}
+
 /* Búsqueda */
 let searchTimeout = null;
-function handleSearch() {
-  const isSemantic = document.getElementById('search-semantic-check').checked;
-  const q = document.getElementById('search-input').value.trim();
+async function handleSearch() {
+  const semCheck = document.getElementById('search-semantic-check');
+  const isSemantic = !!(semCheck && semCheck.checked);
+  const inputEl = document.getElementById('search-input');
+  const q = (inputEl?.value || '').trim();
+
+  // Mantener sincronizada la barra superior si el usuario escribe en el directorio
+  const topInp = document.getElementById('global-quick-search');
+  if (topInp && document.activeElement === inputEl) {
+    topInp.value = inputEl.value;
+  }
+
+  if (!q) {
+    if (Array.isArray(AppState.allPatients) && AppState.allPatients.length) {
+      renderPatients(AppState.allPatients);
+    } else {
+      loadPatients();
+    }
+    return;
+  }
 
   if (isSemantic) {
     clearTimeout(searchTimeout);
-    if (!q) { loadPatients(); return; }
     searchTimeout = setTimeout(async () => {
       try {
         const res = await fetch(`${API}/api/patients/search/semantic?q=${encodeURIComponent(q)}`);
         const results = await res.json();
-        renderPatients(results, true);
+        const filtered = Array.isArray(results) ? results.filter(r => (r.similitud || 0) >= 0.25) : [];
+        renderPatients(filtered, true, q);
       } catch (err) { console.error(err); }
-    }, 400);
+    }, 350);
   } else {
-    const queryUpper = q.toUpperCase();
-    const cards = document.querySelectorAll('.patient-card');
-    cards.forEach(c => {
-      const curp = c.querySelector('.patient-curp')?.textContent || '';
-      const name = c.querySelector('.patient-name')?.textContent || '';
-      c.style.display = (curp.toUpperCase().includes(queryUpper) || name.toUpperCase().includes(queryUpper)) ? 'flex' : 'none';
-    });
+    if (!Array.isArray(AppState.allPatients)) {
+      await loadPatients();
+      return;
+    }
+    const filtered = _filterPatientsLocally(AppState.allPatients, q);
+    renderPatients(filtered, false, q);
   }
 }
 

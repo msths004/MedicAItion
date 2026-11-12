@@ -197,7 +197,7 @@
           <!-- Search Bar -->
           <div class="topbar-search">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="global-quick-search" placeholder="Búsqueda rápida (⌘K)" onkeydown="if(event.key==='Enter'){switchMainTab('expedientes'); document.getElementById('search-input').value=this.value; handleSearch();}" />
+            <input type="text" id="global-quick-search" placeholder="Búsqueda rápida (⌘K)" oninput="if(AppState.mainTab==='expedientes'){document.getElementById('search-input').value=this.value; handleSearch();}" onkeydown="if(event.key==='Enter'){runQuickTopSearch(this.value);}" />
           </div>
 
           <!-- Sync Status -->
@@ -1457,6 +1457,6 @@
   <script src="modals.js?v=5.5.0"></script>
   <script src="calendar.js?v=5.5.0"></script>
   <script src="clinical_ops.js?v=5.5.0"></script>
-  <script src="app.js?v=5.5.0"></script>
+  <script src="app.js?v=5.5.1"></script>
 </body>
 </html>
