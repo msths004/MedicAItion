@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5.8.0" />
+  <link rel="stylesheet" href="style.css?v=5.9.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -143,7 +143,7 @@
         <!-- GROUP 2: CLÍNICA -->
         <div class="nav-section-label nav-section-spaced">CLÍNICA</div>
 
-        <button class="sidebar-nav-btn" id="nav-btn-clinica-exp" onclick="switchMainTab('expedientes')" title="Expedientes clínicos electrónicos NOM-004">
+        <button class="sidebar-nav-btn" id="nav-btn-clinica-exp" onclick="switchMainTab('expediente')" title="Atención Especializada y Expediente Clínico Electrónico NOM-004">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
           <span>Expedientes</span>
           <span class="nav-dot-green"></span>
@@ -1024,6 +1024,196 @@
               <div class="legal-disclaimer-box">
                 <h4>Descargo Clínico y Responsabilidad Profesional (COFEPRIS / LGS)</h4>
                 <p id="legal-clinical-disclaimer-text">Cargando descargo clínico...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================================
+             VIEW: ATENCIÓN ESPECIALIZADA / EXPEDIENTE CLÍNICO ACTIVO
+             ================================================================= -->
+        <section class="view-panel" id="panel-expediente-section" style="display:none">
+          <div class="exp-care-shell">
+            <div class="exp-patient-select-bar">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <label for="exp-patient-select" style="font-size:12px; font-weight:800; color:#475569;">EXPEDIENTE ACTIVO:</label>
+                <select id="exp-patient-select" class="input-field" style="min-width:300px;" onchange="loadSpecializedPatient(this.value)">
+                  <option value="">Cargando pacientes...</option>
+                </select>
+              </div>
+              <button type="button" class="btn-outline-pill" onclick="switchMainTab('expedientes')">← Ver Directorio de Pacientes</button>
+            </div>
+
+            <!-- HEADER CARD -->
+            <div class="exp-header-card">
+              <div class="exp-header-left">
+                <div class="exp-avatar-badge" id="exp-avatar">--</div>
+                <div>
+                  <div class="exp-header-title-row">
+                    <h2 id="exp-patient-name">Selecciona un paciente</h2>
+                    <span class="exp-header-meta" id="exp-patient-meta">—</span>
+                  </div>
+                  <div class="exp-pills-row">
+                    <span class="exp-pill exp-pill-warn" id="exp-triage-badge">Atención especializada</span>
+                    <span class="exp-pill exp-pill-safe" id="exp-allergy-badge">Sin alergias registradas</span>
+                    <span class="exp-pill exp-pill-safe" id="exp-consent-badge">Verificando consentimiento</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="exp-timer-box">
+                <div>
+                  <div class="exp-timer-label">DURACIÓN</div>
+                  <div class="exp-timer-value" id="exp-timer-display">00:00:00</div>
+                </div>
+                <button type="button" class="btn-outline-pill" id="exp-timer-toggle" onclick="toggleExpTimer()">Pausar</button>
+              </div>
+            </div>
+
+            <!-- 3-COLUMN SPECIALIZED WORKSPACE -->
+            <div class="exp-three-col">
+              <!-- COLUMNA IZQUIERDA -->
+              <div class="exp-col-stack">
+                <div class="exp-card">
+                  <div class="exp-card-head">
+                    <h3>Resumen previo con IA</h3>
+                    <span class="exp-verify-badge">VERIFICAR</span>
+                  </div>
+                  <ul class="exp-bullets" id="exp-ai-summary-list">
+                    <li>Selecciona un paciente para analizar su historial.</li>
+                  </ul>
+                </div>
+
+                <div class="exp-card">
+                  <div class="exp-card-head">
+                    <h3>Signos vitales</h3>
+                    <button type="button" class="exp-link-btn" onclick="toggleExpQuickVitalsForm()">Registrar</button>
+                  </div>
+                  <div class="exp-vitals-grid">
+                    <div class="exp-vital-box">
+                      <div class="exp-vital-val" id="exp-vital-fc">--</div>
+                      <div class="exp-vital-lbl">FC (lpm)</div>
+                    </div>
+                    <div class="exp-vital-box">
+                      <div class="exp-vital-val" id="exp-vital-spo2">--%</div>
+                      <div class="exp-vital-lbl">SpO2</div>
+                    </div>
+                    <div class="exp-vital-box">
+                      <div class="exp-vital-val" id="exp-vital-ta">--/--</div>
+                      <div class="exp-vital-lbl">TA (mmHg)</div>
+                    </div>
+                    <div class="exp-vital-box" id="exp-vital-temp-box">
+                      <div class="exp-vital-val" id="exp-vital-temp">--</div>
+                      <div class="exp-vital-lbl">Temp (°C)</div>
+                    </div>
+                  </div>
+                  <div class="exp-news2-foot" id="exp-news2-label">Índice de alerta temprana (NEWS2): <strong>—</strong></div>
+
+                  <div id="exp-quick-vitals-form" class="manual-vitals-grid" style="display:none; margin-top:10px;">
+                    <label>FC<input type="number" id="exp-qv-hr" class="input-field" placeholder="82" /></label>
+                    <label>SpO2<input type="number" id="exp-qv-spo2" class="input-field" placeholder="98" /></label>
+                    <label>TA Sist.<input type="number" id="exp-qv-sbp" class="input-field" placeholder="120" /></label>
+                    <label>TA Diast.<input type="number" id="exp-qv-dbp" class="input-field" placeholder="80" /></label>
+                    <label>Temp °C<input type="number" step="0.1" id="exp-qv-temp" class="input-field" placeholder="36.8" /></label>
+                    <button type="button" class="btn-dark-pill" style="align-self:end;" onclick="saveExpQuickVitals()">Guardar</button>
+                  </div>
+                </div>
+
+                <div class="exp-card">
+                  <div class="exp-card-head">
+                    <h3>Historial</h3>
+                  </div>
+                  <div id="exp-history-list">
+                    <div style="font-size:12px; color:#64748b;">Sin historial previo.</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- COLUMNA CENTRAL: NOTA CLÍNICA SOAP -->
+              <div class="exp-card">
+                <div class="exp-card-head">
+                  <h3>Nota clínica (SOAP) · Borrador generado del dictado</h3>
+                  <span class="exp-rec-pill" id="exp-dictation-badge">● LISTO PARA DICTADO</span>
+                </div>
+
+                <div class="exp-soap-list">
+                  <div class="exp-soap-item">
+                    <span class="exp-soap-letter">S</span>
+                    <div class="exp-soap-text" id="exp-soap-text-s"></div>
+                    <textarea id="exp-soap-input-s" class="textarea-field" rows="3" style="display:none; flex:1;"></textarea>
+                  </div>
+                  <div class="exp-soap-item">
+                    <span class="exp-soap-letter">O</span>
+                    <div class="exp-soap-text" id="exp-soap-text-o"></div>
+                    <textarea id="exp-soap-input-o" class="textarea-field" rows="3" style="display:none; flex:1;"></textarea>
+                  </div>
+                  <div class="exp-soap-item">
+                    <span class="exp-soap-letter">A</span>
+                    <div style="flex:1;">
+                      <div class="exp-soap-text" id="exp-soap-text-a"></div>
+                      <textarea id="exp-soap-input-a" class="textarea-field" rows="2" style="display:none; width:100%;"></textarea>
+                    </div>
+                    <button type="button" class="exp-link-btn" onclick="suggestExpCie10()" title="Sugerir código CIE-10 desde el texto clínico">CIE-10</button>
+                  </div>
+                  <div class="exp-soap-item">
+                    <span class="exp-soap-letter">P</span>
+                    <div class="exp-soap-text" id="exp-soap-text-p"></div>
+                    <textarea id="exp-soap-input-p" class="textarea-field" rows="3" style="display:none; flex:1;"></textarea>
+                  </div>
+                </div>
+
+                <div class="exp-soap-note-foot">
+                  Los campos marcados [PENDIENTE] no se inventan: se completan con tu dictado o a mano.
+                </div>
+
+                <div class="exp-soap-actions">
+                  <button type="button" class="btn-outline-pill" id="exp-btn-edit-soap" onclick="toggleExpEditMode()">Editar nota</button>
+                  <button type="button" class="btn-outline-pill" onclick="toggleExpDictation()">🎙️ Volver a dictar sección</button>
+                </div>
+              </div>
+
+              <!-- COLUMNA DERECHA -->
+              <div class="exp-col-stack">
+                <div class="exp-card">
+                  <div class="exp-card-head">
+                    <h3>Receta electrónica</h3>
+                  </div>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <input type="text" id="exp-med-search" class="input-field" placeholder="Buscar medicamento..." style="flex:1; min-width:130px;" />
+                    <input type="text" id="exp-med-dose" class="input-field" placeholder="Dosis (ej. 500mg)" style="width:105px;" />
+                    <button type="button" class="btn-dark-pill" onclick="addExpMedication()">+</button>
+                  </div>
+                  <div id="exp-meds-list"></div>
+                  <div class="exp-safety-box" id="exp-safety-warning">
+                    Verificación farmacológica activa.
+                  </div>
+                </div>
+
+                <div class="exp-card">
+                  <div class="exp-card-head">
+                    <h3>Órdenes de laboratorio e imagen</h3>
+                  </div>
+                  <div class="exp-labs-wrap" id="exp-labs-chips"></div>
+                </div>
+
+                <div class="exp-card">
+                  <div class="exp-card-head">
+                    <h3>Seguimiento</h3>
+                  </div>
+                  <div class="exp-follow-list">
+                    <label><input type="checkbox" id="exp-follow-7d" checked /> Agendar revisión en 7 días</label>
+                    <label><input type="checkbox" id="exp-follow-whatsapp" checked /> Recordatorio al paciente</label>
+                    <label><input type="checkbox" id="exp-follow-alarm" /> Indicaciones de alarma por escrito</label>
+                  </div>
+                </div>
+
+                <div>
+                  <button type="button" class="exp-sign-cta" onclick="signAndCloseSpecializedConsult()">Firmar y cerrar consulta</button>
+                  <button type="button" class="exp-draft-cta" onclick="saveExpDraft()">Guardar borrador</button>
+                  <div style="text-align:center; font-size:11px; color:#64748b; margin-top:6px;">
+                    Acceso registrado en bitácora de auditoría
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1915,11 +2105,12 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.8.0"></script>
-  <script src="overlays.js?v=5.8.0"></script>
-  <script src="modals.js?v=5.8.0"></script>
-  <script src="calendar.js?v=5.8.0"></script>
-  <script src="clinical_ops.js?v=5.8.0"></script>
-  <script src="app.js?v=5.8.0"></script>
+  <script src="state.js?v=5.9.0"></script>
+  <script src="overlays.js?v=5.9.0"></script>
+  <script src="modals.js?v=5.9.0"></script>
+  <script src="calendar.js?v=5.9.0"></script>
+  <script src="clinical_ops.js?v=5.9.0"></script>
+  <script src="specialized_care.js?v=5.9.0"></script>
+  <script src="app.js?v=5.9.0"></script>
 </body>
 </html>

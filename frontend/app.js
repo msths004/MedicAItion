@@ -18,6 +18,7 @@ function switchMainTab(tab) {
   const btnDash = document.getElementById('nav-btn-dashboard');
   const btnCons = document.getElementById('nav-btn-consulta');
   const btnExpe = document.getElementById('nav-btn-expedientes');
+  const btnClinExp = document.getElementById('nav-btn-clinica-exp');
   const btnAgnd = document.getElementById('nav-btn-agenda');
   const btnRep  = document.getElementById('nav-btn-reportes');
   const btnIa   = document.getElementById('nav-btn-ia-tools');
@@ -27,6 +28,7 @@ function switchMainTab(tab) {
   if (btnDash) btnDash.classList.toggle('active', tab === 'dashboard');
   if (btnCons) btnCons.classList.toggle('active', tab === 'consulta');
   if (btnExpe) btnExpe.classList.toggle('active', tab === 'expedientes');
+  if (btnClinExp) btnClinExp.classList.toggle('active', tab === 'expediente');
   if (btnAgnd) btnAgnd.classList.toggle('active', tab === 'agenda');
   if (btnRep)  btnRep.classList.toggle('active', tab === 'reportes');
   if (btnIa)   btnIa.classList.toggle('active', tab === 'herramientas');
@@ -38,6 +40,7 @@ function switchMainTab(tab) {
   const dashSection = document.getElementById('panel-dashboard-section');
   const consultaLayout = document.getElementById('consulta-layout');
   const patientSection = document.getElementById('panel-patients-section');
+  const expedienteSection = document.getElementById('panel-expediente-section');
   const agendaSection = document.getElementById('panel-agenda-section');
   const reportsSection = document.getElementById('panel-reports-section');
   const toolsSection = document.getElementById('panel-herramientas-section');
@@ -47,6 +50,10 @@ function switchMainTab(tab) {
   if (dashSection) {
     dashSection.style.display = tab === 'dashboard' ? 'block' : 'none';
     if (tab === 'dashboard' && typeof refreshDashboard === 'function') refreshDashboard();
+  }
+  if (expedienteSection) {
+    expedienteSection.style.display = tab === 'expediente' ? 'block' : 'none';
+    if (tab === 'expediente' && typeof initSpecializedCareView === 'function') initSpecializedCareView();
   }
   if (reportsSection) {
     reportsSection.style.display = tab === 'reportes' ? 'block' : 'none';

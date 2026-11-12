@@ -7589,3 +7589,352 @@ body.dark-theme .pat-card {
   flex-wrap: wrap;
   font-size: 13px;
 }
+
+/* =====================================================================
+   ATENCIÓN ESPECIALIZADA / EXPEDIENTE CLÍNICO ACTIVO (3 COLUMNAS)
+   ===================================================================== */
+.exp-care-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.exp-patient-select-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.exp-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+.exp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.exp-avatar-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.exp-header-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.exp-header-title-row h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.exp-header-meta {
+  font-size: 13px;
+  color: #64748b;
+}
+.exp-pills-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.exp-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.exp-pill-warn   { background: #fef3c7; color: #92400e; }
+.exp-pill-danger { background: #fee2e2; color: #b91c1c; }
+.exp-pill-safe   { background: #dcfce7; color: #166534; }
+
+.exp-timer-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.exp-timer-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.04em;
+  text-align: right;
+}
+.exp-timer-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.exp-three-col {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.95fr) minmax(360px, 1.55fr) minmax(270px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1120px) {
+  .exp-three-col { grid-template-columns: 1fr; }
+}
+.exp-col-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.exp-card {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+.exp-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.exp-card-head h3 {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #475569;
+  text-transform: uppercase;
+}
+.exp-verify-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: #e0e7ff;
+  color: #3730a3;
+}
+.exp-link-btn {
+  border: none;
+  background: none;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.exp-bullets {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #334155;
+}
+.exp-vitals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.exp-vital-box {
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+.exp-vital-box.is-warn {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+.exp-vital-val {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.exp-vital-box.is-warn .exp-vital-val { color: #92400e; }
+.exp-vital-lbl { font-size: 11px; color: #64748b; margin-top: 2px; }
+.exp-news2-foot {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #475569;
+}
+.exp-hist-row {
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.25);
+  font-size: 12.5px;
+}
+.exp-hist-row:last-child { border-bottom: none; }
+
+.exp-rec-pill {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+.exp-rec-pill.is-live {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.exp-soap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.exp-soap-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: #fcfdff;
+}
+.exp-soap-letter {
+  font-weight: 800;
+  font-size: 13px;
+  color: #1d4ed8;
+  min-width: 16px;
+}
+.exp-soap-text {
+  font-size: 13px;
+  line-height: 1.5;
+  flex: 1;
+}
+.exp-soap-note-foot {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  font-size: 11.5px;
+  color: #64748b;
+}
+.exp-soap-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.exp-safety-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.exp-safety-box.safe {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+.exp-safety-box.critical {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+.exp-med-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-top: 6px;
+  border-radius: 9px;
+  background: #f8fafc;
+  font-size: 12.5px;
+}
+.exp-med-item button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #ef4444;
+  font-weight: 700;
+}
+.exp-labs-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.exp-lab-chip {
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.exp-lab-chip.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+.exp-follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.exp-follow-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.exp-sign-cta {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.exp-draft-cta {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+body.dark-theme .exp-header-card,
+body.dark-theme .exp-card,
+body.dark-theme .exp-soap-item {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+body.dark-theme .exp-vital-box,
+body.dark-theme .exp-med-item,
+body.dark-theme .exp-soap-note-foot {
+  background: #1e293b;
+}
+body.dark-theme .exp-vital-val { color: #f8fafc; }
+body.dark-theme .exp-sign-cta { background: #2563eb; }
