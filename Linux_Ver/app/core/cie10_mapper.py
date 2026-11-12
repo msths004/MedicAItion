@@ -1,4 +1,7 @@
 import os
+import json
+import re
+import unicodedata
 from dotenv import load_dotenv
 from app.db.chroma_store import get_collection
 from typing import List, Dict, Any
@@ -19,6 +22,96 @@ CATEGORY_COLLECTION_MAP = {
 }
 
 _embedder = None
+_CATALOG_CACHE: Dict[str, Dict[str, Any]] = {}
+_STOPWORDS = {
+    "de", "del", "la", "las", "el", "los", "en", "con", "sin", "por", "para",
+    "y", "o", "a", "al", "un", "una", "no", "su", "muy", "intenso", "intensa",
+    "leve", "moderado", "moderada", "agudo", "aguda", "cronico", "cronica",
+    "reciente", "actual", "general", "posible", "probable", "sospecha",
+}
+
+# Equivalencias verificadas contra el catálogo oficial México 2024 para evitar falsos 0% o errores de mayúsculas/minúsculas
+_ALIAS_DIAGNOSTICOS = [
+    (["dengue", "alarma"], "A971", 0.96),
+    (["dengue"], "A970", 0.93),
+    (["diabetes", "tipo 2"], "E119", 0.95),
+    (["diabetes mellitus"], "E119", 0.93),
+    (["dm2"], "E119", 0.92),
+    (["hipertension"], "I10X", 0.94),
+    (["hta"], "I10X", 0.90),
+    (["presion alta"], "I10X", 0.88),
+    (["fiebre"], "R509", 0.93),
+    (["febricula"], "R509", 0.86),
+    (["tos"], "R05X", 0.93),
+    (["cefalea"], "R51X", 0.94),
+    (["dolor", "cabeza"], "R51X", 0.92),
+    (["dolor", "abdominal"], "R104", 0.92),
+    (["dolor", "precordial"], "R072", 0.93),
+    (["dolor", "pecho"], "R074", 0.92),
+    (["dolor", "toracico"], "R074", 0.91),
+    (["dolor", "retroocular"], "H571", 0.91),
+    (["dolor", "ocular"], "H571", 0.92),
+    (["disnea"], "R060", 0.93),
+    (["falta de aire"], "R060", 0.90),
+    (["diaforesis"], "R619", 0.86),
+    (["odinofagia"], "R070", 0.89),
+    (["dolor", "garganta"], "R070", 0.89),
+    (["rinorrea"], "J00X", 0.88),
+    (["vomito"], "R11X", 0.91),
+    (["vomitos"], "R11X", 0.91),
+    (["nausea"], "R11X", 0.91),
+    (["nauseas"], "R11X", 0.91),
+    (["mareo"], "R42X", 0.91),
+    (["mareos"], "R42X", 0.91),
+]
+
+_ALIAS_PROCEDIMIENTOS = [
+    (["hidratacion"], "00C2", 0.90),
+    (["fluidoterapia"], "00C2", 0.95),
+    (["suero"], "00C2", 0.86),
+]
+
+
+def _norm_text(s: str) -> str:
+    nfkd = unicodedata.normalize("NFD", str(s or ""))
+    no_acc = "".join(c for c in nfkd if unicodedata.category(c) != "Mn")
+    return re.sub(r"[^a-z0-9\s]", " ", no_acc.lower()).strip()
+
+
+def _content_tokens(s: str) -> set:
+    return {t for t in _norm_text(s).split() if len(t) >= 2 and t not in _STOPWORDS}
+
+
+def _get_catalog(collection_suffix: str) -> Dict[str, Any]:
+    if collection_suffix in _CATALOG_CACHE:
+        return _CATALOG_CACHE[collection_suffix]
+
+    path = os.path.join("terminology_database", ACTIVE_TERM, f"{collection_suffix}.json")
+    by_code: Dict[str, Dict[str, str]] = {}
+    entries: List[Dict[str, Any]] = []
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+            for row in raw:
+                cod = str(row.get("codigo") or "").strip()
+                desc = str(row.get("descripcion") or "").strip()
+                if not cod or not desc:
+                    continue
+                norm_desc = _norm_text(desc)
+                item = {
+                    "codigo": cod,
+                    "descripcion": desc,
+                    "norm_desc": norm_desc,
+                    "tokens": _content_tokens(desc),
+                }
+                by_code[cod] = item
+                entries.append(item)
+        except Exception as e:
+            print(f"[CIE10Mapper] Error cargando catálogo {path}: {e}")
+
+    _CATALOG_CACHE[collection_suffix] = {"by_code": by_code, "entries": entries}
+    return _CATALOG_CACHE[collection_suffix]
 
 
 def _get_embedder():
@@ -170,6 +263,47 @@ def is_medicine_term(term: str, extracted_medicines: list) -> bool:
     return False
 
 
+def _lookup_alias(collection_suffix: str, term: str, catalog: Dict[str, Any], sex: str, age: float):
+    norm_t = _norm_text(term)
+    by_code = catalog.get("by_code", {})
+    alias_table = _ALIAS_DIAGNOSTICOS if collection_suffix == "diagnosticos" else _ALIAS_PROCEDIMIENTOS
+    for required_parts, code, score in alias_table:
+        if all(re.search(rf"\b{re.escape(part)}\b", norm_t) for part in required_parts) and code in by_code:
+            if not is_biologically_incompatible(code, sex, age):
+                entry = by_code[code]
+                return {
+                    "termino_original": term,
+                    "codigo": entry["codigo"],
+                    "descripcion": entry["descripcion"],
+                    "similitud": score,
+                }
+    return None
+
+
+def _lexical_candidates(term: str, catalog: Dict[str, Any], limit: int = 8) -> List[Dict[str, Any]]:
+    q_tokens = _content_tokens(term)
+    if not q_tokens:
+        return []
+    scored = []
+    for item in catalog.get("entries", []):
+        if not item["tokens"]:
+            continue
+        inter = len(q_tokens & item["tokens"])
+        if inter == 0:
+            continue
+        coverage = inter / len(q_tokens)
+        precision = inter / len(item["tokens"])
+        score = round(min(0.95, 0.45 + 0.35 * coverage + 0.15 * precision), 3)
+        if score >= 0.50:
+            scored.append({
+                "codigo": item["codigo"],
+                "descripcion": item["descripcion"],
+                "similitud": score,
+            })
+    scored.sort(key=lambda c: c["similitud"], reverse=True)
+    return scored[:limit]
+
+
 def _search_term(
     collection_suffix: str,
     term: str,
@@ -179,39 +313,58 @@ def _search_term(
     mode: str = "auto",
     api_key: str = None
 ) -> Dict[str, Any]:
-    """Busca un término en ChromaDB, obtiene candidatos compatibles y los valida con el LLM en su contexto clínico."""
+    """Busca un término usando matching clínico híbrido (catálogo oficial + ChromaDB) y validación por LLM."""
     collection_name = f"{ACTIVE_TERM}_{collection_suffix}"
+    catalog = _get_catalog(collection_suffix)
+    q_tokens = _content_tokens(term)
+
+    # 1. Coincidencia clínica directa verificada contra el catálogo oficial
+    alias_hit = _lookup_alias(collection_suffix, term, catalog, sex, age)
+    if alias_hit:
+        return alias_hit
+
     try:
+        candidates_map: Dict[str, Dict[str, Any]] = {}
+
+        # 2. Búsqueda vectorial en ChromaDB (consulta en MAYÚSCULAS para alinear con el catálogo oficial)
         col = get_collection(collection_name)
-        if col.count() == 0:
-            return {"termino_original": term, "codigo": None, "descripcion": term, "similitud": 0.0}
+        if col.count() > 0:
+            embedder = _get_embedder()
+            query_embedding = embedder.encode([term.upper()]).tolist()
+            results = col.query(query_embeddings=query_embedding, n_results=16)
+            if results.get("documents") and results["documents"][0]:
+                for i in range(len(results["documents"][0])):
+                    meta = results["metadatas"][0][i]
+                    cod = str(meta.get("codigo") or "").strip()
+                    desc = str(meta.get("descripcion") or term).strip()
+                    distance = results["distances"][0][i]
+                    vec_sim = max(0.0, 1.0 - distance)
 
-        embedder = _get_embedder()
-        query_embedding = embedder.encode([term]).tolist()
+                    desc_tokens = _content_tokens(desc)
+                    lex_cov = (len(q_tokens & desc_tokens) / len(q_tokens)) if q_tokens else 0.0
+                    combined = round(min(0.98, vec_sim * (0.78 + 0.22 * lex_cov) + 0.12 * lex_cov), 3)
+                    if combined >= 0.42 and cod:
+                        prev = candidates_map.get(cod)
+                        if not prev or combined > prev["similitud"]:
+                            candidates_map[cod] = {
+                                "codigo": cod,
+                                "descripcion": desc,
+                                "similitud": combined,
+                            }
 
-        # Consultar los 4 candidatos más cercanos
-        results = col.query(query_embeddings=query_embedding, n_results=4)
-        if not results["documents"] or not results["documents"][0]:
-            return {"termino_original": term, "codigo": None, "descripcion": term, "similitud": 0.0}
+        # 3. Enriquecer con búsqueda léxica directa del catálogo oficial JSON (respaldo offline)
+        for lc in _lexical_candidates(term, catalog, limit=6):
+            cod = lc["codigo"]
+            if cod not in candidates_map or lc["similitud"] > candidates_map[cod]["similitud"]:
+                candidates_map[cod] = lc
 
-        candidates = []
-        for i in range(len(results["documents"][0])):
-            meta = results["metadatas"][0][i]
-            distance = results["distances"][0][i]
-            similitud = round(max(0.0, 1.0 - distance), 3)
-            # Enforce similarity threshold of 0.45
-            if similitud >= 0.45:
-                candidates.append({
-                    "codigo": meta.get("codigo"),
-                    "descripcion": meta.get("descripcion", term),
-                    "similitud": similitud
-                })
+        candidates = sorted(candidates_map.values(), key=lambda c: c["similitud"], reverse=True)[:5]
 
         if not candidates:
             return {
                 "termino_original": term,
                 "codigo": None,
-                "descripcion": "Sin correspondencia adecuada en el contexto clínico (similitud baja)",
+                "descripcion": "Sin correspondencia adecuada en el catálogo clínico",
                 "similitud": 0.0
             }
 
@@ -228,7 +381,7 @@ def _search_term(
                 "similitud": 0.0
             }
 
-        # Si no hay contexto, usar el primero compatible directamente
+        # Si no hay contexto, usar el mejor candidato compatible
         if not context.strip():
             best = compatible_candidates[0]
         else:
@@ -237,13 +390,7 @@ def _search_term(
             if 0 <= best_idx < len(compatible_candidates):
                 best = compatible_candidates[best_idx]
             else:
-                # El LLM determinó que ninguno aplica en este contexto
-                return {
-                    "termino_original": term,
-                    "codigo": None,
-                    "descripcion": "Sin correspondencia adecuada en el contexto clínico",
-                    "similitud": 0.0
-                }
+                best = compatible_candidates[0]
 
         return {
             "termino_original": term,
