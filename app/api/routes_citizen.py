@@ -24,6 +24,7 @@ from app.db.local_db import (
     get_latest_consent,
     get_patient_daily_logs,
     get_patient_full_history,
+    get_patient_upcoming_appointments,
 )
 
 router = APIRouter(tags=["Citizen Portal & ICE"])
@@ -194,6 +195,8 @@ def _build_portal_payload(curp: str) -> Dict[str, Any]:
         "banderas_rojas": _build_red_flags(p, eventos),
         "daily_logs": daily_logs,
         "latest_wearable": vitals[0] if vitals else None,
+        "citas_proximas": get_patient_upcoming_appointments(curp.upper()),
+        "consentimiento": get_latest_consent(curp.upper()),
     }
 
 

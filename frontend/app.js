@@ -1019,7 +1019,7 @@ function waitForBackend() {
   }, 4000);
 
   function checkBackend() {
-    fetch(`${API}/api/patients/`)
+    fetch(`${API}/api/status`)
       .then(res => {
         if (res.ok) return res.json();
         throw new Error('not ready');
@@ -1029,11 +1029,11 @@ function waitForBackend() {
         if (statusEl) statusEl.textContent = '¡Listo!';
         setTimeout(() => {
           loadingScreen.classList.add('hidden');
-          loadPatients();
-          if (typeof loadActiveOperatorProfile === 'function') loadActiveOperatorProfile();
-          if (typeof loadAppointments === 'function') loadAppointments();
-          if (typeof refreshDashboard === 'function') refreshDashboard();
-          if (typeof checkLegalConsentGate === 'function') checkLegalConsentGate();
+          if (typeof initAuthGateOnStartup === 'function') {
+            initAuthGateOnStartup();
+          } else {
+            loadPatients();
+          }
         }, 600);
       })
       .catch(() => setTimeout(checkBackend, 1500));

@@ -15,6 +15,7 @@ import json
 import os
 import secrets
 import struct
+import time
 from typing import Any, Dict, Optional
 
 _ENC_PREFIX = "ENC1:"
@@ -211,3 +212,66 @@ def vault_status() -> Dict[str, Any]:
         "key_storage": "local-file" if not os.environ.get("MEDICAITION_MASTER_KEY") else "env",
         "key_path": _KEY_PATH if not os.environ.get("MEDICAITION_MASTER_KEY") else "ENV",
     }
+
+
+# ---------------------------------------------------------------------------
+# Credenciales locales (PIN PBKDF2-HMAC-SHA256) y Tokens de Sesión Firmados
+# ---------------------------------------------------------------------------
+
+def hash_pin(pin: str, salt: Optional[str] = None) -> str:
+    """Genera un hash PBKDF2-HMAC-SHA256 con sal aleatoria para PIN de acceso."""
+    clean = str(pin or "").strip()
+    if len(clean) < 4:
+        raise ValueError("El PIN debe tener al menos 4 caracteres.")
+    salt_hex = salt or secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", clean.encode("utf-8"), bytes.fromhex(salt_hex), 100_000)
+    return f"PBKDF2${salt_hex}${dk.hex()}"
+
+
+def verify_pin(pin: str, stored_hash: Optional[str]) -> bool:
+    """Verifica en tiempo constante un PIN contra su hash PBKDF2 almacenado."""
+    if not stored_hash or not str(stored_hash).startswith("PBKDF2$"):
+        return False
+    parts = str(stored_hash).split("$")
+    if len(parts) != 3:
+        return False
+    _, salt_hex, expected_hex = parts
+    try:
+        dk = hashlib.pbkdf2_hmac("sha256", str(pin or "").strip().encode("utf-8"), bytes.fromhex(salt_hex), 100_000)
+        return hmac.compare_digest(dk.hex(), expected_hex)
+    except Exception:
+        return False
+
+
+def sign_session_token(claims: Dict[str, Any], ttl_seconds: int = 43200) -> str:
+    """Firma un token de sesión compacto con HMAC-SHA256 usando subclave derivada."""
+    now = int(time.time())
+    payload = dict(claims)
+    payload["iat"] = now
+    payload["exp"] = now + max(60, int(ttl_seconds))
+    raw = json.dumps(payload, separators=(",", ":"), sort_keys=True, ensure_ascii=False).encode("utf-8")
+    b64 = base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    key = _derive_subkey(b"medicaition:session:v1")
+    sig = base64.urlsafe_b64encode(hmac.new(key, b64.encode("ascii"), hashlib.sha256).digest()).decode("ascii").rstrip("=")
+    return f"{b64}.{sig}"
+
+
+def verify_session_token(token: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Valida firma y expiración de un token de sesión emitido localmente."""
+    if not token or "." not in token:
+        return None
+    try:
+        b64, sig = token.strip().split(".", 1)
+        key = _derive_subkey(b"medicaition:session:v1")
+        expected_sig = base64.urlsafe_b64encode(
+            hmac.new(key, b64.encode("ascii"), hashlib.sha256).digest()
+        ).decode("ascii").rstrip("=")
+        if not hmac.compare_digest(sig, expected_sig):
+            return None
+        padded = b64 + "=" * (-len(b64) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8"))
+        if int(payload.get("exp", 0)) < int(time.time()):
+            return None
+        return payload
+    except Exception:
+        return None

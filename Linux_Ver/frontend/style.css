@@ -7403,3 +7403,189 @@ body.dark-theme .legal-doc-block p,
 body.dark-theme .legal-disclaimer-box p {
   color: #94a3b8;
 }
+
+/* =====================================================================
+   LOGIN POR ROLES Y PORTAL EXCLUSIVO DEL PACIENTE (SEPARACIÓN ESTRICTA)
+   ===================================================================== */
+.auth-login-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.14), transparent 45%),
+              radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.18), transparent 45%),
+              rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.auth-login-backdrop.open { display: flex; }
+
+.auth-login-card {
+  width: 100%;
+  max-width: 470px;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 22px;
+  padding: 26px;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+body.dark-theme .auth-login-card {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+.auth-brand-top {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.auth-brand-top h2 {
+  margin: 4px 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+}
+.auth-brand-top p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.auth-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 5px;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.15);
+  margin-bottom: 16px;
+}
+.auth-mode-tab {
+  border: none;
+  border-radius: 9px;
+  padding: 9px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+.auth-mode-tab.active {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+body.dark-theme .auth-mode-tab.active {
+  background: #2563eb;
+}
+
+.auth-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.auth-field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #475569;
+}
+body.dark-theme .auth-field label { color: #cbd5e1; }
+
+.auth-hint-pill {
+  font-size: 11.5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #1e40af;
+}
+body.dark-theme .auth-hint-pill { color: #93c5fd; }
+
+.auth-privacy-badge {
+  margin-top: 14px;
+  font-size: 11px;
+  text-align: center;
+  color: #64748b;
+}
+
+.topbar-logout-btn {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── PORTAL EXCLUSIVO DE PACIENTE ("MI SALUD HOY") ── */
+.patient-standalone-shell {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f0f9ff 0%, #f8fafc 45%, #ecfdf5 100%);
+  color: #0f172a;
+  padding: 20px 24px 48px;
+}
+body.dark-theme .patient-standalone-shell {
+  background: linear-gradient(180deg, #0b1120 0%, #0f172a 100%);
+  color: #f8fafc;
+}
+.patient-standalone-topbar {
+  max-width: 1100px;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+body.dark-theme .patient-standalone-topbar {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+.patient-standalone-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 18px;
+}
+.pat-card {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+}
+body.dark-theme .pat-card {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+.pat-card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.pat-consent-banner {
+  max-width: 1100px;
+  margin: 0 auto 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}

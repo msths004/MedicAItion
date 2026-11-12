@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5.5.0" />
+  <link rel="stylesheet" href="style.css?v=5.8.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -65,7 +65,7 @@
   </div>
 
   <!-- APP SHELL: SIDEBAR + MAIN WORKSPACE -->
-  <div class="app-shell">
+  <div class="app-shell" id="main-app-shell">
 
     <!-- LEFT SIDEBAR (Navigation) -->
     <aside class="app-sidebar">
@@ -189,6 +189,9 @@
           <button class="profile-settings-btn" onclick="switchMainTab('config')" title="Configuración del perfil y cédula profesional">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
+          <button class="profile-settings-btn" onclick="logoutActiveUser()" title="Cambiar de usuario o cerrar sesión" style="color:#ef4444;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
         </div>
       </div>
     </aside>
@@ -224,6 +227,10 @@
           <button type="button" class="topbar-role-pill" id="topbar-role-pill" onclick="switchMainTab('config')" title="Cambiar rol activo o cédula profesional (RBAC NOM-024)">
             <span class="role-dot"></span>
             <span id="topbar-role-label">Médico • CED-9482710</span>
+          </button>
+
+          <button type="button" class="topbar-logout-btn" id="topbar-logout-btn" onclick="logoutActiveUser()" title="Cambiar de usuario (Personal o Paciente)">
+            Cerrar Sesión
           </button>
 
           <!-- Notifications Bell -->
@@ -821,6 +828,15 @@
                   <button type="button" class="btn-outline-pill" onclick="testCurrentRoleBoundary()">🧪 Probar Restricción en Servidor</button>
                 </div>
                 <div id="cfg-rbac-test-result" class="calc-output" style="display:none; margin-top:10px;"></div>
+
+                <div class="cfg-perms-box" style="margin-top:14px;">
+                  <h4>🔐 PIN de Acceso del Rol Seleccionado</h4>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <input type="password" id="cfg-pin-current" class="input-field" placeholder="PIN actual (inicial: 1234)" style="flex:1; min-width:140px;" />
+                    <input type="password" id="cfg-pin-new" class="input-field" placeholder="Nuevo PIN (mín. 4 dígitos)" style="flex:1; min-width:140px;" />
+                    <button type="button" class="btn-outline-pill" onclick="updateSelectedRolePin()">Actualizar PIN</button>
+                  </div>
+                </div>
               </div>
 
               <!-- COLUMNA 2: Diagnóstico 100% Offline -->
@@ -1449,6 +1465,161 @@
     </div>
   </div>
 
+  <!-- =================================================================
+       PORTAL EXCLUSIVO DEL PACIENTE ("MI SALUD HOY" - SIN INTERFAZ CLÍNICA)
+       ================================================================= -->
+  <div id="patient-standalone-view" class="patient-standalone-shell" style="display:none;">
+    <header class="patient-standalone-topbar">
+      <div>
+        <div style="font-size:12px; font-weight:700; color:#0284c7;">CRUZ ROJA MÉRIDA · PORTAL PERSONAL DEL PACIENTE</div>
+        <h2 id="pat-welcome-name" style="margin:2px 0;">Hola</h2>
+        <div id="pat-welcome-meta" style="font-size:12.5px; color:#64748b;">Sesión protegida y cifrada para uso exclusivo del titular</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn-outline-pill" onclick="openStandaloneIcePassport()">🪪 Mi QR de Emergencia</button>
+        <button type="button" class="topbar-logout-btn" onclick="logoutActiveUser()">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <div id="pat-privacy-alert-banner" class="pat-consent-banner" style="display:none;">
+      <div>
+        <strong>🔒 Tu Aviso de Privacidad (México / Yucatán LFPDPPP)</strong><br />
+        <span>Revisa y confirma tus permisos sobre tus datos personales de salud, pasaporte de emergencia QR y chequeos desde casa.</span>
+      </div>
+      <a href="#pat-privacy-card" class="btn-dark-pill" style="text-decoration:none;">Revisar y Autorizar ↓</a>
+    </div>
+
+    <div class="patient-standalone-grid">
+      <section class="pat-card">
+        <h3>💊 Mis Medicinas de Hoy</h3>
+        <div id="pat-portal-meds"><p style="font-size:13px; color:#64748b;">Cargando tus horarios de medicinas...</p></div>
+      </section>
+
+      <section class="pat-card">
+        <h3>🚨 ¿Cuándo ir a Urgencias?</h3>
+        <p style="font-size:12.5px; color:#64748b; margin-top:0;">Acude de inmediato o llama al 911 si presentas alguno de estos síntomas:</p>
+        <div id="pat-portal-redflags"></div>
+      </section>
+
+      <section class="pat-card">
+        <h3>📅 Mis Próximas Citas</h3>
+        <div id="pat-portal-appointments"><p style="font-size:13px; color:#64748b;">Consultando tus citas...</p></div>
+      </section>
+
+      <section class="pat-card">
+        <h3>📝 Mi Chequeo en Casa</h3>
+        <p style="font-size:12px; color:#64748b; margin-top:0;">Registra cómo te sientes hoy para ayudar a tu seguimiento médico.</p>
+        <div class="manual-vitals-grid">
+          <label>Presión alta (Sistólica)<input type="number" id="pat-chk-bp-s" class="input-field" placeholder="120" /></label>
+          <label>Presión baja (Diastólica)<input type="number" id="pat-chk-bp-d" class="input-field" placeholder="80" /></label>
+          <label>Glucosa (mg/dL)<input type="number" id="pat-chk-gluc" class="input-field" placeholder="105" /></label>
+          <label>Temperatura (°C)<input type="number" step="0.1" id="pat-chk-temp" class="input-field" placeholder="36.5" /></label>
+          <label>¿Tomaste tus medicinas?<select id="pat-chk-med-ok" class="input-field"><option value="true">Sí, todas</option><option value="false">Aún no / Olvidé</option></select></label>
+          <label>¿Cómo te sientes hoy?<select id="pat-chk-mood" class="input-field"><option value="Bien">Bien</option><option value="Molestia leve">Molestia leve</option><option value="Síntomas importantes">Con molestias importantes</option></select></label>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <input type="text" id="pat-chk-note" class="input-field" placeholder="Escribe algún síntoma o comentario..." style="flex:1;" />
+          <button type="button" class="btn-primary-gradient" onclick="submitStandaloneDailyLog()">Guardar</button>
+        </div>
+        <h4 style="margin:14px 0 6px; font-size:13px;">Mis últimos chequeos</h4>
+        <div id="pat-portal-logs" style="font-size:12px;"></div>
+      </section>
+
+      <section class="pat-card" id="pat-privacy-card" style="grid-column: 1 / -1;">
+        <h3>🛡️ Mi Privacidad y Derechos ARCO (LFPDPPP México / Yucatán)</h3>
+        <p style="font-size:12.5px; color:#64748b; margin-top:0;">
+          Como titular de tus datos de salud, solo tú decides qué usos opcionales autorizar. Tus datos se guardan cifrados (`ChaCha20 + HMAC-SHA256`) y tu expediente médico se conserva mínimo 5 años por ley (NOM-004-SSA3-2012).
+        </p>
+        <div class="legal-consent-checks">
+          <label class="legal-check-item required">
+            <input type="checkbox" id="pat-priv-privacy" checked />
+            <div><strong>Aviso de Privacidad Integral (Obligatorio)</strong><small>Uso exclusivo para tu atención médica en Cruz Roja Mérida / red CLUES autorizada.</small></div>
+          </label>
+          <label class="legal-check-item required">
+            <input type="checkbox" id="pat-priv-clinical" checked />
+            <div><strong>Custodia Cifrada de Expediente Clínico (NOM-004)</strong><small>Tus recetas y consultas se protegen con cifrado en reposo.</small></div>
+          </label>
+          <label class="legal-check-item">
+            <input type="checkbox" id="pat-priv-ice" checked />
+            <div><strong>Pasaporte de Emergencia QR / ICE</strong><small>Permite a paramédicos ver alergias y tipo de sangre al escanear tu QR en urgencias.</small></div>
+          </label>
+          <label class="legal-check-item">
+            <input type="checkbox" id="pat-priv-wearables" checked />
+            <div><strong>Seguimiento de Chequeos en Casa y Signos Vitales</strong><small>Guarda tus mediciones diarias para que tu médico revise tu evolución.</small></div>
+          </label>
+          <label class="legal-check-item warning">
+            <input type="checkbox" id="pat-priv-cloud" />
+            <div><strong>(Opcional Art. 36 LFPDPPP) Permitir resúmenes con IA Externa en Nube</strong><small>Desactivado por defecto para que todo permanezca 100% local dentro de la clínica.</small></div>
+          </label>
+        </div>
+        <div class="legal-actions-bar">
+          <button type="button" class="btn-primary-gradient" onclick="saveStandalonePatientConsent()">Guardar mis Permisos</button>
+          <button type="button" class="btn-secondary-outline" onclick="downloadStandaloneArco()">Descargar mi Expediente (ARCO JSON)</button>
+          <button type="button" class="btn-danger-outline" onclick="revokeStandaloneOptionalConsent()">Revocar Usos Opcionales (QR / Nube)</button>
+        </div>
+        <div class="legal-proof-box" id="pat-priv-proof">Verificando estado de tu firma de privacidad...</div>
+      </section>
+    </div>
+  </div>
+
+  <!-- =================================================================
+       LOGIN UNIFICADO CON SEPARACIÓN DE ROLES (PERSONAL VS PACIENTE)
+       ================================================================= -->
+  <div id="auth-login-overlay" class="auth-login-backdrop">
+    <div class="auth-login-card">
+      <div class="auth-brand-top">
+        <div style="font-size:28px;">🏥</div>
+        <h2>MedicAItion — Acceso Seguro</h2>
+        <p>Cruz Roja Mérida · Separación estricta de roles (NOM-024 / LFPDPPP)</p>
+      </div>
+
+      <div class="auth-mode-tabs">
+        <button type="button" id="auth-tab-staff" class="auth-mode-tab active" onclick="switchAuthLoginTab('staff')">🩺 Personal Clínico</button>
+        <button type="button" id="auth-tab-patient" class="auth-mode-tab" onclick="switchAuthLoginTab('patient')">👤 Soy Paciente</button>
+      </div>
+
+      <div id="auth-panel-staff" class="auth-form-stack">
+        <div class="auth-field">
+          <label for="login-staff-role">Perfil / Rol Operativo</label>
+          <select id="login-staff-role" class="input-field">
+            <option value="Médico">Médico (Consulta, IA, Receta NOM-004)</option>
+            <option value="Enfermería / Triaje">Enfermería / Triaje (Vitales y Triage)</option>
+            <option value="Recepción">Recepción (Agenda, Registro y Firma Paciente)</option>
+            <option value="Administrador">Administrador (Seguridad, Bitácora NOM-024)</option>
+          </select>
+        </div>
+        <div class="auth-field">
+          <label for="login-staff-pin">PIN de Acceso Local</label>
+          <input type="password" id="login-staff-pin" class="input-field" placeholder="Ingresa tu PIN (inicial: 1234)" value="1234" onkeydown="if(event.key==='Enter') submitStaffLogin();" />
+        </div>
+        <div class="auth-hint-pill">
+          🔐 <strong>Acceso Clínico:</strong> el personal firma compromiso de secreto profesional NOM-024; el consentimiento de privacidad se recaba del paciente. <em>(PIN inicial editable en Configuración: 1234)</em>
+        </div>
+        <button type="button" class="btn-primary-gradient" style="width:100%; padding:11px;" onclick="submitStaffLogin()">Ingresar como Personal de Salud</button>
+      </div>
+
+      <div id="auth-panel-patient" class="auth-form-stack" style="display:none;">
+        <div class="auth-field">
+          <label for="login-patient-curp">Tu CURP o ID de Paciente</label>
+          <input type="text" id="login-patient-curp" class="input-field" placeholder="Ej. MOBK070228HYNRTVA3" style="text-transform:uppercase;" />
+        </div>
+        <div class="auth-field">
+          <label for="login-patient-secret">Fecha de Nacimiento (AAAA-MM-DD) o Folio</label>
+          <input type="text" id="login-patient-secret" class="input-field" placeholder="Ej. 2007-02-28 ó 0001" onkeydown="if(event.key==='Enter') submitPatientLogin();" />
+        </div>
+        <div class="auth-hint-pill">
+          🛡️ <strong>Portal Básico Ciudadano:</strong> solo verás tus medicinas, citas, chequeo en casa, QR de emergencia y tus permisos ARCO. Nunca tendrás acceso a datos de otros pacientes.
+        </div>
+        <button type="button" class="btn-primary-gradient" style="width:100%; padding:11px;" onclick="submitPatientLogin()">Entrar a Mi Salud Hoy</button>
+      </div>
+
+      <div id="auth-login-error" style="display:none; margin-top:10px; padding:8px 10px; border-radius:10px; background:rgba(239,68,68,0.12); color:#dc2626; font-size:12px; font-weight:700;"></div>
+      <div class="auth-privacy-badge">
+        Cifrado ChaCha20 + HMAC-SHA256 · Operación Offline Local · Yucatán / México
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: AGENDAR NUEVA CITA -->
   <div class="llm-modal-overlay" id="appointment-modal-overlay">
     <div class="llm-modal appointment-modal-box">
@@ -1706,36 +1877,32 @@
     </div>
   </div>
 
-  <!-- MODAL DE PERMISO Y AVISO LEGAL INICIAL (LFPDPPP MÉXICO / YUCATÁN) -->
+  <!-- MODAL DE CONFIDENCIALIDAD Y SECRETO PROFESIONAL DEL PERSONAL (NOM-024 / LGS) -->
   <div class="llm-modal-overlay" id="legal-gate-overlay">
     <div class="llm-modal wearable-modal-box" style="max-width:620px;">
-      <div class="modal-top-badge">⚖️</div>
-      <h2>Permiso de Uso de Datos y Marco Legal</h2>
+      <div class="modal-top-badge">🩺⚖️</div>
+      <h2>Acuerdo de Confidencialidad y Secreto Profesional (Personal Clínico)</h2>
       <p class="modal-sub">
-        Operación regulada bajo leyes de <strong>México y el Estado de Yucatán</strong> (<em>LFPDPPP, LGPDPPSO, NOM-004-SSA3-2012 y NOM-024-SSA3-2012</em>), con arquitectura preparada para expansión nacional e internacional.
+        Operación institucional regulada bajo leyes de <strong>México y el Estado de Yucatán</strong> (<em>NOM-024-SSA3-2012, NOM-004-SSA3-2012, LGS y LFPDPPP</em>). El consentimiento de privacidad de los datos de salud se recaba directamente del paciente o en su registro.
       </p>
 
       <div class="legal-gate-highlight">
-        <strong>🔐 Seguridad del Paciente como Prioridad #1:</strong> Toda información clínica sensible se almacena bajo cifrado autenticado en reposo (<strong>ChaCha20 + HMAC-SHA256</strong>), inmutabilidad documental NOM-004 y guardián farmacológico de alergias/triaje.
+        <strong>🔐 Seguridad del Paciente y Trazabilidad NOM-024:</strong> Todos los expedientes operan bajo cifrado autenticado (<strong>ChaCha20 + HMAC-SHA256</strong>), sellos de integridad documental y bitácora auditable por usuario y cédula profesional.
       </div>
 
       <div class="legal-checks-stack" style="margin-top:12px;">
         <label class="legal-chk-row">
           <input type="checkbox" id="gate-chk-privacy" checked />
-          <span>He leído y acepto el <strong>Aviso de Privacidad Integral (México / Yucatán)</strong> y el tratamiento cifrado de datos clínicos sensibles.</span>
+          <span>Me comprometo a guardar <strong>secreto profesional y confidencialidad estricta</strong> sobre todos los datos clínicos cifrados que consulte en mi turno.</span>
         </label>
         <label class="legal-chk-row">
           <input type="checkbox" id="gate-chk-responsibility" checked />
-          <span>Comprendo que MedicAItion es un <strong>copiloto CDSS de apoyo clínico</strong>; el criterio médico y la prescripción corresponden al profesional autorizado.</span>
-        </label>
-        <label class="legal-chk-row">
-          <input type="checkbox" id="gate-chk-cloud" />
-          <span><em>(Opcional)</em> Autorizo envío a <strong>IA en Nube externa</strong> cuando tenga API Key; si no se marca, todo el procesamiento permanecerá <strong>100% local offline</strong>.</span>
+          <span>Comprendo que MedicAItion es un <strong>copiloto CDSS de apoyo clínico</strong>; el criterio diagnóstico y la prescripción corresponden al profesional autorizado bajo su cédula.</span>
         </label>
       </div>
 
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-        <button type="button" class="llm-modal-close" style="flex:1; background:#0f172a;" onclick="acceptLegalGateConsent()">✅ Acepto y Autorizo Datos Cifrados</button>
+        <button type="button" class="llm-modal-close" style="flex:1; background:#0f172a;" onclick="acceptLegalGateConsent()">✅ Aceptar Compromiso NOM-024</button>
         <button type="button" class="btn-outline-pill" onclick="closeLegalConsentGate(); switchMainTab('legal');">📄 Ver Apartado Legal Completo</button>
       </div>
     </div>
@@ -1748,11 +1915,11 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.7.0"></script>
-  <script src="overlays.js?v=5.7.0"></script>
-  <script src="modals.js?v=5.7.0"></script>
-  <script src="calendar.js?v=5.7.0"></script>
-  <script src="clinical_ops.js?v=5.7.0"></script>
-  <script src="app.js?v=5.7.0"></script>
+  <script src="state.js?v=5.8.0"></script>
+  <script src="overlays.js?v=5.8.0"></script>
+  <script src="modals.js?v=5.8.0"></script>
+  <script src="calendar.js?v=5.8.0"></script>
+  <script src="clinical_ops.js?v=5.8.0"></script>
+  <script src="app.js?v=5.8.0"></script>
 </body>
 </html>

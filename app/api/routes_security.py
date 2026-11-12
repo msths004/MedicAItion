@@ -80,6 +80,20 @@ ROLE_PERMISSIONS = {
         "manage_config": True,
         "delete_patient": True,
     },
+    "Paciente": {
+        "view_clinical": False,
+        "register_patient": False,
+        "manage_appointments": False,
+        "record_vitals": False,
+        "sign_consultation": False,
+        "add_addendum": False,
+        "prescribe": False,
+        "read_audit": False,
+        "manage_config": False,
+        "delete_patient": False,
+        "patient_self_portal": True,
+        "patient_self_privacy": True,
+    },
 }
 
 _PERMISSION_LABELS = {
@@ -112,6 +126,8 @@ def normalize_role(raw_role: str | None) -> str:
         return "Recepción"
     if "admin" in norm or "director" in norm:
         return "Administrador"
+    if "pacient" in norm or "ciudadan" in norm:
+        return "Paciente"
     return raw_role.strip()
 
 

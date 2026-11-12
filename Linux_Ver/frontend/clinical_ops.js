@@ -1074,6 +1074,7 @@ function _syncOperatorUi() {
   }
 
   _renderGreeting();
+  if (typeof _applyStaffRbacUi === 'function') _applyStaffRbacUi(role, perms);
 }
 
 async function loadSecurityConfigView() {
@@ -1277,23 +1278,19 @@ const _LegalState = {
 };
 
 async function checkLegalConsentGate() {
+  // Solo verifica compromiso de confidencialidad cuando hay sesión de Personal Clínico
+  if (!AppState.session || AppState.session.userType !== 'staff') return;
   try {
-    const res = await fetch(`${API}/api/legal/consent/SYSTEM`);
+    const res = await fetch(`${API}/api/auth/roles`);
     if (!res.ok) return;
     const data = await res.json();
-    _LegalState.systemConsent = data.consent || null;
-    const isSigned = !!(
-      data.has_consent &&
-      data.consent &&
-      data.consent.status === 'active' &&
-      data.consent.accepted_privacy_notice &&
-      data.consent.accepted_clinical_processing
-    );
-    if (!isSigned) {
+    const role = AppState.operatorProfile?.role || AppState.session?.role || 'Médico';
+    const match = (data.staff_roles || []).find(r => r.role === role);
+    if (match && !match.confidentiality_accepted) {
       openLegalConsentGate();
     }
   } catch (e) {
-    console.warn('No se pudo verificar el consentimiento legal inicial:', e);
+    console.warn('No se pudo verificar confidencialidad del operador:', e);
   }
 }
 
@@ -1306,41 +1303,32 @@ function closeLegalConsentGate() {
 }
 
 async function acceptLegalGateConsent() {
-  const privacyOk = !!document.getElementById('gate-chk-privacy')?.checked;
-  const respOk    = !!document.getElementById('gate-chk-responsibility')?.checked;
-  const cloudOk   = !!document.getElementById('gate-chk-cloud')?.checked;
+  const secretOk = !!document.getElementById('gate-chk-privacy')?.checked;
+  const cdssOk   = !!document.getElementById('gate-chk-responsibility')?.checked;
 
-  if (!privacyOk || !respOk) {
-    return showToast('Debes aceptar el Aviso de Privacidad y la responsabilidad clínica CDSS para continuar.', 'error');
+  if (!secretOk || !cdssOk) {
+    return showToast('Debes aceptar el secreto profesional NOM-024 y la responsabilidad clínica CDSS para operar.', 'error');
   }
 
-  const signer =
-    document.getElementById('active-operator-name')?.textContent?.trim() ||
-    'Médico Responsable / Operador';
+  const role = AppState.operatorProfile?.role || AppState.session?.role || 'Médico';
+  const fullName = AppState.operatorProfile?.full_name || role;
 
   try {
-    const res = await fetch(`${API}/api/legal/consent/SYSTEM`, {
+    const res = await fetch(`${API}/api/auth/staff-confidentiality`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accepted_privacy_notice: true,
-        accepted_clinical_processing: true,
-        accepted_ai_local_processing: true,
-        accepted_cloud_llm_transfer: cloudOk,
-        accepted_ice_qr_emergency: true,
-        accepted_wearables_monitoring: true,
-        signed_by_name: signer,
-        signer_role: 'operator',
+        role,
+        full_name: fullName,
+        accepted_confidentiality: true,
+        accepted_cdss_responsibility: true,
       }),
     });
     if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    _LegalState.systemConsent = data.consent || null;
     closeLegalConsentGate();
-    showToast('✅ Consentimiento legal registrado y datos cifrados activos.', 'success');
-    if (AppState.mainTab === 'legal') loadLegalView();
+    showToast('✅ Compromiso de confidencialidad NOM-024 registrado para ' + role, 'success');
   } catch (err) {
-    showToast('Error al guardar consentimiento legal: ' + err.message, 'error');
+    showToast('Error al registrar compromiso: ' + err.message, 'error');
   }
 }
 
@@ -1594,5 +1582,439 @@ async function revokeTargetConsent() {
     await loadLegalView();
   } catch (err) {
     showToast('Error al revocar consentimiento: ' + err.message, 'error');
+  }
+}
+
+
+// =====================================================================
+// LOGIN POR ROLES Y SEPARACIÓN ESTRICTA: PERSONAL CLÍNICO VS. PACIENTE
+// =====================================================================
+
+function _persistSession(sess) {
+  AppState.session = sess;
+  try {
+    sessionStorage.setItem('medicaition_session_v1', JSON.stringify(sess));
+  } catch (_) {}
+}
+
+function openAuthLoginModal() {
+  document.getElementById('main-app-shell')?.style.setProperty('display', 'none');
+  document.getElementById('patient-standalone-view')?.style.setProperty('display', 'none');
+  const errEl = document.getElementById('auth-login-error');
+  if (errEl) errEl.style.display = 'none';
+  document.getElementById('auth-login-overlay')?.classList.add('open');
+}
+
+function closeAuthLoginModal() {
+  document.getElementById('auth-login-overlay')?.classList.remove('open');
+}
+
+function switchAuthLoginTab(mode) {
+  const isPatient = mode === 'patient';
+  document.getElementById('auth-tab-staff')?.classList.toggle('active', !isPatient);
+  document.getElementById('auth-tab-patient')?.classList.toggle('active', isPatient);
+  const pStaff = document.getElementById('auth-panel-staff');
+  const pPat = document.getElementById('auth-panel-patient');
+  if (pStaff) pStaff.style.display = isPatient ? 'none' : 'flex';
+  if (pPat) pPat.style.display = isPatient ? 'flex' : 'none';
+  const errEl = document.getElementById('auth-login-error');
+  if (errEl) errEl.style.display = 'none';
+}
+
+function initAuthGateOnStartup() {
+  const sess = AppState.session;
+  if (sess && sess.authenticated && sess.token) {
+    if (sess.userType === 'patient' && sess.patientCurp) {
+      _enterPatientStandaloneWorkspace(sess);
+      return;
+    }
+    if (sess.userType === 'staff') {
+      _enterStaffWorkspace(sess);
+      return;
+    }
+  }
+  openAuthLoginModal();
+}
+
+async function submitStaffLogin() {
+  const role = document.getElementById('login-staff-role')?.value || 'Médico';
+  const pin = document.getElementById('login-staff-pin')?.value?.trim() || '';
+  const errEl = document.getElementById('auth-login-error');
+  if (errEl) errEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API}/api/auth/staff-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, pin }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || 'Credenciales inválidas');
+
+    const sess = {
+      authenticated: true,
+      userType: 'staff',
+      token: data.token,
+      role: data.profile?.role || role,
+      permissions: data.permissions || {},
+      requiresConfidentialityAck: !!data.requires_confidentiality_ack,
+    };
+    AppState.operatorProfile = data.profile || AppState.operatorProfile;
+    _persistSession(sess);
+    closeAuthLoginModal();
+    await _enterStaffWorkspace(sess);
+    showToast(`Bienvenido, ${AppState.operatorProfile.full_name} (${sess.role})`, 'success');
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = err.message || 'Error al iniciar sesión';
+      errEl.style.display = 'block';
+    }
+  }
+}
+
+async function submitPatientLogin() {
+  const curp = (document.getElementById('login-patient-curp')?.value || '').trim().toUpperCase();
+  const verification_secret = (document.getElementById('login-patient-secret')?.value || '').trim();
+  const errEl = document.getElementById('auth-login-error');
+  if (errEl) errEl.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API}/api/auth/patient-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ curp, verification_secret }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || 'CURP o fecha/folio incorrecto');
+
+    const sess = {
+      authenticated: true,
+      userType: 'patient',
+      token: data.token,
+      role: 'Paciente',
+      patientCurp: data.patient?.curp || curp,
+      patientName: data.patient?.nombre_completo || curp,
+      permissions: data.permissions || {},
+    };
+    _persistSession(sess);
+    closeAuthLoginModal();
+    await _enterPatientStandaloneWorkspace(sess);
+    showToast(`Bienvenido a Mi Salud Hoy, ${data.patient?.nombre_corto || curp}`, 'success');
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = err.message || 'No se pudo iniciar sesión';
+      errEl.style.display = 'block';
+    }
+  }
+}
+
+function logoutActiveUser() {
+  try { sessionStorage.removeItem('medicaition_session_v1'); } catch (_) {}
+  AppState.session = {
+    authenticated: false,
+    userType: null,
+    token: null,
+    role: null,
+    patientCurp: null,
+    patientName: null,
+    permissions: {},
+  };
+  document.body.classList.remove('mode-patient-portal');
+  closeLegalConsentGate();
+  openAuthLoginModal();
+}
+
+async function _enterStaffWorkspace(sess) {
+  document.body.classList.remove('mode-patient-portal');
+  document.getElementById('patient-standalone-view')?.style.setProperty('display', 'none');
+  document.getElementById('main-app-shell')?.style.removeProperty('display');
+
+  if (typeof loadActiveOperatorProfile === 'function') await loadActiveOperatorProfile();
+  _applyStaffRbacUi(sess.role || AppState.operatorProfile?.role, sess.permissions);
+
+  const perms = sess.permissions || _Sprint4State.permissionsMatrix[sess.role] || {};
+  if (perms.view_clinical !== false) {
+    if (typeof loadPatients === 'function') loadPatients();
+    if (typeof refreshDashboard === 'function') refreshDashboard();
+  } else {
+    // Recepción: iniciar directo en Agenda/Pacientes sin vistas clínicas
+    if (typeof loadPatients === 'function') loadPatients();
+    if (typeof switchMainTab === 'function') switchMainTab('agenda');
+  }
+  if (typeof loadAppointments === 'function') loadAppointments();
+  if (sess.requiresConfidentialityAck) {
+    openLegalConsentGate();
+  } else {
+    checkLegalConsentGate();
+  }
+}
+
+function _applyStaffRbacUi(role, permsOverride) {
+  const r = role || AppState.operatorProfile?.role || 'Médico';
+  const perms = (permsOverride && Object.keys(permsOverride).length ? permsOverride : null)
+    || _Sprint4State.permissionsMatrix[r]
+    || {};
+
+  const setShow = (id, show) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  };
+
+  setShow('nav-btn-consulta', perms.sign_consultation !== false || perms.record_vitals === true);
+  setShow('nav-btn-ia-tools', perms.view_clinical !== false);
+  setShow('nav-btn-reportes', perms.view_clinical !== false);
+  setShow('nav-btn-config', perms.manage_config !== false);
+  setShow('nav-btn-wearables', perms.record_vitals !== false || perms.view_clinical !== false);
+  // Legal está visible para que Médico/Recepción recaben consentimiento y Admin audite
+  setShow('nav-btn-legal', true);
+
+  if (r === 'Recepción') {
+    setShow('nav-btn-dashboard', false);
+    setShow('nav-btn-consulta', false);
+    setShow('nav-btn-clinica-exp', false);
+  } else {
+    setShow('nav-btn-dashboard', true);
+    setShow('nav-btn-clinica-exp', true);
+  }
+}
+
+async function updateSelectedRolePin() {
+  const role = document.getElementById('cfg-role-name')?.value || _Sprint4State.selectedRole || 'Médico';
+  const current_pin = document.getElementById('cfg-pin-current')?.value?.trim() || '';
+  const new_pin = document.getElementById('cfg-pin-new')?.value?.trim() || '';
+  if (!current_pin || new_pin.length < 4) {
+    return showToast('Ingresa el PIN actual y un nuevo PIN de al menos 4 dígitos.', 'error');
+  }
+  try {
+    const res = await fetch(`${API}/api/auth/staff-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, current_pin, new_pin }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || 'No se pudo actualizar el PIN');
+    document.getElementById('cfg-pin-current').value = '';
+    document.getElementById('cfg-pin-new').value = '';
+    showToast(`🔐 PIN actualizado para el rol ${role}`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// ── PORTAL EXCLUSIVO DEL PACIENTE (AISLADO DEL ENTORNO MÉDICO) ──
+async function _enterPatientStandaloneWorkspace(sess) {
+  document.body.classList.add('mode-patient-portal');
+  document.getElementById('main-app-shell')?.style.setProperty('display', 'none');
+  document.getElementById('patient-standalone-view')?.style.setProperty('display', 'block');
+  closeLegalConsentGate();
+  await loadStandalonePatientPortal(sess.patientCurp);
+}
+
+async function loadStandalonePatientPortal(curpOverride) {
+  const curp = (curpOverride || AppState.session?.patientCurp || '').toUpperCase();
+  if (!curp) return;
+
+  try {
+    const res = await fetch(`${API}/api/patient-portal/${encodeURIComponent(curp)}`);
+    if (res.status === 401 || res.status === 403) {
+      logoutActiveUser();
+      return;
+    }
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    _setText('pat-welcome-name', `Hola, ${data.nombre_completo || curp}`);
+    _setText(
+      'pat-welcome-meta',
+      `CURP: ${curp} · Tipo de sangre: ${data.tipo_sangre || 'No especificado'} · Tu sesión está aislada y cifrada`
+    );
+
+    // 1. Medicinas de hoy en formato simple
+    const medsEl = document.getElementById('pat-portal-meds');
+    if (medsEl) {
+      let slotsHtml = '';
+      for (const [slot, items] of Object.entries(data.horario_visual || {})) {
+        if (!items.length) continue;
+        slotsHtml += `
+          <div class="portal-slot-box" style="margin-bottom:8px;">
+            <h5 style="margin:0 0 4px;">${_opsEsc(slot)}</h5>
+            <ul style="margin:0; padding-left:18px; font-size:13px;">
+              ${items.map(m => `<li><strong>${_opsEsc(m.nombre)}</strong> — ${_opsEsc(m.dosis)} (${_opsEsc(m.duracion || 'según indicación')})</li>`).join('')}
+            </ul>
+          </div>`;
+      }
+      medsEl.innerHTML = (slotsHtml || '<p style="font-size:13px; color:#64748b;">No tienes medicamentos activos registrados en este momento.</p>') +
+        `<div style="margin-top:8px; font-size:12.5px; color:#475569;"><strong>Indicaciones:</strong> ${_opsEsc(data.receta_amigable || '')}</div>`;
+    }
+
+    // 2. Banderas rojas
+    const flagsEl = document.getElementById('pat-portal-redflags');
+    if (flagsEl) {
+      flagsEl.innerHTML = `<ul style="margin:0; padding-left:18px; font-size:13px; color:#b91c1c;">
+        ${(data.banderas_rojas || []).map(f => `<li style="margin-bottom:4px;">${_opsEsc(f)}</li>`).join('')}
+      </ul>`;
+    }
+
+    // 3. Próximas citas
+    const apptsEl = document.getElementById('pat-portal-appointments');
+    if (apptsEl) {
+      const citas = data.citas_proximas || [];
+      apptsEl.innerHTML = citas.length
+        ? citas.map(c => `
+            <div style="padding:8px 10px; border-radius:10px; border:1px solid rgba(148,163,184,0.25); margin-bottom:8px; font-size:12.5px;">
+              <strong>📅 ${_opsEsc(c.date)} · ${_opsEsc(c.time)}</strong> — ${_opsEsc(c.reason)}<br/>
+              <span style="color:#64748b;">Con ${_opsEsc(c.doctor)} · Estado: ${_opsEsc(c.status)}</span>
+            </div>`).join('')
+        : '<p style="font-size:13px; color:#64748b;">No tienes citas próximas registradas.</p>';
+    }
+
+    // 4. Últimos chequeos
+    const logsEl = document.getElementById('pat-portal-logs');
+    if (logsEl) {
+      const logs = (data.daily_logs || []).slice(0, 5);
+      logsEl.innerHTML = logs.length
+        ? logs.map(l => `
+            <div class="portal-log-row ${l.alert_flag ? 'is-alert' : ''}" style="margin-bottom:6px;">
+              <strong>${_opsEsc((l.recorded_at || '').slice(0, 16).replace('T', ' '))}</strong> —
+              Presión ${l.systolic_bp ?? '--'}/${l.diastolic_bp ?? '--'} · Glucosa ${l.glucose_mg_dl ?? '--'} ·
+              Temp ${l.temperature_c ?? '--'} °C · Medicinas: ${l.medication_taken ? '✅' : '❌'}
+              ${l.alert_flag && l.alert_message ? `<br/>⚠️ ${_opsEsc(l.alert_message)}` : ''}
+            </div>`).join('')
+        : '<p style="color:#64748b;">Aún no has guardado chequeos en casa.</p>';
+    }
+
+    // 5. Consentimiento propio LFPDPPP
+    const c = data.consentimiento;
+    const hasPrivacy = !!(c && c.status === 'active' && c.accepted_privacy_notice);
+    const banner = document.getElementById('pat-privacy-alert-banner');
+    if (banner) banner.style.display = hasPrivacy ? 'none' : 'flex';
+
+    document.getElementById('pat-priv-privacy').checked   = c ? !!c.accepted_privacy_notice : true;
+    document.getElementById('pat-priv-clinical').checked  = c ? !!c.accepted_clinical_processing : true;
+    document.getElementById('pat-priv-ice').checked       = c ? !!c.accepted_ice_qr_emergency : true;
+    document.getElementById('pat-priv-wearables').checked = c ? !!c.accepted_wearables_monitoring : true;
+    document.getElementById('pat-priv-cloud').checked     = c ? !!c.accepted_cloud_llm_transfer : false;
+
+    const proofEl = document.getElementById('pat-priv-proof');
+    if (proofEl) {
+      proofEl.innerHTML = c
+        ? `<strong>Estado:</strong> ${c.status === 'active' ? '🟢 Permisos Activos' : '🟠 Usos Opcionales Revocados (Custodia NOM-004)'} · <strong>Sello SHA-256:</strong> <code>${_opsEsc(c.proof_hash || '—')}</code>`
+        : 'Aún no has confirmado tu Aviso de Privacidad. Revisa las opciones de arriba y presiona "Guardar mis Permisos".';
+    }
+  } catch (err) {
+    showToast('Error cargando tu portal: ' + err.message, 'error');
+  }
+}
+
+async function submitStandaloneDailyLog() {
+  const curp = AppState.session?.patientCurp;
+  if (!curp) return;
+  const payload = {
+    systolic_bp: parseFloat(document.getElementById('pat-chk-bp-s')?.value) || null,
+    diastolic_bp: parseFloat(document.getElementById('pat-chk-bp-d')?.value) || null,
+    glucose_mg_dl: parseFloat(document.getElementById('pat-chk-gluc')?.value) || null,
+    temperature_c: parseFloat(document.getElementById('pat-chk-temp')?.value) || null,
+    medication_taken: document.getElementById('pat-chk-med-ok')?.value === 'true',
+    mood_or_pain: document.getElementById('pat-chk-mood')?.value || 'Bien',
+    symptoms_note: document.getElementById('pat-chk-note')?.value?.trim() || null,
+  };
+  try {
+    const res = await fetch(`${API}/api/patient-portal/${encodeURIComponent(curp)}/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(out.detail || 'Error al guardar chequeo');
+    document.getElementById('pat-chk-note').value = '';
+    showToast(out.alert_flag ? `⚠️ Guardado con alerta: ${out.alert_message}` : '✅ Tu chequeo de hoy fue guardado', out.alert_flag ? 'error' : 'success');
+    await loadStandalonePatientPortal(curp);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function saveStandalonePatientConsent() {
+  const curp = AppState.session?.patientCurp;
+  if (!curp) return;
+  const privacy = !!document.getElementById('pat-priv-privacy')?.checked;
+  const clinical = !!document.getElementById('pat-priv-clinical')?.checked;
+  if (!privacy || !clinical) {
+    return showToast('El Aviso de Privacidad y el expediente clínico NOM-004 son necesarios para tu atención.', 'error');
+  }
+  try {
+    const res = await fetch(`${API}/api/legal/consent/${encodeURIComponent(curp)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accepted_privacy_notice: privacy,
+        accepted_clinical_processing: clinical,
+        accepted_ai_local_processing: true,
+        accepted_ice_qr_emergency: !!document.getElementById('pat-priv-ice')?.checked,
+        accepted_wearables_monitoring: !!document.getElementById('pat-priv-wearables')?.checked,
+        accepted_cloud_llm_transfer: !!document.getElementById('pat-priv-cloud')?.checked,
+        signed_by_name: AppState.session?.patientName || curp,
+        signer_role: 'patient',
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showToast('✅ Tus permisos LFPDPPP han sido guardados y sellados', 'success');
+    await loadStandalonePatientPortal(curp);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function downloadStandaloneArco() {
+  const curp = AppState.session?.patientCurp;
+  if (!curp) return;
+  try {
+    const res = await fetch(`${API}/api/legal/arco/${encodeURIComponent(curp)}/export?download=true`);
+    if (!res.ok) throw new Error(await res.text());
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Mi_Expediente_ARCO_${curp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📦 Tu expediente ARCO fue descargado', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function revokeStandaloneOptionalConsent() {
+  const curp = AppState.session?.patientCurp;
+  if (!curp) return;
+  if (!confirm('¿Desactivar tu QR de emergencias y envío opcional a nube? Tus consultas previas seguirán resguardadas bajo NOM-004 por seguridad clínica.')) {
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/legal/consent/${encodeURIComponent(curp)}/revoke`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        revoke_ice_qr: true,
+        revoke_cloud_llm: true,
+        revoke_wearables: false,
+        reason: 'Decisión del titular desde Portal Paciente',
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showToast('🔒 Permisos opcionales revocados', 'info');
+    await loadStandalonePatientPortal(curp);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openStandaloneIcePassport() {
+  const curp = AppState.session?.patientCurp;
+  if (!curp) return;
+  if (typeof openIcePassportModal === 'function') {
+    openIcePassportModal(curp);
+  } else {
+    window.open(`/ice/${encodeURIComponent(curp)}`, '_blank');
   }
 }

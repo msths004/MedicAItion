@@ -34,8 +34,10 @@ from app.core.crypto_vault import (
     compute_consulta_seal,
     decrypt_text,
     encrypt_text,
+    hash_pin,
     is_encrypted,
     verify_consulta_seal,
+    verify_pin,
 )
 
 load_dotenv()
@@ -339,14 +341,18 @@ class PractitionerProfile(Base):
     """
     __tablename__ = "practitioner_profiles"
 
-    id                 = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    role               = Column(String, nullable=False, unique=True, index=True)
-    full_name          = Column(String, nullable=False)
-    cedula_profesional = Column(String, nullable=True)
-    specialty          = Column(String, nullable=True)
-    clues_institucion  = Column(String, nullable=True, default="YUC-CR-001")
-    is_active          = Column(Boolean, default=False)
-    updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id                        = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    role                      = Column(String, nullable=False, unique=True, index=True)
+    full_name                 = Column(String, nullable=False)
+    cedula_profesional        = Column(String, nullable=True)
+    specialty                 = Column(String, nullable=True)
+    clues_institucion         = Column(String, nullable=True, default="YUC-CR-001")
+    pin_hash                  = Column(String, nullable=True)
+    confidentiality_accepted  = Column(Boolean, default=False)
+    confidentiality_accepted_at = Column(DateTime, nullable=True)
+    confidentiality_hash      = Column(String, nullable=True)
+    is_active                 = Column(Boolean, default=False)
+    updated_at                = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class ConsentRecord(Base):
@@ -526,9 +532,22 @@ def create_tables():
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE patients ADD COLUMN tipo_sangre TEXT;"))
 
+    if "practitioner_profiles" in inspector.get_table_names():
+        pp_columns = [col["name"] for col in inspector.get_columns("practitioner_profiles")]
+        with engine.begin() as conn:
+            if "pin_hash" not in pp_columns:
+                conn.execute(text("ALTER TABLE practitioner_profiles ADD COLUMN pin_hash TEXT;"))
+            if "confidentiality_accepted" not in pp_columns:
+                conn.execute(text("ALTER TABLE practitioner_profiles ADD COLUMN confidentiality_accepted BOOLEAN DEFAULT 0;"))
+            if "confidentiality_accepted_at" not in pp_columns:
+                conn.execute(text("ALTER TABLE practitioner_profiles ADD COLUMN confidentiality_accepted_at DATETIME;"))
+            if "confidentiality_hash" not in pp_columns:
+                conn.execute(text("ALTER TABLE practitioner_profiles ADD COLUMN confidentiality_hash TEXT;"))
+
     _seed_sprint2_defaults()
     _seed_sprint3_defaults()
     _seed_sprint4_defaults()
+    _ensure_staff_default_pins()
     migrate_encrypt_existing_records()
     print("[DB] Tablas verificadas/creadas correctamente.")
 
@@ -1727,6 +1746,13 @@ def _profile_to_dict(p: PractitionerProfile) -> dict:
         "cedula_profesional": p.cedula_profesional or "",
         "specialty": p.specialty or "",
         "clues_institucion": p.clues_institucion or "YUC-CR-001",
+        "confidentiality_accepted": bool(getattr(p, "confidentiality_accepted", False)),
+        "confidentiality_accepted_at": (
+            p.confidentiality_accepted_at.isoformat()
+            if getattr(p, "confidentiality_accepted_at", None)
+            else None
+        ),
+        "has_pin": bool(getattr(p, "pin_hash", None)),
         "is_active": bool(p.is_active),
         "updated_at": p.updated_at.isoformat() if p.updated_at else None,
     }
@@ -1737,6 +1763,7 @@ def _seed_sprint4_defaults():
     db = SessionLocal()
     try:
         if db.query(PractitionerProfile).count() == 0:
+            default_pin_hash = hash_pin("1234")
             seeds = [
                 PractitionerProfile(
                     role="Médico",
@@ -1744,6 +1771,7 @@ def _seed_sprint4_defaults():
                     cedula_profesional="CED-9482710",
                     specialty="Medicina General / Urgencias",
                     clues_institucion="YUC-CR-001",
+                    pin_hash=default_pin_hash,
                     is_active=True,
                 ),
                 PractitionerProfile(
@@ -1752,6 +1780,7 @@ def _seed_sprint4_defaults():
                     cedula_profesional="ENF-7319042",
                     specialty="Enfermería y Triaje Hospitalario",
                     clues_institucion="YUC-CR-001",
+                    pin_hash=default_pin_hash,
                     is_active=False,
                 ),
                 PractitionerProfile(
@@ -1760,6 +1789,7 @@ def _seed_sprint4_defaults():
                     cedula_profesional="ADM-REC-014",
                     specialty="Admisión y Agenda Clínica",
                     clues_institucion="YUC-CR-001",
+                    pin_hash=default_pin_hash,
                     is_active=False,
                 ),
                 PractitionerProfile(
@@ -1768,6 +1798,7 @@ def _seed_sprint4_defaults():
                     cedula_profesional="DIR-0012026",
                     specialty="Dirección Médica NOM-024",
                     clues_institucion="YUC-CR-001",
+                    pin_hash=default_pin_hash,
                     is_active=False,
                 ),
             ]
@@ -2196,5 +2227,234 @@ def verify_encryption_and_integrity_audit() -> dict:
             "revoked_arco_locks": sum(1 for r in consents if r.revoked),
             "patient_safety_ok": (c_tampered == 0 and p_encrypted == p_with_sensitive and c_encrypted == len(consultas)),
         }
+    finally:
+        db.close()
+
+
+# ─────────────────────────────────────────────────────────────────
+# AUTENTICACIÓN Y SEPARACIÓN STRICTAMENTE AISLADA (PERSONAL VS PACIENTE)
+# ─────────────────────────────────────────────────────────────────
+
+def _ensure_staff_default_pins():
+    """Asigna el PIN inicial PBKDF2 ('1234') a perfiles existentes sin pin_hash."""
+    db = SessionLocal()
+    try:
+        rows = db.query(PractitionerProfile).all()
+        changed = False
+        default_h = None
+        for r in rows:
+            if not getattr(r, "pin_hash", None):
+                if default_h is None:
+                    default_h = hash_pin("1234")
+                r.pin_hash = default_h
+                changed = True
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
+
+def get_staff_login_roles() -> list:
+    """Devuelve roles configurados para el selector de Login de Personal Clínico."""
+    db = SessionLocal()
+    try:
+        rows = db.query(PractitionerProfile).all()
+        return [
+            {
+                "role": r.role,
+                "full_name": r.full_name,
+                "cedula_profesional": r.cedula_profesional or "",
+                "specialty": r.specialty or "",
+                "clues_institucion": r.clues_institucion or "YUC-CR-001",
+                "confidentiality_accepted": bool(getattr(r, "confidentiality_accepted", False)),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def authenticate_staff_profile(role: str, pin: str) -> dict | None:
+    """Valida PIN PBKDF2 del operador clínico y activa ese perfil."""
+    db = SessionLocal()
+    try:
+        target = role.strip()
+        row = db.query(PractitionerProfile).filter(PractitionerProfile.role == target).first()
+        if not row:
+            return None
+        stored = getattr(row, "pin_hash", None)
+        if not stored:
+            row.pin_hash = hash_pin("1234")
+            db.commit()
+            stored = row.pin_hash
+        if not verify_pin(pin, stored):
+            log_audit_action(
+                action="LOGIN_PERSONAL_FALLIDO",
+                patient_curp="SISTEMA",
+                operator=f"{row.full_name} [{row.role}]",
+                details_dict={"role": row.role},
+                db=db,
+            )
+            return None
+
+        db.query(PractitionerProfile).update({"is_active": False})
+        row.is_active = True
+        row.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(row)
+
+        log_audit_action(
+            action="LOGIN_PERSONAL",
+            patient_curp="SISTEMA",
+            operator=f"{row.full_name} [{row.role}]",
+            details_dict={"role": row.role, "cedula": row.cedula_profesional or ""},
+            db=db,
+        )
+        return _profile_to_dict(row)
+    finally:
+        db.close()
+
+
+def accept_staff_confidentiality(role: str, operator_name: str = "") -> dict | None:
+    """Registra la firma del compromiso de secreto profesional NOM-024 del operador."""
+    db = SessionLocal()
+    try:
+        row = db.query(PractitionerProfile).filter(PractitionerProfile.role == role.strip()).first()
+        if not row:
+            return None
+        now = datetime.utcnow()
+        signer = operator_name or row.full_name
+        proof = compute_consent_hash({
+            "type": "STAFF_CONFIDENTIALITY_NOM024",
+            "role": row.role,
+            "operator": signer,
+            "cedula": row.cedula_profesional or "",
+            "accepted_at": now.isoformat(),
+        })
+        row.confidentiality_accepted = True
+        row.confidentiality_accepted_at = now
+        row.confidentiality_hash = proof
+        db.commit()
+        db.refresh(row)
+
+        log_audit_action(
+            action="FIRMA_CONFIDENCIALIDAD_PERSONAL",
+            patient_curp="SISTEMA",
+            operator=f"{signer} [{row.role}]",
+            details_dict={"role": row.role, "proof_hash": proof},
+            db=db,
+        )
+        return _profile_to_dict(row)
+    finally:
+        db.close()
+
+
+def update_staff_pin(role: str, current_pin: str, new_pin: str) -> dict:
+    """Actualiza el PIN de acceso del perfil clínico verificando el PIN actual."""
+    db = SessionLocal()
+    try:
+        row = db.query(PractitionerProfile).filter(PractitionerProfile.role == role.strip()).first()
+        if not row:
+            raise ValueError("Rol no encontrado.")
+        if not verify_pin(current_pin, getattr(row, "pin_hash", None)):
+            raise ValueError("El PIN actual no coincide.")
+        row.pin_hash = hash_pin(new_pin)
+        row.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(row)
+        log_audit_action(
+            action="CAMBIO_PIN_PERSONAL",
+            patient_curp="SISTEMA",
+            operator=f"{row.full_name} [{row.role}]",
+            details_dict={"role": row.role},
+            db=db,
+        )
+        return _profile_to_dict(row)
+    finally:
+        db.close()
+
+
+def _normalize_date_variants(val: str | None) -> set:
+    if not val:
+        return set()
+    s = str(val).strip()
+    variants = {s.lower()}
+    if "-" in s and len(s) >= 10:
+        parts = s[:10].split("-")
+        if len(parts) == 3:
+            variants.add(f"{parts[2]}/{parts[1]}/{parts[0]}".lower())
+            variants.add(f"{parts[2]}-{parts[1]}-{parts[0]}".lower())
+            variants.add(s[:10].lower())
+    return variants
+
+
+def authenticate_patient_portal(curp: str, secret: str) -> dict | None:
+    """
+    Autentica al paciente verificando su CURP y (fecha_nacimiento o folio_hospital).
+    Devuelve únicamente su resumen no-técnico para Portal Ciudadano.
+    """
+    db = SessionLocal()
+    try:
+        target = curp.strip().upper()
+        p = db.query(Patient).filter(Patient.curp == target).first()
+        if not p:
+            return None
+        clean_secret = secret.strip().lower()
+        valid_secrets = _normalize_date_variants(p.fecha_nacimiento)
+        if p.folio_hospital:
+            valid_secrets.add(str(p.folio_hospital).strip().lower())
+        if clean_secret not in valid_secrets:
+            log_audit_action(
+                action="LOGIN_PACIENTE_FALLIDO",
+                patient_curp=target,
+                operator="Portal Paciente",
+                details_dict={"curp": target},
+                db=db,
+            )
+            return None
+
+        full_name = f"{p.nombres or ''} {p.primer_apellido or ''} {p.segundo_apellido or ''}".strip()
+        log_audit_action(
+            action="LOGIN_PACIENTE",
+            patient_curp=target,
+            operator=f"Paciente: {full_name or target}",
+            details_dict={"portal": "Mi Salud Hoy"},
+            db=db,
+        )
+        return {
+            "curp": p.curp,
+            "nombre_corto": p.nombres or full_name or target,
+            "nombre_completo": full_name or target,
+            "tipo_sangre": p.tipo_sangre or "No especificado",
+            "fecha_nacimiento": p.fecha_nacimiento,
+            "folio_hospital": p.folio_hospital,
+        }
+    finally:
+        db.close()
+
+
+def get_patient_upcoming_appointments(curp: str) -> list:
+    """Devuelve únicamente citas básicas (sin datos de triaje/staff interno) del paciente."""
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(Appointment)
+            .filter(Appointment.patient_curp == curp.strip().upper())
+            .order_by(Appointment.date_str.asc(), Appointment.time_str.asc())
+            .limit(12)
+            .all()
+        )
+        return [
+            {
+                "id": a.id,
+                "date": a.date_str,
+                "time": a.time_str,
+                "reason": a.reason,
+                "status": a.status,
+                "doctor": a.doctor_nombre or "Médico asignado",
+                "clinica": a.clues_institucion or "YUC-CR-001",
+            }
+            for a in rows
+        ]
     finally:
         db.close()
