@@ -692,3 +692,324 @@ function calcClinicalTools() {
     }
   }
 }
+
+
+/* ════════════════════════════════════════════════════════════════
+   SPRINT 3 — HERRAMIENTAS IA, ASK-EXPEDIENTE, ICE, PORTAL & FHIR
+   ════════════════════════════════════════════════════════════════ */
+
+async function initHerramientasView() {
+  await _populateToolsPatients();
+  calcSuiteAll();
+}
+
+async function _populateToolsPatients(selectedCurp) {
+  const sel = document.getElementById('ask-patient-select');
+  if (!sel) return;
+  const prev = selectedCurp || sel.value;
+  try {
+    const patients = await _getJson(`${API}/api/patients/`);
+    sel.innerHTML = patients.map(p => {
+      const name = p.nombre || p.nombre_completo || p.curp;
+      return `<option value="${_opsEsc(p.curp)}">${_opsEsc(name)} (${_opsEsc(p.curp)})</option>`;
+    }).join('') || '<option value="">Sin pacientes registrados</option>';
+    if (prev && patients.some(p => p.curp === prev)) sel.value = prev;
+  } catch { /* ignore */ }
+}
+
+function _selectedToolCurp() {
+  return document.getElementById('ask-patient-select')?.value || '';
+}
+
+function setAskQuickQuestion(q) {
+  const inp = document.getElementById('ask-question-input');
+  if (inp) inp.value = q;
+  askExpedienteQuery();
+}
+
+async function askExpedienteQuery() {
+  const curp = _selectedToolCurp();
+  const inp = document.getElementById('ask-question-input');
+  const outBox = document.getElementById('ask-response-box');
+  if (!curp) return showToast('Selecciona primero un paciente', 'error');
+  const q = (inp?.value || '').trim() || 'Resumen clínico integral, alergias, medicamentos y riesgos';
+  if (outBox) outBox.innerHTML = 'Consultando historial longitudinal y memoria vectorial...';
+  try {
+    const res = await fetch(`${API}/api/patients/${encodeURIComponent(curp)}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, llm_mode: AppState?.llmMode || 'offline' }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Error al consultar expediente');
+    const cites = (data.citations || []).map(c =>
+      `<span class="ask-cite-pill" title="${_opsEsc(c.detalle)}">📌 ${_opsEsc(c.fuente)}</span>`
+    ).join('');
+    if (outBox) {
+      outBox.innerHTML = `<div>${_opsEsc(data.answer)}</div>`
+        + (cites ? `<div class="ask-citations">${cites}</div>` : '');
+    }
+  } catch (e) {
+    if (outBox) outBox.textContent = `No se pudo consultar: ${e.message}`;
+  }
+}
+
+async function openAskForPatient(curp) {
+  if (typeof OverlaySystem !== 'undefined') OverlaySystem.close();
+  switchMainTab('herramientas');
+  await _populateToolsPatients(curp);
+  setAskQuickQuestion('Resumen clínico integral, alergias, medicamentos actuales y últimos signos vitales');
+}
+
+function downloadPatientFhir(curp) {
+  const c = curp || _selectedToolCurp();
+  if (!c) return showToast('Selecciona un paciente primero', 'error');
+  window.open(`${API}/api/patients/${encodeURIComponent(c)}/fhir?download=true`, '_blank');
+  showToast('Descargando Bundle HL7 FHIR R4 (NOM-024)...', 'success');
+}
+
+async function openIceModal(curp) {
+  const c = curp || _selectedToolCurp();
+  if (!c) return showToast('Selecciona un paciente primero', 'error');
+  const overlay = document.getElementById('ice-modal-overlay');
+  const body = document.getElementById('ice-modal-body');
+  if (!overlay || !body) return;
+  body.innerHTML = '<p>Generando Pasaporte Médico de Emergencia QR (ICE)...</p>';
+  overlay.classList.add('open');
+  try {
+    const ice = await _getJson(`${API}/api/ice/${encodeURIComponent(c)}`);
+    const allergies = (ice.alergias || []).length
+      ? ice.alergias.map(a => `<div class="portal-log-row is-alert">⚠️ ${_opsEsc(a.descripcion)} (${_opsEsc(a.severidad)})</div>`).join('')
+      : '<div class="portal-log-row">✅ Sin alergias críticas registradas</div>';
+    const meds = (ice.medicamentos_actuales || []).length
+      ? ice.medicamentos_actuales.map(m => `<li><strong>${_opsEsc(m.nombre)}</strong> ${_opsEsc(m.dosis)} (${_opsEsc(m.periodicidad)})</li>`).join('')
+      : '<li>Sin medicación crónica registrada</li>';
+    const iceUrl = `${window.location.origin}/ice/${encodeURIComponent(ice.curp)}`;
+    body.innerHTML = `
+      <div class="ice-preview-header">
+        <div>
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;opacity:0.9;">PASAPORTE DE EMERGENCIA (ICE) &bull; CRUZ ROJA MÉRIDA</div>
+          <h3 style="margin:4px 0 2px;font-size:19px;">${_opsEsc(ice.nombre_completo)}</h3>
+          <div style="font-size:12px;opacity:0.9;">${ice.edad ?? '—'} años &bull; ${_opsEsc(ice.sexo || '—')} &bull; CURP: ${_opsEsc(ice.curp)}</div>
+        </div>
+        <div class="ice-blood-tag"><div style="font-size:9px;color:#475569;text-transform:uppercase;">Sangre</div>${_opsEsc(ice.tipo_sangre)}</div>
+      </div>
+      <div class="ice-preview-grid">
+        <div>
+          <h4 style="margin:6px 0;">Alergias Críticas</h4>
+          ${allergies}
+          <h4 style="margin:10px 0 4px;">Medicación Actual</h4>
+          <ul style="margin:0;padding-left:18px;font-size:12.5px;">${meds}</ul>
+          <h4 style="margin:10px 0 4px;">Contacto de Emergencia</h4>
+          <div style="font-size:13px;"><strong>${_opsEsc(ice.contacto_emergencia?.nombre)}</strong> &bull; ${_opsEsc(ice.contacto_emergencia?.telefono || 'Sin teléfono')}</div>
+        </div>
+        <div class="ice-qr-box">
+          <img src="${API}/api/ice/${encodeURIComponent(ice.curp)}/qr" alt="QR Pasaporte ICE" style="width:150px;height:150px;" />
+          <small style="font-size:10.5px;text-align:center;">Escanea para rescate en &lt;2s (sin notas privadas)</small>
+        </div>
+      </div>
+      <div class="wearable-btn-row" style="margin-top:14px;">
+        <a class="btn-red-cta" style="text-decoration:none;" href="${iceUrl}" target="_blank">🪪 Abrir Tarjeta ICE Imprimible</a>
+        <button class="btn-outline-pill" onclick="navigator.clipboard?.writeText('${iceUrl}'); showToast('Enlace ICE copiado', 'success');">📋 Copiar enlace QR</button>
+      </div>`;
+  } catch (e) {
+    body.innerHTML = `<p style="color:#dc2626;">Error cargando Pasaporte ICE: ${_opsEsc(e.message)}</p>`;
+  }
+}
+
+function closeIceModal() {
+  document.getElementById('ice-modal-overlay')?.classList.remove('open');
+}
+
+async function openPatientPortalModal(curp) {
+  const c = curp || _selectedToolCurp();
+  if (!c) return showToast('Selecciona un paciente primero', 'error');
+  const overlay = document.getElementById('portal-modal-overlay');
+  const body = document.getElementById('portal-modal-body');
+  if (!overlay || !body) return;
+  body.innerHTML = '<p>Cargando portal ciudadano "Mi Salud Hoy"...</p>';
+  overlay.classList.add('open');
+  try {
+    const data = await _getJson(`${API}/api/patient-portal/${encodeURIComponent(c)}`);
+    let slotsHtml = '';
+    for (const [slot, items] of Object.entries(data.horario_visual || {})) {
+      if (!items.length) continue;
+      slotsHtml += `<div class="portal-slot-box"><h5>${_opsEsc(slot)}</h5><ul style="margin:0;padding-left:18px;font-size:12.5px;">${items.map(m =>
+        `<li><strong>${_opsEsc(m.nombre)}</strong> — ${_opsEsc(m.dosis)} (${_opsEsc(m.duracion || 'según indicación')})</li>`
+      ).join('')}</ul></div>`;
+    }
+    if (!slotsHtml) slotsHtml = '<div class="portal-slot-box">Sin medicamentos activos en la última consulta.</div>';
+
+    const flags = (data.banderas_rojas || []).map(f => `<li>${_opsEsc(f)}</li>`).join('');
+    const logs = (data.daily_logs || []).slice(0, 5).map(l => `
+      <div class="portal-log-row ${l.alert_flag ? 'is-alert' : ''}">
+        <strong>${_opsEsc((l.recorded_at || '').slice(0, 16).replace('T', ' '))}</strong> —
+        TA ${l.systolic_bp ?? '--'}/${l.diastolic_bp ?? '--'} mmHg · Glucosa ${l.glucose_mg_dl ?? '--'} mg/dL ·
+        Temp ${l.temperature_c ?? '--'} °C · Medicinas: ${l.medication_taken ? '✅' : '❌'}
+        ${l.alert_flag && l.alert_message ? `<br>⚠ ${_opsEsc(l.alert_message)}` : ''}
+      </div>`).join('') || '<p style="font-size:12px;opacity:0.7;">Sin registros diarios aún.</p>';
+
+    body.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <div>
+          <h3 style="margin:0;">${_opsEsc(data.nombre_completo)}</h3>
+          <small style="opacity:0.75;">Diagnóstico reciente: ${_opsEsc(data.ultimo_diagnostico)}</small>
+        </div>
+        <a class="btn-outline-pill" style="text-decoration:none;" href="/mi-salud/${encodeURIComponent(data.curp)}" target="_blank">📱 Abrir vista móvil ciudadana ↗</a>
+      </div>
+      <h4 style="margin:8px 0 6px;">💊 Horario Visual de Medicamentos</h4>
+      ${slotsHtml}
+      <div class="portal-red-box">
+        <strong>🚨 Cuándo acudir a Urgencias de inmediato:</strong>
+        <ul style="margin:6px 0 0;padding-left:18px;">${flags}</ul>
+      </div>
+      <h4 style="margin:10px 0 6px;">📝 Registrar chequeo diario en casa</h4>
+      <div class="manual-vitals-grid">
+        <label>TA Sistólica<input type="number" id="portal-bp-s" class="input-field" placeholder="122" /></label>
+        <label>TA Diastólica<input type="number" id="portal-bp-d" class="input-field" placeholder="80" /></label>
+        <label>Glucosa (mg/dL)<input type="number" id="portal-gluc" class="input-field" placeholder="108" /></label>
+        <label>Temperatura (°C)<input type="number" step="0.1" id="portal-temp" class="input-field" placeholder="36.5" /></label>
+        <label>¿Tomó medicinas?<select id="portal-med-ok" class="input-field"><option value="true">Sí</option><option value="false">No</option></select></label>
+        <label>Estado hoy<select id="portal-mood" class="input-field"><option value="Bien">Bien</option><option value="Molestia leve">Molestia leve</option><option value="Síntomas importantes">Síntomas importantes</option></select></label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <input type="text" id="portal-note" class="input-field" placeholder="Síntomas o comentarios del paciente..." style="flex:1;" />
+        <button class="btn-red-cta" onclick="submitPatientDailyLog('${_opsEsc(data.curp)}')">Guardar chequeo</button>
+      </div>
+      <div id="portal-log-msg" style="margin-top:6px;font-size:12px;"></div>
+      <h4 style="margin:12px 0 6px;">📊 Últimos registros del paciente</h4>
+      ${logs}`;
+  } catch (e) {
+    body.innerHTML = `<p style="color:#dc2626;">Error cargando portal: ${_opsEsc(e.message)}</p>`;
+  }
+}
+
+function closePortalModal() {
+  document.getElementById('portal-modal-overlay')?.classList.remove('open');
+}
+
+async function submitPatientDailyLog(curp) {
+  const msg = document.getElementById('portal-log-msg');
+  const payload = {
+    systolic_bp: parseFloat(document.getElementById('portal-bp-s')?.value) || null,
+    diastolic_bp: parseFloat(document.getElementById('portal-bp-d')?.value) || null,
+    glucose_mg_dl: parseFloat(document.getElementById('portal-gluc')?.value) || null,
+    temperature_c: parseFloat(document.getElementById('portal-temp')?.value) || null,
+    medication_taken: document.getElementById('portal-med-ok')?.value === 'true',
+    mood_or_pain: document.getElementById('portal-mood')?.value || 'Bien',
+    symptoms_note: document.getElementById('portal-note')?.value?.trim() || null,
+  };
+  try {
+    const res = await fetch(`${API}/api/patient-portal/${encodeURIComponent(curp)}/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const out = await res.json();
+    if (!res.ok) throw new Error(out.detail || 'Error al guardar');
+    showToast(out.alert_flag ? `Alerta registrada: ${out.alert_message}` : 'Chequeo diario guardado', out.alert_flag ? 'error' : 'success');
+    await openPatientPortalModal(curp);
+  } catch (e) {
+    if (msg) msg.innerHTML = `<span class="import-warn">${_opsEsc(e.message)}</span>`;
+  }
+}
+
+/* ── CALCULADORAS CLÍNICAS AMPLIADAS (100% OFFLINE) ── */
+function calcSuiteAll() {
+  calcSuiteImcPam();
+  calcCkdEpi();
+  calcQsofa();
+  calcGlasgow();
+  calcCha2ds2();
+  calcSuitePed();
+}
+
+function calcSuiteImcPam() {
+  const peso = parseFloat(document.getElementById('tool-peso')?.value);
+  const talla = parseFloat(document.getElementById('tool-talla')?.value);
+  const tas = parseFloat(document.getElementById('tool-tas')?.value);
+  const tad = parseFloat(document.getElementById('tool-tad')?.value);
+  const out = document.getElementById('tool-imc-pam-out');
+  if (!out) return;
+  const parts = [];
+  if (peso > 0 && talla > 0) {
+    const imc = peso / ((talla / 100) ** 2);
+    const cat = imc < 18.5 ? 'Bajo peso' : imc < 25 ? 'Normal' : imc < 30 ? 'Sobrepeso' : 'Obesidad';
+    parts.push(`<strong>IMC:</strong> ${imc.toFixed(1)} kg/m² (${cat})`);
+  }
+  if (tas > 0 && tad > 0) {
+    const pam = (tas + 2 * tad) / 3;
+    const tag = pam < 65 ? '⚠ Hipoperfusión' : pam > 110 ? '⚠ Elevada' : 'Normal';
+    parts.push(`<strong>PAM:</strong> ${pam.toFixed(1)} mmHg (${tag})`);
+  }
+  out.innerHTML = parts.length ? parts.join(' &bull; ') : 'Ingresa peso/talla o presión arterial.';
+}
+
+function calcCkdEpi() {
+  const cr = parseFloat(document.getElementById('tool-creat')?.value);
+  const age = parseFloat(document.getElementById('tool-edad')?.value);
+  const sex = document.getElementById('tool-sexo')?.value || 'M';
+  const out = document.getElementById('tool-ckd-out');
+  if (!out) return;
+  if (!(cr > 0 && age > 0)) {
+    out.textContent = 'Ingresa creatinina (mg/dL) y edad para estimar TFG (CKD-EPI 2021).';
+    return;
+  }
+  const kappa = sex === 'F' ? 0.7 : 0.9;
+  const alpha = sex === 'F' ? -0.241 : -0.302;
+  const minR = Math.min(cr / kappa, 1);
+  const maxR = Math.max(cr / kappa, 1);
+  const sexFactor = sex === 'F' ? 1.012 : 1.0;
+  const egfr = 142 * (minR ** alpha) * (maxR ** -1.2) * (0.9938 ** age) * sexFactor;
+  const stage = egfr >= 90 ? 'G1 (Normal)' : egfr >= 60 ? 'G2 (Leve)' : egfr >= 45 ? 'G3a (Moderada)' : egfr >= 30 ? 'G3b (Ajustar fármacos)' : egfr >= 15 ? 'G4 (Grave — evitar AINEs/Metformina)' : 'G5 (Falla renal)';
+  out.innerHTML = `<strong>TFG:</strong> ${egfr.toFixed(1)} mL/min/1.73m² &bull; <strong>Estadio:</strong> ${stage}`;
+}
+
+function calcQsofa() {
+  const fr = parseFloat(document.getElementById('tool-qsofa-fr')?.value);
+  const tas = parseFloat(document.getElementById('tool-qsofa-tas')?.value);
+  const gcsAlt = document.getElementById('tool-qsofa-gcs')?.checked ? 1 : 0;
+  const out = document.getElementById('tool-qsofa-out');
+  if (!out) return;
+  let score = gcsAlt;
+  if (fr >= 22) score += 1;
+  if (tas > 0 && tas <= 100) score += 1;
+  const riesgo = score >= 2 ? '🚨 ALTO RIESGO DE SEPSIS (≥2) — Activar Código Sepsis' : `Bajo (${score}/3)`;
+  out.innerHTML = `<strong>qSOFA:</strong> ${score}/3 puntos &bull; ${riesgo}`;
+}
+
+function calcGlasgow() {
+  const o = parseInt(document.getElementById('tool-gcs-o')?.value || '4', 10);
+  const v = parseInt(document.getElementById('tool-gcs-v')?.value || '5', 10);
+  const m = parseInt(document.getElementById('tool-gcs-m')?.value || '6', 10);
+  const total = o + v + m;
+  const out = document.getElementById('tool-gcs-out');
+  if (!out) return;
+  const sev = total <= 8 ? '🚨 Traumatismo/Deterioro GRAVE (≤8 — valorar vía aérea)' : total <= 12 ? '⚠️ Moderado (9–12)' : 'Leve / Normal (13–15)';
+  out.innerHTML = `<strong>Glasgow Total:</strong> ${total}/15 &bull; ${sev}`;
+}
+
+function calcCha2ds2() {
+  let pts = 0;
+  document.querySelectorAll('.cha-chk:checked').forEach(el => {
+    pts += parseInt(el.dataset.pts || '1', 10);
+  });
+  const out = document.getElementById('tool-cha-out');
+  if (!out) return;
+  const rec = pts === 0 ? 'Riesgo bajo — sin anticoagulación habitual' : pts === 1 ? 'Riesgo moderado — considerar anticoagulante oral' : '🚨 Riesgo alto (≥2) — Anticoagulación oral recomendada';
+  out.innerHTML = `<strong>CHA₂DS₂-VASc:</strong> ${pts} pts &bull; ${rec}`;
+}
+
+function calcSuitePed() {
+  const pPed = parseFloat(document.getElementById('tool-ped-peso')?.value);
+  const mgkg = parseFloat(document.getElementById('tool-ped-mgkg')?.value);
+  const tomas = Math.max(1, parseInt(document.getElementById('tool-ped-tomas')?.value || '3', 10));
+  const out = document.getElementById('tool-ped-out');
+  if (!out) return;
+  if (pPed > 0 && mgkg > 0) {
+    const total = pPed * mgkg;
+    out.innerHTML = `<strong>Total/día:</strong> ${total.toFixed(0)} mg &bull; <strong>Por toma:</strong> ${(total / tomas).toFixed(0)} mg c/${Math.round(24 / tomas)} h`;
+  } else {
+    out.textContent = 'Ingresa peso y dosis mg/kg/día.';
+  }
+}

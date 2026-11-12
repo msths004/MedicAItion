@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5.4.0" />
+  <link rel="stylesheet" href="style.css?v=5.5.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -154,7 +154,7 @@
           <span>Dispositivos Médicos</span>
         </button>
 
-        <button class="sidebar-nav-btn" id="nav-btn-ia-tools" onclick="openLlmModal()" title="Configuración del Cerebro IA y extractores clínicos">
+        <button class="sidebar-nav-btn" id="nav-btn-ia-tools" onclick="switchMainTab('herramientas')" title="Ask-Expediente, Calculadoras Clínicas, Pasaporte QR y FHIR">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
           <span>Herramientas IA</span>
         </button>
@@ -626,6 +626,127 @@
                 <div id="reports-triage-bars" class="reports-bars"></div>
                 <div class="bento-card-header" style="margin-top:18px"><h3>DIAGNÓSTICOS MÁS FRECUENTES (90 DÍAS)</h3></div>
                 <div id="reports-top-dx" class="reports-top-dx"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================================
+             VIEW: HERRAMIENTAS IA (Ask-Expediente, Calculadoras, ICE, FHIR)
+             ================================================================= -->
+        <section class="view-panel" id="panel-herramientas-section" style="display:none">
+          <div class="tools-container">
+            <div class="tools-header">
+              <div>
+                <h1>Herramientas IA &amp; Ecosistema Clínico</h1>
+                <p>Copiloto Ask-Expediente sobre historial longitudinal, calculadoras médicas offline, Pasaporte QR (ICE), Portal ciudadano y exportación HL7 FHIR R4.</p>
+              </div>
+              <button class="btn-outline-pill" onclick="openLlmModal()">⚙ Configurar Motor IA</button>
+            </div>
+
+            <div class="tools-patient-bar">
+              <strong style="font-size:12.5px;">Paciente activo:</strong>
+              <select id="ask-patient-select" class="input-field"></select>
+              <button class="btn-red-cta" onclick="openIceModal()">🪪 Pasaporte QR (ICE)</button>
+              <button class="btn-dark-pill" onclick="openPatientPortalModal()">📱 Portal Mi Salud Hoy</button>
+              <button class="btn-outline-pill" onclick="downloadPatientFhir()">🔗 Exportar HL7 FHIR R4</button>
+            </div>
+
+            <div class="tools-main-grid">
+              <!-- COLUMNA IZQUIERDA: ASK-EXPEDIENTE -->
+              <div class="bento-card" style="padding:22px;">
+                <div class="bento-card-header">
+                  <h3>🧠 ASK-EXPEDIENTE (COPILOTO LONGITUDINAL)</h3>
+                  <span class="epi-live-badge" style="background:rgba(16,185,129,0.14);color:#059669;">Citas verificables</span>
+                </div>
+                <p style="font-size:12.5px;opacity:0.78;margin:4px 0 8px;">Pregunta sobre alergias, medicamentos, evolución, banderas rojas o chequeos en casa.</p>
+
+                <div class="ask-chips-row">
+                  <button type="button" class="ask-chip" onclick="setAskQuickQuestion('Resumen clínico integral, alergias y medicamentos actuales')">Resumen + Alergias + Meds</button>
+                  <button type="button" class="ask-chip" onclick="setAskQuickQuestion('¿Qué diagnósticos CIE-10 y banderas rojas ha tenido?')">Diagnósticos y Riesgos</button>
+                  <button type="button" class="ask-chip" onclick="setAskQuickQuestion('Últimos signos vitales de wearable y bitácora en casa')">Signos y Bitácora</button>
+                </div>
+
+                <div class="ask-input-row">
+                  <textarea id="ask-question-input" class="input-field" rows="2" placeholder="Ej: ¿Qué alergias tiene y qué medicamentos ha tomado en sus últimas consultas?"></textarea>
+                  <button type="button" class="btn-dark-pill" style="align-self:flex-start;" onclick="askExpedienteQuery()">Preguntar al Expediente</button>
+                </div>
+
+                <div id="ask-response-box" class="ask-response-box">Selecciona un paciente y haz una pregunta o pulsa uno de los accesos rápidos arriba.</div>
+              </div>
+
+              <!-- COLUMNA DERECHA: CALCULADORAS CLÍNICAS OFFLINE -->
+              <div class="bento-card" style="padding:22px;">
+                <div class="bento-card-header">
+                  <h3>🧮 SUITE DE CALCULADORAS CLÍNICAS (OFFLINE)</h3>
+                </div>
+                <div class="calc-suite-grid" style="margin-top:10px;">
+                  <div class="calc-suite-card">
+                    <h4>IMC &amp; Presión Arterial Media</h4>
+                    <div class="calc-inputs-2">
+                      <label>Peso (kg)<input type="number" id="tool-peso" class="input-field" placeholder="72" oninput="calcSuiteImcPam()" /></label>
+                      <label>Talla (cm)<input type="number" id="tool-talla" class="input-field" placeholder="172" oninput="calcSuiteImcPam()" /></label>
+                      <label>TA Sistólica<input type="number" id="tool-tas" class="input-field" placeholder="120" oninput="calcSuiteImcPam()" /></label>
+                      <label>TA Diastólica<input type="number" id="tool-tad" class="input-field" placeholder="80" oninput="calcSuiteImcPam()" /></label>
+                    </div>
+                    <div id="tool-imc-pam-out" class="calc-output">Ingresa peso/talla o presión arterial.</div>
+                  </div>
+
+                  <div class="calc-suite-card">
+                    <h4>TFG Renal (CKD-EPI 2021)</h4>
+                    <div class="calc-inputs-3">
+                      <label>Creat. (mg/dL)<input type="number" step="0.1" id="tool-creat" class="input-field" placeholder="1.0" oninput="calcCkdEpi()" /></label>
+                      <label>Edad<input type="number" id="tool-edad" class="input-field" placeholder="45" oninput="calcCkdEpi()" /></label>
+                      <label>Sexo<select id="tool-sexo" class="input-field" onchange="calcCkdEpi()"><option value="M">Masc.</option><option value="F">Fem.</option></select></label>
+                    </div>
+                    <div id="tool-ckd-out" class="calc-output">Ingresa creatinina y edad.</div>
+                  </div>
+
+                  <div class="calc-suite-card">
+                    <h4>qSOFA (Tamizaje Sepsis)</h4>
+                    <div class="calc-inputs-2">
+                      <label>FR (rpm)<input type="number" id="tool-qsofa-fr" class="input-field" placeholder="18" oninput="calcQsofa()" /></label>
+                      <label>TAS (mmHg)<input type="number" id="tool-qsofa-tas" class="input-field" placeholder="115" oninput="calcQsofa()" /></label>
+                    </div>
+                    <label style="flex-direction:row;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;">
+                      <input type="checkbox" id="tool-qsofa-gcs" onchange="calcQsofa()" /> Alteración del estado mental (Glasgow &lt; 15)
+                    </label>
+                    <div id="tool-qsofa-out" class="calc-output">qSOFA: 0/3 puntos</div>
+                  </div>
+
+                  <div class="calc-suite-card">
+                    <h4>Escala de Coma de Glasgow</h4>
+                    <div class="calc-inputs-3">
+                      <label>Ocular<select id="tool-gcs-o" class="input-field" onchange="calcGlasgow()"><option value="4">4 Espont.</option><option value="3">3 Voz</option><option value="2">2 Dolor</option><option value="1">1 Ninguna</option></select></label>
+                      <label>Verbal<select id="tool-gcs-v" class="input-field" onchange="calcGlasgow()"><option value="5">5 Orient.</option><option value="4">4 Conf.</option><option value="3">3 Inapr.</option><option value="2">2 Incomp.</option><option value="1">1 Ninguna</option></select></label>
+                      <label>Motora<select id="tool-gcs-m" class="input-field" onchange="calcGlasgow()"><option value="6">6 Obedece</option><option value="5">5 Localiza</option><option value="4">4 Retira</option><option value="3">3 Flexión</option><option value="2">2 Extens.</option><option value="1">1 Ninguna</option></select></label>
+                    </div>
+                    <div id="tool-gcs-out" class="calc-output">Glasgow Total: 15/15</div>
+                  </div>
+
+                  <div class="calc-suite-card">
+                    <h4>CHA₂DS₂-VASc (Fibrilación Auricular)</h4>
+                    <div class="cha-checks">
+                      <label><input type="checkbox" class="cha-chk" data-pts="1" onchange="calcCha2ds2()" /> Insuf. Cardíaca (+1)</label>
+                      <label><input type="checkbox" class="cha-chk" data-pts="1" onchange="calcCha2ds2()" /> Hipertensión (+1)</label>
+                      <label><input type="checkbox" class="cha-chk" data-pts="2" onchange="calcCha2ds2()" /> Edad ≥75 años (+2)</label>
+                      <label><input type="checkbox" class="cha-chk" data-pts="1" onchange="calcCha2ds2()" /> Diabetes (+1)</label>
+                      <label><input type="checkbox" class="cha-chk" data-pts="2" onchange="calcCha2ds2()" /> EVC/AIT previo (+2)</label>
+                      <label><input type="checkbox" class="cha-chk" data-pts="1" onchange="calcCha2ds2()" /> Edad 65–74 (+1)</label>
+                    </div>
+                    <div id="tool-cha-out" class="calc-output">CHA₂DS₂-VASc: 0 pts</div>
+                  </div>
+
+                  <div class="calc-suite-card">
+                    <h4>Dosis Pediátrica / Por Peso</h4>
+                    <div class="calc-inputs-3">
+                      <label>Peso (kg)<input type="number" id="tool-ped-peso" class="input-field" placeholder="18" oninput="calcSuitePed()" /></label>
+                      <label>mg/kg/día<input type="number" id="tool-ped-mgkg" class="input-field" placeholder="45" oninput="calcSuitePed()" /></label>
+                      <label>Tomas/día<input type="number" id="tool-ped-tomas" class="input-field" value="3" min="1" max="6" oninput="calcSuitePed()" /></label>
+                    </div>
+                    <div id="tool-ped-out" class="calc-output">Ingresa peso y dosis mg/kg/día.</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1308,6 +1429,22 @@
     </div>
   </div>
 
+  <!-- PASAPORTE MÉDICO QR (ICE) MODAL -->
+  <div class="llm-modal-overlay" id="ice-modal-overlay">
+    <div class="llm-modal citizen-modal-box">
+      <div id="ice-modal-body"></div>
+      <button class="llm-modal-close" style="margin-top:14px;background:#64748b;" onclick="closeIceModal()">Cerrar Pasaporte ICE</button>
+    </div>
+  </div>
+
+  <!-- PORTAL CIUDADANO "MI SALUD HOY" MODAL -->
+  <div class="llm-modal-overlay" id="portal-modal-overlay">
+    <div class="llm-modal citizen-modal-box">
+      <div id="portal-modal-body"></div>
+      <button class="llm-modal-close" style="margin-top:14px;background:#64748b;" onclick="closePortalModal()">Cerrar Portal Paciente</button>
+    </div>
+  </div>
+
   <!-- GENERIC OVERLAY CONTAINER (Expediente Clínico & Consultas) -->
   <div class="app-overlay" id="app-overlay">
     <div class="app-overlay-content" id="app-overlay-content">
@@ -1315,11 +1452,11 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.4.0"></script>
-  <script src="overlays.js?v=5.4.0"></script>
-  <script src="modals.js?v=5.4.0"></script>
-  <script src="calendar.js?v=5.4.0"></script>
-  <script src="clinical_ops.js?v=5.4.0"></script>
-  <script src="app.js?v=5.4.0"></script>
+  <script src="state.js?v=5.5.0"></script>
+  <script src="overlays.js?v=5.5.0"></script>
+  <script src="modals.js?v=5.5.0"></script>
+  <script src="calendar.js?v=5.5.0"></script>
+  <script src="clinical_ops.js?v=5.5.0"></script>
+  <script src="app.js?v=5.5.0"></script>
 </body>
 </html>

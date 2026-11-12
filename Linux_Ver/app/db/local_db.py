@@ -90,8 +90,9 @@ class Patient(Base):
     anotaciones_generales = Column(Text, nullable=True)
 
     # ── Métricas físicas (editables post-registro) ────────────────
-    altura_cm = Column(Float, nullable=True)
-    peso_kg   = Column(Float, nullable=True)
+    altura_cm   = Column(Float, nullable=True)
+    peso_kg     = Column(Float, nullable=True)
+    tipo_sangre = Column(String, nullable=True)
 
     # ── Resumen IA (caché, regenerado al crear nuevas consultas) ──
     resumen_ia        = Column(Text, nullable=True)
@@ -296,6 +297,28 @@ class VitalReading(Base):
     recorded_at   = Column(DateTime, default=datetime.utcnow, index=True)
 
 
+class PatientDailyLog(Base):
+    """
+    Bitácora diaria del ciudadano / paciente ("Mi Salud Hoy"):
+    automedición de presión, glucosa, temperatura, peso, adherencia a medicamentos y síntomas.
+    """
+    __tablename__ = "patient_daily_logs"
+
+    id               = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_curp     = Column(String, ForeignKey("patients.curp"), nullable=False, index=True)
+    systolic_bp      = Column(Float, nullable=True)
+    diastolic_bp     = Column(Float, nullable=True)
+    glucose_mg_dl    = Column(Float, nullable=True)
+    temperature_c    = Column(Float, nullable=True)
+    weight_kg        = Column(Float, nullable=True)
+    medication_taken = Column(Boolean, default=True)
+    mood_or_pain     = Column(String, nullable=True)
+    symptoms_note    = Column(Text, nullable=True)
+    alert_flag       = Column(Boolean, default=False)
+    alert_message    = Column(String, nullable=True)
+    recorded_at      = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 def _seed_sprint2_defaults():
     """Siembra citas y lecturas iniciales si las tablas nuevas están vacías."""
     db = SessionLocal()
@@ -433,7 +456,13 @@ def create_tables():
             conn.execute(text("ALTER TABLE consultas ADD COLUMN texto_redactado TEXT;"))
         print("[DB] Migración completada: Columna 'texto_redactado' agregada ✅")
 
+    p_columns = [col["name"] for col in inspector.get_columns("patients")]
+    if "tipo_sangre" not in p_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE patients ADD COLUMN tipo_sangre TEXT;"))
+
     _seed_sprint2_defaults()
+    _seed_sprint3_defaults()
     print("[DB] Tablas verificadas/creadas correctamente.")
 
 
@@ -484,6 +513,7 @@ def register_patient(data: dict) -> dict:
             anotaciones_generales=data.get("anotaciones_generales"),
             altura_cm=data.get("altura_cm"),
             peso_kg=data.get("peso_kg"),
+            tipo_sangre=data.get("tipo_sangre"),
             clues_institucion=data.get("clues_institucion"),
         )
         db.add(patient)
@@ -527,7 +557,7 @@ def update_patient(curp: str, data: dict) -> dict | None:
             "expediente_externo", "nacionalidad", "lugar_nacimiento", "estado_civil",
             "ocupacion", "tipo_paciente", "programa_medico", "telefono_local",
             "celular", "email", "contacto_emergencia_nombre", "contacto_emergencia_tel",
-            "anotaciones_generales", "altura_cm", "peso_kg", "clues_institucion",
+            "anotaciones_generales", "altura_cm", "peso_kg", "tipo_sangre", "clues_institucion",
         ]
         for field in editable_fields:
             if field in data:
@@ -663,6 +693,7 @@ def _patient_to_dict(patient: Patient, include_auxiliaries: bool = False) -> dic
         "anotaciones_generales": patient.anotaciones_generales,
         "altura_cm": patient.altura_cm,
         "peso_kg": patient.peso_kg,
+        "tipo_sangre": patient.tipo_sangre,
         "bmi": bmi,             # Calculado al vuelo
         "edad": edad,           # Calculado al vuelo
         "clues_institucion": patient.clues_institucion,
@@ -1349,3 +1380,187 @@ def search_events_semantically(query: str, patient_curp: str = None, n_results: 
     except Exception as e:
         print(f"[SemanticSearch] Error eventos: {e}")
         return []
+
+
+
+# ─────────────────────────────────────────────────────────────────
+# FUNCIONES SPRINT 3: PORTAL PACIENTE, HISTORIAL COMPLETO Y FHIR
+# ─────────────────────────────────────────────────────────────────
+
+def _daily_log_to_dict(row: PatientDailyLog) -> dict:
+    return {
+        "id": row.id,
+        "patient_curp": row.patient_curp,
+        "systolic_bp": row.systolic_bp,
+        "diastolic_bp": row.diastolic_bp,
+        "glucose_mg_dl": row.glucose_mg_dl,
+        "temperature_c": row.temperature_c,
+        "weight_kg": row.weight_kg,
+        "medication_taken": bool(row.medication_taken),
+        "mood_or_pain": row.mood_or_pain,
+        "symptoms_note": row.symptoms_note,
+        "alert_flag": bool(row.alert_flag),
+        "alert_message": row.alert_message,
+        "recorded_at": row.recorded_at.isoformat() if row.recorded_at else None,
+    }
+
+
+def _evaluate_daily_log_alerts(data: dict) -> tuple[bool, str]:
+    alerts = []
+    sys_bp = data.get("systolic_bp")
+    dia_bp = data.get("diastolic_bp")
+    gluc = data.get("glucose_mg_dl")
+    temp = data.get("temperature_c")
+    mood = (data.get("mood_or_pain") or "").lower()
+
+    if sys_bp is not None and (sys_bp >= 160 or sys_bp < 90):
+        alerts.append(f"Presión sistólica fuera de rango seguro ({sys_bp:.0f} mmHg)")
+    if dia_bp is not None and dia_bp >= 100:
+        alerts.append(f"Presión diastólica elevada ({dia_bp:.0f} mmHg)")
+    if gluc is not None and gluc < 70:
+        alerts.append(f"Hipoglucemia ({gluc:.0f} mg/dL) — acudir o tratar de inmediato")
+    elif gluc is not None and gluc >= 250:
+        alerts.append(f"Hiperglucemia severa ({gluc:.0f} mg/dL) — valorar urgencias")
+    if temp is not None and temp >= 38.5:
+        alerts.append(f"Fiebre alta ({temp:.1f} °C)")
+    if "importante" in mood or "alarma" in mood:
+        alerts.append("Paciente reporta síntomas importantes en casa")
+
+    return (len(alerts) > 0, " • ".join(alerts))
+
+
+def add_patient_daily_log(curp: str, data: dict) -> dict:
+    db = SessionLocal()
+    try:
+        alert_flag, alert_msg = _evaluate_daily_log_alerts(data)
+        row = PatientDailyLog(
+            id=str(uuid.uuid4()),
+            patient_curp=curp.upper(),
+            systolic_bp=data.get("systolic_bp"),
+            diastolic_bp=data.get("diastolic_bp"),
+            glucose_mg_dl=data.get("glucose_mg_dl"),
+            temperature_c=data.get("temperature_c"),
+            weight_kg=data.get("weight_kg"),
+            medication_taken=bool(data.get("medication_taken", True)),
+            mood_or_pain=data.get("mood_or_pain") or "Bien",
+            symptoms_note=data.get("symptoms_note"),
+            alert_flag=alert_flag,
+            alert_message=alert_msg or None,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return _daily_log_to_dict(row)
+    finally:
+        db.close()
+
+
+def get_patient_daily_logs(curp: str, limit: int = 30) -> list:
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(PatientDailyLog)
+            .filter(PatientDailyLog.patient_curp == curp.upper())
+            .order_by(PatientDailyLog.recorded_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return [_daily_log_to_dict(r) for r in rows]
+    finally:
+        db.close()
+
+
+def get_patient_full_history(curp: str) -> dict | None:
+    """Retorna el expediente completo longitudinal del paciente para FHIR, ICE, Portal y Ask-Expediente."""
+    db = SessionLocal()
+    try:
+        patient = db.query(Patient).filter(Patient.curp == curp.upper()).first()
+        if not patient:
+            return None
+
+        p_dict = _patient_to_dict(patient, include_auxiliaries=True)
+        eventos_list = []
+        for ev in patient.eventos:
+            ev_dict = _evento_to_dict(ev)
+            ev_dict["consultas"] = [_consulta_to_dict(c) for c in ev.consultas]
+            eventos_list.append(ev_dict)
+
+        vitals_rows = (
+            db.query(VitalReading)
+            .filter(VitalReading.patient_curp == patient.curp)
+            .order_by(VitalReading.recorded_at.desc())
+            .limit(30)
+            .all()
+        )
+        vitals = [
+            {
+                "id": v.id,
+                "device": v.device_name,
+                "source": v.source,
+                "heart_rate": v.heart_rate,
+                "spo2": v.spo2,
+                "systolic_bp": v.systolic_bp,
+                "diastolic_bp": v.diastolic_bp,
+                "temperature": v.temperature,
+                "steps": v.steps,
+                "alert": bool(v.alert_flag),
+                "alert_message": v.alert_message,
+                "recorded_at": v.recorded_at.isoformat() if v.recorded_at else None,
+            }
+            for v in vitals_rows
+        ]
+
+        logs_rows = (
+            db.query(PatientDailyLog)
+            .filter(PatientDailyLog.patient_curp == patient.curp)
+            .order_by(PatientDailyLog.recorded_at.desc())
+            .limit(30)
+            .all()
+        )
+        daily_logs = [_daily_log_to_dict(r) for r in logs_rows]
+
+        return {
+            "patient": p_dict,
+            "eventos": eventos_list,
+            "vital_readings": vitals,
+            "patient_daily_logs": daily_logs,
+        }
+    finally:
+        db.close()
+
+
+def _seed_sprint3_defaults():
+    """Asigna tipo de sangre demostrativo y siembra registros diarios iniciales si faltan."""
+    db = SessionLocal()
+    try:
+        blood_defaults = {
+            "GOPC790814HYNCLN04": "O+",
+            "MOBK070228HYNRTVA3": "A+",
+            "TESTCURP1234567890": "B+",
+        }
+        patients = db.query(Patient).all()
+        for p in patients:
+            if not p.tipo_sangre and p.curp in blood_defaults:
+                p.tipo_sangre = blood_defaults[p.curp]
+
+        if db.query(PatientDailyLog).count() == 0 and patients:
+            sample_curps = [p.curp for p in patients[:2]]
+            for idx, curp in enumerate(sample_curps):
+                db.add(PatientDailyLog(
+                    id=str(uuid.uuid4()),
+                    patient_curp=curp,
+                    systolic_bp=126 if idx == 0 else 118,
+                    diastolic_bp=80 if idx == 0 else 76,
+                    glucose_mg_dl=112 if idx == 0 else 96,
+                    temperature_c=36.5,
+                    medication_taken=True,
+                    mood_or_pain="Bien",
+                    symptoms_note="Sin síntomas agudos, apego normal al tratamiento.",
+                    alert_flag=False,
+                ))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[DB] Error sembrando datos iniciales Sprint 3: {e}")
+    finally:
+        db.close()

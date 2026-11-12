@@ -232,16 +232,25 @@ const OverlaySystem = (() => {
             <div class="metric-row"><span class="metric-label">Peso</span><span class="metric-val">${p.peso_kg ? p.peso_kg + ' kg' : '—'}</span></div>
             <div class="metric-row"><span class="metric-label">BMI</span><span class="metric-val">${bmi}</span></div>
             <div class="metric-row"><span class="metric-label">Edad</span><span class="metric-val">${edad}</span></div>
+            <div class="metric-row"><span class="metric-label">Sangre</span><span class="metric-val" style="color:#dc2626;">${_esc(p.tipo_sangre || '—')}</span></div>
           </div>
 
           <div class="profile-nav-actions">
-            <button class="profile-action-btn btn-ece-leer" onclick="window.showToast?.('Lector de ECE próximamente', 'info')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Leer ECE
+            <button class="profile-action-btn btn-ice-qr" onclick="openIceModal('${_escAttr(p.curp)}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Pasaporte QR (ICE)
             </button>
-            <button class="profile-action-btn btn-ece-acceder" onclick="window.showToast?.('Acceso ECE próximamente', 'info')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Acceder ECE
+            <button class="profile-action-btn btn-mi-salud" onclick="openPatientPortalModal('${_escAttr(p.curp)}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              Portal Mi Salud Hoy
+            </button>
+            <button class="profile-action-btn btn-ece-fhir" onclick="downloadPatientFhir('${_escAttr(p.curp)}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar HL7 FHIR R4
+            </button>
+            <button class="profile-action-btn btn-ask-ia" onclick="openAskForPatient('${_escAttr(p.curp)}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Ask-Expediente (IA)
             </button>
             <button class="profile-action-btn btn-historial" onclick="OverlaySystem.push('patient-events', { curp: '${_escAttr(p.curp)}', nombre: '${_escAttr(p.nombre_completo || p.nombre || '')}' })">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -393,6 +402,13 @@ const OverlaySystem = (() => {
                 <option value="">— Seleccionar —</option>
                 <option value="Masculino" ${p.sexo === 'Masculino' ? 'selected' : ''}>Masculino</option>
                 <option value="Femenino" ${p.sexo === 'Femenino' ? 'selected' : ''}>Femenino</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Tipo de Sangre</label>
+              <select class="input-field" name="tipo_sangre">
+                <option value="">— Seleccionar —</option>
+                ${['O+','O-','A+','A-','B+','B-','AB+','AB-'].map(bt =>
+                  `<option value="${bt}" ${p.tipo_sangre === bt ? 'selected' : ''}>${bt}</option>`).join('')}
               </select>
             </div>
             <div class="form-group"><label>CURP</label><input class="input-field" name="curp_field" value="${v('curp')}" style="font-family:'JetBrains Mono',monospace;" /></div>

@@ -20,12 +20,14 @@ function switchMainTab(tab) {
   const btnExpe = document.getElementById('nav-btn-expedientes');
   const btnAgnd = document.getElementById('nav-btn-agenda');
   const btnRep  = document.getElementById('nav-btn-reportes');
+  const btnIa   = document.getElementById('nav-btn-ia-tools');
 
   if (btnDash) btnDash.classList.toggle('active', tab === 'dashboard');
   if (btnCons) btnCons.classList.toggle('active', tab === 'consulta');
   if (btnExpe) btnExpe.classList.toggle('active', tab === 'expedientes');
   if (btnAgnd) btnAgnd.classList.toggle('active', tab === 'agenda');
   if (btnRep)  btnRep.classList.toggle('active', tab === 'reportes');
+  if (btnIa)   btnIa.classList.toggle('active', tab === 'herramientas');
 
   document.body.className = `mode-${tab}`;
 
@@ -34,6 +36,7 @@ function switchMainTab(tab) {
   const patientSection = document.getElementById('panel-patients-section');
   const agendaSection = document.getElementById('panel-agenda-section');
   const reportsSection = document.getElementById('panel-reports-section');
+  const toolsSection = document.getElementById('panel-herramientas-section');
 
   if (dashSection) {
     dashSection.style.display = tab === 'dashboard' ? 'block' : 'none';
@@ -42,6 +45,10 @@ function switchMainTab(tab) {
   if (reportsSection) {
     reportsSection.style.display = tab === 'reportes' ? 'block' : 'none';
     if (tab === 'reportes' && typeof renderReportsView === 'function') renderReportsView();
+  }
+  if (toolsSection) {
+    toolsSection.style.display = tab === 'herramientas' ? 'block' : 'none';
+    if (tab === 'herramientas' && typeof initHerramientasView === 'function') initHerramientasView();
   }
   if (consultaLayout) consultaLayout.style.display = tab === 'consulta' ? 'grid' : 'none';
   if (patientSection) {

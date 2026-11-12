@@ -27,8 +27,11 @@ Endpoints:
 """
 
 from fastapi import APIRouter, HTTPException, Body
+from fastapi.responses import JSONResponse
 from typing import Optional
 
+from app.core.fhir_exporter import build_fhir_bundle
+from app.core.ask_expediente import answer_patient_question
 from app.db.local_db import (
     register_patient,
     update_patient,
@@ -36,6 +39,7 @@ from app.db.local_db import (
     get_all_patients,
     check_patient_exists,
     get_patient_events,
+    get_patient_full_history,
     create_evento_clinico,
     rename_clinical_event,
     search_patients_semantically,
@@ -247,3 +251,44 @@ def delete_patient_endpoint(curp: str):
 def get_audit_logs(curp: str):
     """Devuelve los logs de auditoría para un paciente específico."""
     return get_patient_audit_logs(curp.upper())
+
+
+# ── INTEROPERABILIDAD HL7 FHIR R4 & ASK-EXPEDIENTE ───────────────
+
+@router.get("/{curp}/fhir")
+def export_patient_fhir(curp: str, download: bool = False):
+    """Exporta el expediente completo del paciente como Bundle estándar HL7 FHIR R4 (NOM-024)."""
+    history = get_patient_full_history(curp.upper())
+    if not history:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    bundle = build_fhir_bundle(
+        patient=history["patient"],
+        eventos=history["eventos"],
+        vitals=history["vital_readings"],
+        daily_logs=history["patient_daily_logs"],
+    )
+    if download:
+        return JSONResponse(
+            content=bundle,
+            headers={"Content-Disposition": f'attachment; filename="{curp.upper()}_fhir_r4.json"'},
+        )
+    return bundle
+
+
+@router.post("/{curp}/ask")
+def ask_patient_record(curp: str, data: dict = Body(...)):
+    """Copiloto Ask-Expediente: responde preguntas clínicas sobre todo el historial con citas verificables."""
+    history = get_patient_full_history(curp.upper())
+    if not history:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    question = str(data.get("question") or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Escribe una pregunta clínica para consultar el expediente.")
+    return answer_patient_question(
+        question=question,
+        patient=history["patient"],
+        eventos=history["eventos"],
+        vitals=history["vital_readings"],
+        daily_logs=history["patient_daily_logs"],
+        llm_mode=str(data.get("llm_mode") or "offline"),
+    )
