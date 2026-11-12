@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=6.2.1" />
+  <link rel="stylesheet" href="style.css?v=6.3.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -1757,56 +1757,174 @@
        ================================================================= -->
   <div id="auth-login-overlay" class="auth-login-backdrop">
     <div class="auth-login-card">
-      <div class="auth-brand-top">
-        <div style="font-size:28px;">🏥</div>
-        <h2>MedicAItion — Acceso Seguro</h2>
-        <p>Cruz Roja Mérida · Separación estricta de roles (NOM-024 / LFPDPPP)</p>
-      </div>
+      
+      <!-- COLUMNA IZQUIERDA: INSTITUCIONAL / CRUZ ROJA / CERTIFICACIONES -->
+      <aside class="auth-card-sidebar">
+        <div class="auth-sidebar-brand">
+          <div class="auth-cruz-roja-badge">
+            <svg class="auth-cr-logo" width="46" height="46" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="auth-cr-grad" x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#ff3b53" />
+                  <stop offset="50%" stop-color="#ee2a42" />
+                  <stop offset="100%" stop-color="#c9182e" />
+                </linearGradient>
+                <linearGradient id="auth-steth-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#ffffff" />
+                  <stop offset="35%" stop-color="#e2e8f0" />
+                  <stop offset="70%" stop-color="#94a3b8" />
+                  <stop offset="100%" stop-color="#64748b" />
+                </linearGradient>
+              </defs>
+              <path d="M38 16C38 12.7 40.7 10 44 10H56C59.3 10 62 12.7 62 16V38H84C87.3 38 90 40.7 90 44V56C90 59.3 87.3 62 84 62H62V84C62 87.3 59.3 90 56 90H44C40.7 90 38 87.3 38 84V62H16C12.7 62 10 59.3 10 44V44C10 40.7 12.7 38 16 38H38V16Z" fill="url(#auth-cr-grad)" />
+              <path d="M32 28 C22 28 16 42 22 58 C26 68 36 76 50 76 C66 76 80 66 76 50 C73 38 60 42 50 48 C40 54 30 64 34 78 C38 90 54 94 66 88" stroke="url(#auth-steth-grad)" stroke-width="6" stroke-linecap="round" fill="none" />
+              <circle cx="68" cy="86" r="9" fill="url(#auth-steth-grad)" />
+              <circle cx="68" cy="86" r="4" fill="#06b6d4" />
+            </svg>
+            <div>
+              <span class="auth-org-kicker">CRUZ ROJA MEXICANA</span>
+              <h1 class="auth-org-title">Delegación Mérida</h1>
+            </div>
+          </div>
+          <div class="auth-system-tag">
+            <span class="auth-system-badge">ECE / HIS</span>
+            <strong>MedicAItion</strong> · Sistema Clínico Hospitalario
+          </div>
+        </div>
 
-      <div class="auth-mode-tabs">
-        <button type="button" id="auth-tab-staff" class="auth-mode-tab active" onclick="switchAuthLoginTab('staff')">🩺 Personal Clínico</button>
-        <button type="button" id="auth-tab-patient" class="auth-mode-tab" onclick="switchAuthLoginTab('patient')">👤 Soy Paciente</button>
-      </div>
+        <div class="auth-sidebar-features">
+          <div class="auth-feat-item">
+            <div class="auth-feat-icon">🏛️</div>
+            <div class="auth-feat-body">
+              <strong>Expediente Clínico Electrónico Certificado</strong>
+              <small>Conforme a NOM-024-SSA3-2012 y NOM-004-SSA3-2012 para consulta externa y urgencias.</small>
+            </div>
+          </div>
+          <div class="auth-feat-item">
+            <div class="auth-feat-icon">🔒</div>
+            <div class="auth-feat-body">
+              <strong>Bóveda Cifrada Grado Hospitalario</strong>
+              <small>Cifrado ChaCha20-Poly1305 + HMAC-SHA256 con bitácora NOM-024 inmutable.</small>
+            </div>
+          </div>
+          <div class="auth-feat-item">
+            <div class="auth-feat-icon">⚡</div>
+            <div class="auth-feat-body">
+              <strong>Operación 100% Offline Local</strong>
+              <small>Garantía de continuidad asistencial en casos de desastre o contingencia de red.</small>
+            </div>
+          </div>
+          <div class="auth-feat-item">
+            <div class="auth-feat-icon">🛡️</div>
+            <div class="auth-feat-body">
+              <strong>Protección LFPDPPP & Derechos ARCO</strong>
+              <small>Separación estricta de perfiles: el personal médico atiende, el paciente controla su privacidad.</small>
+            </div>
+          </div>
+        </div>
 
-      <div id="auth-panel-staff" class="auth-form-stack">
-        <div class="auth-field">
-          <label for="login-staff-role">Perfil / Rol Operativo</label>
-          <select id="login-staff-role" class="input-field">
-            <option value="Médico">Médico (Consulta, IA, Receta NOM-004)</option>
-            <option value="Enfermería / Triaje">Enfermería / Triaje (Vitales y Triage)</option>
-            <option value="Recepción">Recepción (Agenda, Registro y Firma Paciente)</option>
-            <option value="Administrador">Administrador (Seguridad, Bitácora NOM-024)</option>
-          </select>
+        <div class="auth-sidebar-footer">
+          <div class="auth-node-status">
+            <span class="auth-live-dot"></span>
+            <span>Servidor Local Mérida · Base Hospitalaria Activa</span>
+          </div>
+          <div class="auth-emergency-contact">
+            Línea Médica: <strong>999 924 9813</strong> · Urgencias: <strong>911</strong>
+          </div>
         </div>
-        <div class="auth-field">
-          <label for="login-staff-pin">PIN de Acceso Local</label>
-          <input type="password" id="login-staff-pin" class="input-field" placeholder="Ingresa tu PIN (inicial: 1234)" value="1234" onkeydown="if(event.key==='Enter') submitStaffLogin();" />
-        </div>
-        <div class="auth-hint-pill">
-          🔐 <strong>Acceso Clínico:</strong> el personal firma compromiso de secreto profesional NOM-024; el consentimiento de privacidad se recaba del paciente. <em>(PIN inicial editable en Configuración: 1234)</em>
-        </div>
-        <button type="button" class="btn-primary-gradient" style="width:100%; padding:11px;" onclick="submitStaffLogin()">Ingresar como Personal de Salud</button>
-      </div>
+      </aside>
 
-      <div id="auth-panel-patient" class="auth-form-stack" style="display:none;">
-        <div class="auth-field">
-          <label for="login-patient-curp">Tu CURP o ID de Paciente</label>
-          <input type="text" id="login-patient-curp" class="input-field" placeholder="Ej. MOBK070228HYNRTVA3" style="text-transform:uppercase;" />
+      <!-- COLUMNA DERECHA: FORMULARIO TABULADO DE ACCESO -->
+      <main class="auth-card-main">
+        <div class="auth-main-header">
+          <div class="auth-header-subpill">Sistema Hospitalario Institucional</div>
+          <h2>Ingreso al Sistema</h2>
+          <p>Selecciona tu credencial asignada para acceder al entorno seguro</p>
         </div>
-        <div class="auth-field">
-          <label for="login-patient-secret">Fecha de Nacimiento (AAAA-MM-DD) o Folio</label>
-          <input type="text" id="login-patient-secret" class="input-field" placeholder="Ej. 2007-02-28 ó 0001" onkeydown="if(event.key==='Enter') submitPatientLogin();" />
-        </div>
-        <div class="auth-hint-pill">
-          🛡️ <strong>Portal Básico Ciudadano:</strong> solo verás tus medicinas, citas, chequeo en casa, QR de emergencia y tus permisos ARCO. Nunca tendrás acceso a datos de otros pacientes.
-        </div>
-        <button type="button" class="btn-primary-gradient" style="width:100%; padding:11px;" onclick="submitPatientLogin()">Entrar a Mi Salud Hoy</button>
-      </div>
 
-      <div id="auth-login-error" style="display:none; margin-top:10px; padding:8px 10px; border-radius:10px; background:rgba(239,68,68,0.12); color:#dc2626; font-size:12px; font-weight:700;"></div>
-      <div class="auth-privacy-badge">
-        Cifrado ChaCha20 + HMAC-SHA256 · Operación Offline Local · Yucatán / México
-      </div>
+        <div class="auth-mode-tabs" role="tablist" aria-label="Tipo de acceso al sistema">
+          <button type="button" id="auth-tab-staff" class="auth-mode-tab active" role="tab" aria-selected="true" onclick="switchAuthLoginTab('staff')">
+            <span class="auth-tab-emoji">🩺</span>
+            <span class="auth-tab-text">
+              <strong>Personal Clínico</strong>
+              <small>Médicos, Enfermería, Recepción</small>
+            </span>
+          </button>
+          <button type="button" id="auth-tab-patient" class="auth-mode-tab" role="tab" aria-selected="false" onclick="switchAuthLoginTab('patient')">
+            <span class="auth-tab-emoji">👤</span>
+            <span class="auth-tab-text">
+              <strong>Soy Paciente</strong>
+              <small>Mi Salud Hoy · Derechos ARCO</small>
+            </span>
+          </button>
+        </div>
+
+        <div id="auth-panel-staff" class="auth-form-stack">
+          <div class="auth-field">
+            <label for="login-staff-role">Perfil / Rol Operativo en Turno</label>
+            <div class="auth-input-wrapper">
+              <span class="auth-input-icon">👔</span>
+              <select id="login-staff-role" class="input-field auth-select">
+                <option value="Médico">Médico (Consulta Especializada, IA Diagnóstica, Receta NOM-004)</option>
+                <option value="Enfermería / Triaje">Enfermería / Triaje (Signos Vitales y Triaje)</option>
+                <option value="Recepción">Recepción (Agenda, Citas y Consentimiento)</option>
+                <option value="Administrador">Administrador (Seguridad y Auditoría NOM-024)</option>
+              </select>
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="login-staff-pin">PIN de Seguridad Local</label>
+            <div class="auth-input-wrapper">
+              <span class="auth-input-icon">🔑</span>
+              <input type="password" id="login-staff-pin" class="input-field auth-input" placeholder="Ingresa tu PIN (predeterminado: 1234)" value="1234" onkeydown="if(event.key==='Enter') submitStaffLogin();" />
+            </div>
+          </div>
+          <div class="auth-hint-pill">
+            <span class="auth-hint-icon">⚖️</span>
+            <div><strong>Compromiso Deontológico:</strong> Al autenticarse, el personal médico firma electrónicamente el secreto profesional (Art. 16 Constitucional / NOM-024). <em>PIN predeterminado editable: 1234</em></div>
+          </div>
+          <button type="button" class="btn-primary-gradient auth-submit-btn" onclick="submitStaffLogin()">
+            <span>Ingresar al Expediente Clínico</span>
+            <span class="auth-btn-arrow">→</span>
+          </button>
+        </div>
+
+        <div id="auth-panel-patient" class="auth-form-stack" style="display:none;">
+          <div class="auth-field">
+            <label for="login-patient-curp">CURP o Folio de Paciente</label>
+            <div class="auth-input-wrapper">
+              <span class="auth-input-icon">🪪</span>
+              <input type="text" id="login-patient-curp" class="input-field auth-input" placeholder="18 caracteres (Ej. MOBK070228HYNRTVA3)" style="text-transform:uppercase;" />
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="login-patient-secret">Fecha de Nacimiento (AAAA-MM-DD) o Folio Hospitalario</label>
+            <div class="auth-input-wrapper">
+              <span class="auth-input-icon">📅</span>
+              <input type="text" id="login-patient-secret" class="input-field auth-input" placeholder="Ej. 2007-02-28 ó 0001" onkeydown="if(event.key==='Enter') submitPatientLogin();" />
+            </div>
+          </div>
+          <div class="auth-hint-pill patient-hint">
+            <span class="auth-hint-icon">🛡️</span>
+            <div><strong>Privacidad Ciudadana Garantizada:</strong> Portal personal para revisar citas, medicamentos, chequeo en casa y descargar tu expediente bajo derechos ARCO. Tus datos son privados y confidenciales.</div>
+          </div>
+          <button type="button" class="btn-primary-gradient auth-submit-btn patient-btn" onclick="submitPatientLogin()">
+            <span>Acceder a Mi Salud Hoy</span>
+            <span class="auth-btn-arrow">→</span>
+          </button>
+        </div>
+
+        <div id="auth-login-error" style="display:none;" class="auth-error-alert"></div>
+        
+        <div class="auth-privacy-badge">
+          <span>🔒 ChaCha20 + HMAC-SHA256</span>
+          <span class="auth-badge-sep">·</span>
+          <span>Bóveda Local Cifrada</span>
+          <span class="auth-badge-sep">·</span>
+          <span>Mérida, Yucatán</span>
+        </div>
+      </main>
+
     </div>
   </div>
 
@@ -2201,13 +2319,13 @@
     </button>
   </div>
 
-  <script src="state.js?v=6.2.1"></script>
-  <script src="overlays.js?v=6.2.1"></script>
-  <script src="modals.js?v=6.2.1"></script>
-  <script src="calendar.js?v=6.2.1"></script>
-  <script src="clinical_ops.js?v=6.2.1"></script>
-  <script src="specialized_care.js?v=6.2.1"></script>
-  <script src="pulso_assistant.js?v=6.2.1"></script>
-  <script src="app.js?v=6.2.1"></script>
+  <script src="state.js?v=6.3.0"></script>
+  <script src="overlays.js?v=6.3.0"></script>
+  <script src="modals.js?v=6.3.0"></script>
+  <script src="calendar.js?v=6.3.0"></script>
+  <script src="clinical_ops.js?v=6.3.0"></script>
+  <script src="specialized_care.js?v=6.3.0"></script>
+  <script src="pulso_assistant.js?v=6.3.0"></script>
+  <script src="app.js?v=6.3.0"></script>
 </body>
 </html>
