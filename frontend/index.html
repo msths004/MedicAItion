@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5.0.0" />
+  <link rel="stylesheet" href="style.css?v=5.3.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -129,10 +129,10 @@
           <span>Nueva Consulta</span>
         </button>
 
-        <button class="sidebar-nav-btn" id="nav-btn-agenda" onclick="focusAgendaSection()" title="Agenda de citas programadas hoy">
+        <button class="sidebar-nav-btn" id="nav-btn-agenda" onclick="switchMainTab('agenda')" title="Calendario anual de citas y programación médica">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
           <span>Agenda / Citas</span>
-          <span class="nav-badge-red">3</span>
+          <span class="nav-badge-red" id="agenda-nav-badge">3</span>
         </button>
 
         <button class="sidebar-nav-btn" id="nav-btn-expedientes" onclick="switchMainTab('expedientes')" title="Directorio de pacientes registrados">
@@ -162,7 +162,7 @@
         <!-- GROUP 3: ADMINISTRACIÓN -->
         <div class="nav-section-label nav-section-spaced">ADMINISTRACIÓN</div>
 
-        <button class="sidebar-nav-btn" id="nav-btn-reportes" onclick="focusEpidemiologiaSection()" title="Estadísticas epidemiológicas y métricas hospitalarias">
+        <button class="sidebar-nav-btn" id="nav-btn-reportes" onclick="switchMainTab('reportes')" title="Estadísticas epidemiológicas y métricas hospitalarias">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 17v-5"/><path d="M12 17V7"/><path d="M16 17v-3"/></svg>
           <span>Reportes y Estadísticas</span>
         </button>
@@ -250,8 +250,56 @@
             
             <!-- Top Banner -->
             <div class="dashboard-greeting">
-              <h1>Buenos días, Roberto</h1>
-              <p>Aquí tienes el resumen de tu actividad clínica para hoy.</p>
+              <h1 id="dashboard-greeting-title">Buenos días, Roberto</h1>
+              <p id="dashboard-greeting-sub">Aquí tienes el resumen de tu actividad clínica para hoy.</p>
+            </div>
+
+            <!-- FLUJO DE TRABAJO DEL MÉDICO: KPIs + ACCIONES DE 1 CLIC -->
+            <div class="doctor-workflow-bar">
+              <div class="next-patient-card" id="next-patient-card">
+                <div class="next-patient-label">SIGUIENTE PACIENTE</div>
+                <div class="next-patient-body" id="next-patient-body">
+                  <span class="next-patient-empty">Cargando cola de atención...</span>
+                </div>
+              </div>
+
+              <div class="kpi-strip">
+                <div class="kpi-tile" onclick="switchMainTab('agenda')" title="Ver agenda del día">
+                  <span class="kpi-val" id="kpi-pendientes">—</span>
+                  <span class="kpi-lbl">Pendientes hoy</span>
+                </div>
+                <div class="kpi-tile" onclick="switchMainTab('agenda')" title="Pacientes esperando en sala">
+                  <span class="kpi-val" id="kpi-sala">—</span>
+                  <span class="kpi-lbl">En sala</span>
+                </div>
+                <div class="kpi-tile kpi-tile-alert" onclick="focusTasksSection()" title="Pacientes con prioridad roja/naranja">
+                  <span class="kpi-val" id="kpi-criticos">—</span>
+                  <span class="kpi-lbl">Prioritarios</span>
+                </div>
+                <div class="kpi-tile" title="Consultas atendidas hoy">
+                  <span class="kpi-val" id="kpi-atendidas">—</span>
+                  <span class="kpi-lbl">Atendidas</span>
+                </div>
+              </div>
+
+              <div class="quick-actions-grid">
+                <button class="quick-action-btn qa-primary" onclick="startBlankConsultation()" title="Atajo: Alt + N">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                  Nueva consulta
+                </button>
+                <button class="quick-action-btn" onclick="openAppointmentModal()" title="Atajo: Alt + A">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                  Agendar cita
+                </button>
+                <button class="quick-action-btn" onclick="openWearableModal('manual')" title="Capturar signos vitales de triaje">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  Registrar signos
+                </button>
+                <button class="quick-action-btn" onclick="switchMainTab('expedientes')" title="Atajo: Alt + P">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  Buscar paciente
+                </button>
+              </div>
             </div>
 
             <!-- ROW 1: AGENDA + WEARABLES -->
@@ -261,10 +309,10 @@
               <div class="bento-card agenda-card" id="bento-agenda-card">
                 <div class="bento-card-header">
                   <h3>PRÓXIMOS PACIENTES (AGENDA)</h3>
-                  <span class="bento-sub-caption">Todo a hoy</span>
+                  <span class="bento-sub-caption" id="dashboard-agenda-caption">Todo a hoy</span>
                 </div>
 
-                <div class="agenda-list">
+                <div class="agenda-list" id="dashboard-agenda-list">
                   <!-- Item 1: 09:00 AM Carlos Manuel G. -->
                   <div class="agenda-item">
                     <div class="agenda-time">
@@ -504,19 +552,21 @@
                 <div class="bento-card epidemiologia-inner-card">
                   <div class="epi-top-row">
                     <span class="epi-brand">Cerebro IA</span>
-                    <span class="epi-live-badge">En tiempo real</span>
+                    <span class="epi-live-badge" id="epi-live-badge">En tiempo real</span>
                   </div>
-                  <p class="epi-topic">Dengue en Mérida -<br/>Alertas rápidas:</p>
+                  <p class="epi-topic" id="epi-topic">Dengue en Mérida -<br/>Alertas rápidas:</p>
                   <div class="epi-stats-grid">
                     <div class="epi-stat">
-                      <div class="epi-stat-val">35%</div>
-                      <div class="epi-stat-lbl">Alertas rápidas</div>
+                      <div class="epi-stat-val" id="epi-stat-share">35%</div>
+                      <div class="epi-stat-lbl" id="epi-stat-share-lbl">Alertas rápidas</div>
                     </div>
                     <div class="epi-stat">
-                      <div class="epi-stat-val">+5.3%</div>
-                      <div class="epi-stat-lbl">Rápido/drástico</div>
+                      <div class="epi-stat-val" id="epi-stat-change">+5.3%</div>
+                      <div class="epi-stat-lbl" id="epi-stat-change-lbl">Rápido/drástico</div>
                     </div>
                   </div>
+                  <div class="epi-mini-list" id="epi-mini-list"></div>
+                  <button class="epi-open-reports" onclick="switchMainTab('reportes')">Ver reporte completo ›</button>
                 </div>
               </div>
 
@@ -526,7 +576,7 @@
                   <h3>ALERTAS Y TAREAS PENDIENTES</h3>
                 </div>
 
-                <div class="tasks-list">
+                <div class="tasks-list" id="dashboard-tasks-list">
                   <div class="task-item" onclick="switchMainTab('consulta')">
                     <span class="task-icon task-alert">!</span>
                     <span class="task-text">3 notas médicas pendientes de firmar</span>
@@ -546,6 +596,39 @@
 
             </div>
 
+          </div>
+        </section>
+
+        <!-- =================================================================
+             VIEW: REPORTES Y ESTADÍSTICAS (datos reales SQLite / CIE-10)
+             ================================================================= -->
+        <section class="view-panel" id="panel-reports-section" style="display:none">
+          <div class="reports-container">
+            <div class="reports-header">
+              <div>
+                <h1>Reportes y Estadísticas</h1>
+                <p>Vigilancia epidemiológica y productividad calculadas en tiempo real desde las consultas registradas.</p>
+              </div>
+              <div class="reports-header-actions">
+                <button class="btn-outline-pill" onclick="renderReportsView()">↻ Actualizar</button>
+                <button class="btn-dark-pill" onclick="exportReportsCsv()">⬇ Exportar CSV</button>
+              </div>
+            </div>
+
+            <div class="reports-kpi-grid" id="reports-kpi-grid"></div>
+
+            <div class="reports-two-col">
+              <div class="bento-card reports-card">
+                <div class="bento-card-header"><h3>VIGILANCIA EPIDEMIOLÓGICA (SEMANAL)</h3></div>
+                <div id="reports-epi-table" class="reports-epi-table"></div>
+              </div>
+              <div class="bento-card reports-card">
+                <div class="bento-card-header"><h3>TRIAJE DE HOY</h3></div>
+                <div id="reports-triage-bars" class="reports-bars"></div>
+                <div class="bento-card-header" style="margin-top:18px"><h3>DIAGNÓSTICOS MÁS FRECUENTES (90 DÍAS)</h3></div>
+                <div id="reports-top-dx" class="reports-top-dx"></div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -598,6 +681,16 @@
                   <span>Cerebro IA (<span id="llm-mode-label">Auto</span>)</span>
                 </button>
               </div>
+            </div>
+
+            <!-- PLANTILLAS RÁPIDAS + CALCULADORAS PARA EL MÉDICO -->
+            <div class="consulta-templates-bar">
+              <span class="templates-bar-label">Plantillas rápidas:</span>
+              <button type="button" class="tpl-chip" onclick="applyClinicalTemplate('dm2')">🩺 Control DM2 / HAS</button>
+              <button type="button" class="tpl-chip" onclick="applyClinicalTemplate('dengue')">🦟 Fiebre / Dengue</button>
+              <button type="button" class="tpl-chip" onclick="applyClinicalTemplate('resp')">🫁 Respiratorio</button>
+              <button type="button" class="tpl-chip tpl-chip-urg" onclick="applyClinicalTemplate('toracico')">🚨 Dolor Torácico</button>
+              <button type="button" class="tpl-chip tpl-chip-calc" onclick="openCalculatorsModal()">🧮 Calculadoras</button>
             </div>
 
             <!-- AUDIO CAPTURE CARD -->
@@ -711,6 +804,9 @@
               <p>Capture el caso médico en el panel izquierdo. Al presionar <strong>"Procesar con IA"</strong>, el borrador normativo NOM-004 y la receta médica se estructurarán automáticamente aquí.</p>
             </div>
 
+            <!-- GUARDIÁN CLÍNICO CDSS (Triaje, Banderas Rojas & Escudo Farmacológico) -->
+            <div id="clinical-safety-banner" class="clinical-safety-banner" style="display:none"></div>
+
             <!-- ASSOCIATE TO EVENT BUTTON -->
             <button class="btn-associate-note" id="btn-associate-note" onclick="openAssociateNoteModal()" style="display:none" title="Asociar las notas y recetas generadas con un Evento Clínico existente">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -749,6 +845,22 @@
                   Códigos Estandarizados (CIE-10 / CIE-9MC)
                 </h3>
                 <div id="result-cie10"></div>
+              </div>
+
+              <div class="result-section" id="result-section-ddx" style="display:none">
+                <h3 class="section-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>
+                  Diagnóstico Diferencial IA (3 Niveles)
+                </h3>
+                <div id="result-ddx" class="ddx-grid"></div>
+              </div>
+
+              <div class="result-section" id="result-section-evidence" style="display:none">
+                <h3 class="section-title title-cyan">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  Evidencia Vinculada (Trazabilidad al Dictado Original)
+                </h3>
+                <div id="result-evidence" class="evidence-list"></div>
               </div>
 
               <details class="json-details">
@@ -806,11 +918,25 @@
 
                   <h5>Indicaciones y Cuidados Generales</h5>
                   <div class="receta-instructions" id="receta-instructions-text"></div>
+
+                  <div class="receta-alarma-box" id="receta-alarma-box" style="display:none">
+                    <h6>⚠️ Signos de Alarma — Acudir a Urgencias de inmediato si presenta:</h6>
+                    <ul id="receta-alarma-list"></ul>
+                  </div>
                 </div>
 
-                <div class="receta-footer">
-                  <div class="receta-firma-line"></div>
-                  <span>Firma y Cédula del Médico Tratante</span>
+                <div class="receta-footer receta-footer-qr">
+                  <div class="receta-qr-wrap">
+                    <div id="receta-qr-box" class="receta-qr-box"></div>
+                    <div class="receta-qr-meta">
+                      <strong>Verificación Digital</strong>
+                      <span id="receta-verif-code">MED-BORRADOR</span>
+                    </div>
+                  </div>
+                  <div class="receta-firma-wrap">
+                    <div class="receta-firma-line"></div>
+                    <span>Firma y Cédula del Médico Tratante</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -865,8 +991,158 @@
           </div>
         </section>
 
+        <!-- =================================================================
+             VIEW 4: AGENDA / CITAS (Calendario Anual de 12 Meses + Detalle)
+             ================================================================= -->
+        <section class="view-panel" id="panel-agenda-section" style="display:none">
+          <div class="agenda-page-container">
+
+            <!-- Header & Year Controls -->
+            <div class="agenda-page-header">
+              <div>
+                <h1 class="agenda-page-title">Agenda Médica &amp; Calendario Anual</h1>
+                <p class="agenda-page-sub">Visualiza todo el año, consulta citas programadas por día y agenda nuevas consultas.</p>
+              </div>
+
+              <div class="agenda-toolbar-controls">
+                <!-- View Switcher: Todo el Año vs Mes -->
+                <div class="cal-view-switch">
+                  <button class="cal-view-btn active" id="cal-btn-year" onclick="setCalendarViewMode('year')">Todo el Año (12 Meses)</button>
+                  <button class="cal-view-btn" id="cal-btn-month" onclick="setCalendarViewMode('month')">Vista Mensual</button>
+                </div>
+
+                <!-- Year Navigation -->
+                <div class="cal-year-nav">
+                  <button class="cal-nav-arrow" onclick="changeCalendarYear(-1)" title="Año anterior">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <span class="cal-year-display" id="cal-year-display">2026</span>
+                  <button class="cal-nav-arrow" onclick="changeCalendarYear(1)" title="Año siguiente">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                </div>
+
+                <button class="btn-cal-today" onclick="jumpToCalendarToday()">Hoy</button>
+
+                <button class="btn-register-patient-modern btn-add-cita" onclick="openAppointmentModal()" title="Programar una nueva cita médica">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Agendar Cita
+                </button>
+              </div>
+            </div>
+
+            <!-- Legend Bar -->
+            <div class="cal-legend-bar">
+              <div class="cal-legend-item"><span class="legend-dot legend-today"></span> Día actual</div>
+              <div class="cal-legend-item"><span class="legend-dot legend-has-citas"></span> Con citas programadas</div>
+              <div class="cal-legend-item"><span class="legend-dot legend-selected"></span> Día seleccionado</div>
+              <div class="cal-legend-summary" id="cal-year-total-summary">Cargando resumen anual...</div>
+            </div>
+
+            <!-- Split Layout: Left Calendar Grid (Year / Month) + Right Day Inspector -->
+            <div class="agenda-workspace-grid">
+              <div class="calendar-main-area" id="calendar-grid-container">
+                <!-- Rendered dynamically by calendar.js -->
+              </div>
+
+              <aside class="calendar-day-inspector" id="calendar-day-inspector">
+                <div class="inspector-header">
+                  <div>
+                    <div class="inspector-day-badge" id="inspector-day-badge">DÍA SELECCIONADO</div>
+                    <h2 class="inspector-date-title" id="inspector-date-title">—</h2>
+                  </div>
+                  <button class="btn-dark-pill" onclick="openAppointmentModal(CalendarState.selectedDateStr)">+ Nueva Cita</button>
+                </div>
+
+                <div class="inspector-citas-list" id="inspector-citas-list">
+                  <!-- Rendered dynamically by calendar.js -->
+                </div>
+              </aside>
+            </div>
+
+          </div>
+        </section>
+
       </main>
 
+    </div>
+  </div>
+
+  <!-- MODAL: AGENDAR NUEVA CITA -->
+  <div class="llm-modal-overlay" id="appointment-modal-overlay">
+    <div class="llm-modal appointment-modal-box">
+      <div class="modal-top-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+      </div>
+      <h2>Agendar Nueva Cita Médica</h2>
+      <p class="modal-sub">Programa una consulta en el calendario anual de Cruz Roja Mérida.</p>
+
+      <div class="appt-form-grid">
+        <div class="appt-field">
+          <label for="appt-patient-select">Paciente Registrado (Opcional)</label>
+          <select id="appt-patient-select" class="input-field" onchange="onApptPatientSelect(this)">
+            <option value="">— Escribir paciente manualmente o seleccionar —</option>
+          </select>
+        </div>
+
+        <div class="appt-row-2">
+          <div class="appt-field">
+            <label for="appt-patient-name">Nombre Completo *</label>
+            <input type="text" id="appt-patient-name" class="input-field" placeholder="Ej: Carlos Manuel G." required />
+          </div>
+          <div class="appt-field">
+            <label for="appt-patient-curp">CURP / Expediente</label>
+            <input type="text" id="appt-patient-curp" class="input-field monospace-input" placeholder="Opcional" maxlength="18" />
+          </div>
+        </div>
+
+        <div class="appt-row-2">
+          <div class="appt-field">
+            <label for="appt-date">Fecha de la Cita *</label>
+            <input type="date" id="appt-date" class="input-field" required />
+          </div>
+          <div class="appt-field">
+            <label for="appt-time">Hora *</label>
+            <input type="time" id="appt-time" class="input-field" value="10:00" required />
+          </div>
+        </div>
+
+        <div class="appt-field">
+          <label for="appt-reason">Motivo / Tipo de Consulta *</label>
+          <input type="text" id="appt-reason" class="input-field" placeholder="Ej: Control general, Seguimiento diabetes, Urgencias..." required />
+        </div>
+
+        <div class="appt-row-2">
+          <div class="appt-field">
+            <label for="appt-triage">Prioridad de Triaje</label>
+            <select id="appt-triage" class="input-field">
+              <option value="VERDE">🟢 VERDE — Consulta / urgencia menor</option>
+              <option value="AMARILLO">🟡 AMARILLO — Urgencia (≤30 min)</option>
+              <option value="NARANJA">🟠 NARANJA — Emergencia (≤10 min)</option>
+              <option value="ROJO">🔴 ROJO — Riesgo vital inmediato</option>
+            </select>
+          </div>
+          <div class="appt-field">
+            <label for="appt-status">Estado inicial</label>
+            <select id="appt-status" class="input-field">
+              <option value="Programada">Programada</option>
+              <option value="En Sala / Triaje">Llegó — En Sala / Triaje</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="appt-field">
+          <label class="appt-checkbox-label">
+            <input type="checkbox" id="appt-wearable" />
+            <span>Vincular monitoreo de Wearable / Smartwatch conectado</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="llm-modal-close" style="background:#111c2d; flex:1;" onclick="saveNewAppointment()">Guardar Cita en Calendario</button>
+        <button class="llm-modal-close" style="background:#64748b; width:auto; padding:0 20px;" onclick="closeAppointmentModal()">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -877,35 +1153,106 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="12" height="12" x="6" y="6" rx="3"/><path d="M9 6V3h6v3"/><path d="M9 18v3h6v-3"/><path d="M9 12h2l1-2 1 4 1-2h1"/></svg>
       </div>
       <h2>Central de Dispositivos Médicos (Wearables)</h2>
-      <p class="modal-sub">Sincronización Bluetooth Low Energy (BLE) con relojes inteligentes y sensores biométricos de pacientes.</p>
+      <p class="modal-sub">Conecta un sensor Bluetooth real, importa el archivo exportado del reloj o captura signos de triaje. Todo se guarda en el expediente y genera alertas automáticas.</p>
 
-      <div class="llm-options-grid">
-        <div class="llm-opt active">
-          <div class="llm-opt-body">
-            <div class="llm-opt-title">⌚ Reloj de Carlos Manuel — Garmin Active (Conectado ✅)</div>
-            <div class="llm-opt-desc">FC: <strong>72 lpm</strong> &bull; SpO2: <strong>98%</strong> &bull; TA estimada: <strong>122/78 mmHg</strong> &bull; Temp: <strong>36.5 °C</strong></div>
+      <div class="wearable-patient-row">
+        <label for="wearable-patient-select">Paciente</label>
+        <select id="wearable-patient-select" class="input-field">
+          <option value="">— Selecciona paciente —</option>
+        </select>
+      </div>
+
+      <div class="wearable-tabs">
+        <button class="wearable-tab active" id="wtab-ble" onclick="setWearableTab('ble')">📡 Bluetooth en vivo</button>
+        <button class="wearable-tab" id="wtab-file" onclick="setWearableTab('file')">📁 Importar archivo</button>
+        <button class="wearable-tab" id="wtab-manual" onclick="setWearableTab('manual')">✍️ Captura manual</button>
+      </div>
+
+      <!-- BLE -->
+      <div class="wearable-pane" id="wpane-ble">
+        <p class="wearable-help">Compatible con bandas y relojes que exponen el <strong>Servicio de Frecuencia Cardíaca BLE (0x180D)</strong> — Polar, Garmin (modo broadcast), Wahoo, Coospo, etc. Requiere Chrome o Edge.</p>
+        <div class="ble-live-box">
+          <div class="ble-live-val"><span id="ble-live-hr">--</span><small>lpm</small></div>
+          <div class="ble-live-meta">
+            <div id="ble-device-name">Sin dispositivo conectado</div>
+            <div id="ble-live-status" class="ble-status-idle">● Desconectado</div>
           </div>
         </div>
-
-        <div class="llm-opt">
-          <div class="llm-opt-body">
-            <div class="llm-opt-title">⌚ Reloj de Kevin Enrique — Apple Watch S9 (Conectado ✅)</div>
-            <div class="llm-opt-desc">FC: <strong>82 lpm</strong> &bull; SpO2: <strong>98%</strong> &bull; Nivel de estrés: Moderado &bull; Temp: <strong>36.8 °C</strong></div>
-          </div>
+        <div class="wearable-btn-row">
+          <button class="btn-dark-pill" id="ble-connect-btn" onclick="connectBleHeartRate()">Conectar sensor Bluetooth</button>
+          <button class="btn-outline-pill" id="ble-disconnect-btn" onclick="disconnectBle()" style="display:none">Desconectar</button>
         </div>
+      </div>
 
-        <div class="llm-opt">
-          <div class="llm-opt-body">
-            <div class="llm-opt-title">⌚ Reloj de Juan Pérez — Galaxy Watch 6 (Sincronizado 🔄)</div>
-            <div class="llm-opt-desc">FC: <strong>74 lpm</strong> &bull; SpO2: <strong>99%</strong> &bull; Actividad física: 6,420 pasos hoy</div>
-          </div>
+      <!-- FILE -->
+      <div class="wearable-pane" id="wpane-file" style="display:none">
+        <p class="wearable-help">Archivo <strong>CSV</strong> o <strong>JSON</strong> exportado del reloj. Columnas reconocidas: <code>timestamp, heart_rate, spo2, systolic, diastolic, temperature, steps</code>.</p>
+        <input type="file" id="wearable-file-input" accept=".csv,.json,text/csv,application/json" class="input-field" />
+        <div class="wearable-btn-row">
+          <button class="btn-dark-pill" onclick="importWearableFile()">Importar lecturas</button>
+          <button class="btn-outline-pill" onclick="downloadWearableTemplate()">Descargar plantilla CSV</button>
         </div>
+        <div id="wearable-import-result" class="wearable-import-result"></div>
+      </div>
+
+      <!-- MANUAL -->
+      <div class="wearable-pane" id="wpane-manual" style="display:none">
+        <div class="manual-vitals-grid">
+          <label>FC (lpm)<input type="number" id="mv-hr" class="input-field" min="20" max="250" placeholder="72" /></label>
+          <label>SpO2 (%)<input type="number" id="mv-spo2" class="input-field" min="50" max="100" placeholder="98" /></label>
+          <label>TA sistólica<input type="number" id="mv-sys" class="input-field" min="50" max="260" placeholder="120" /></label>
+          <label>TA diastólica<input type="number" id="mv-dia" class="input-field" min="30" max="160" placeholder="80" /></label>
+          <label>Temp (°C)<input type="number" id="mv-temp" class="input-field" step="0.1" min="30" max="43" placeholder="36.5" /></label>
+          <label>Glucosa (mg/dL)<input type="number" id="mv-glu" class="input-field" min="20" max="900" placeholder="opcional" /></label>
+        </div>
+        <div class="wearable-btn-row">
+          <button class="btn-dark-pill" onclick="saveManualVitals()">Guardar signos vitales</button>
+        </div>
+      </div>
+
+      <h4 class="wearable-list-title">Últimas lecturas registradas</h4>
+      <div class="llm-options-grid" id="wearable-latest-list">
+        <div class="wearable-empty">Cargando lecturas...</div>
       </div>
 
       <div style="display:flex; gap:10px; margin-top:16px;">
-        <button class="llm-modal-close" style="background:#0f172a;" onclick="importWearableHealthData(); closeWearableModal();">Importar Signos Vitales a Consulta</button>
+        <button class="llm-modal-close" style="background:#0f172a;" onclick="importWearableHealthData(); closeWearableModal();">Usar signos en la consulta</button>
         <button class="llm-modal-close" style="background:#64748b;" onclick="closeWearableModal()">Cerrar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- CALCULADORAS CLÍNICAS RÁPIDAS MODAL -->
+  <div class="llm-modal-overlay" id="calculators-modal-overlay">
+    <div class="llm-modal wearable-modal-box">
+      <div class="modal-top-badge">🧮</div>
+      <h2>Calculadoras Clínicas Rápidas</h2>
+      <p class="modal-sub">Herramientas de apoyo inmediato en consulta (100% offline).</p>
+
+      <div class="calc-grid">
+        <div class="calc-box">
+          <h4>IMC y Presión Arterial Media (PAM)</h4>
+          <div class="manual-vitals-grid">
+            <label>Peso (kg)<input type="number" id="calc-peso" class="input-field" placeholder="72" oninput="calcClinicalTools()" /></label>
+            <label>Talla (cm)<input type="number" id="calc-talla" class="input-field" placeholder="172" oninput="calcClinicalTools()" /></label>
+            <label>TA Sistólica<input type="number" id="calc-tas" class="input-field" placeholder="120" oninput="calcClinicalTools()" /></label>
+            <label>TA Diastólica<input type="number" id="calc-tad" class="input-field" placeholder="80" oninput="calcClinicalTools()" /></label>
+          </div>
+          <div id="calc-imc-pam-out" class="calc-output">Ingresa peso/talla o presión para calcular al instante.</div>
+        </div>
+
+        <div class="calc-box">
+          <h4>Dosis Pediátrica / Por Peso (mg/kg)</h4>
+          <div class="manual-vitals-grid">
+            <label>Peso (kg)<input type="number" id="calc-ped-peso" class="input-field" placeholder="18" oninput="calcClinicalTools()" /></label>
+            <label>Dosis (mg/kg/día)<input type="number" id="calc-ped-mgkg" class="input-field" placeholder="45" oninput="calcClinicalTools()" /></label>
+            <label>Tomas al día<input type="number" id="calc-ped-tomas" class="input-field" value="3" min="1" max="6" oninput="calcClinicalTools()" /></label>
+          </div>
+          <div id="calc-ped-out" class="calc-output">Ingresa peso y mg/kg/día (ej. Paracetamol 45-60, Amoxicilina 40-90).</div>
+        </div>
+      </div>
+
+      <button class="llm-modal-close" style="margin-top:14px;" onclick="closeCalculatorsModal()">Cerrar Calculadoras</button>
     </div>
   </div>
 
@@ -969,9 +1316,11 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.0.0"></script>
-  <script src="overlays.js?v=5.0.0"></script>
-  <script src="modals.js?v=5.0.0"></script>
-  <script src="app.js?v=5.0.0"></script>
+  <script src="state.js?v=5.3.0"></script>
+  <script src="overlays.js?v=5.3.0"></script>
+  <script src="modals.js?v=5.3.0"></script>
+  <script src="calendar.js?v=5.3.0"></script>
+  <script src="clinical_ops.js?v=5.3.0"></script>
+  <script src="app.js?v=5.3.0"></script>
 </body>
 </html>

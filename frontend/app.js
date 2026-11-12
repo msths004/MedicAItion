@@ -18,22 +18,41 @@ function switchMainTab(tab) {
   const btnDash = document.getElementById('nav-btn-dashboard');
   const btnCons = document.getElementById('nav-btn-consulta');
   const btnExpe = document.getElementById('nav-btn-expedientes');
+  const btnAgnd = document.getElementById('nav-btn-agenda');
+  const btnRep  = document.getElementById('nav-btn-reportes');
 
   if (btnDash) btnDash.classList.toggle('active', tab === 'dashboard');
   if (btnCons) btnCons.classList.toggle('active', tab === 'consulta');
   if (btnExpe) btnExpe.classList.toggle('active', tab === 'expedientes');
+  if (btnAgnd) btnAgnd.classList.toggle('active', tab === 'agenda');
+  if (btnRep)  btnRep.classList.toggle('active', tab === 'reportes');
 
   document.body.className = `mode-${tab}`;
 
   const dashSection = document.getElementById('panel-dashboard-section');
   const consultaLayout = document.getElementById('consulta-layout');
   const patientSection = document.getElementById('panel-patients-section');
+  const agendaSection = document.getElementById('panel-agenda-section');
+  const reportsSection = document.getElementById('panel-reports-section');
 
-  if (dashSection) dashSection.style.display = tab === 'dashboard' ? 'block' : 'none';
+  if (dashSection) {
+    dashSection.style.display = tab === 'dashboard' ? 'block' : 'none';
+    if (tab === 'dashboard' && typeof refreshDashboard === 'function') refreshDashboard();
+  }
+  if (reportsSection) {
+    reportsSection.style.display = tab === 'reportes' ? 'block' : 'none';
+    if (tab === 'reportes' && typeof renderReportsView === 'function') renderReportsView();
+  }
   if (consultaLayout) consultaLayout.style.display = tab === 'consulta' ? 'grid' : 'none';
   if (patientSection) {
     patientSection.style.display = tab === 'expedientes' ? 'flex' : 'none';
     if (tab === 'expedientes') loadPatients();
+  }
+  if (agendaSection) {
+    agendaSection.style.display = tab === 'agenda' ? 'block' : 'none';
+    if (tab === 'agenda' && typeof renderCalendar === 'function') {
+      renderCalendar();
+    }
   }
 
   const titleEl = document.getElementById('results-panel-title');
@@ -134,6 +153,13 @@ function printActiveTab() {
           .receta-table { width: 100%; border-collapse: collapse; font-size: 12px; }
           .receta-table th { text-align: left; background: #f9fafb; padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #e5e7eb; }
           .receta-table td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; }
+          .receta-alarma-box { margin-top: 14px; padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; }
+          .receta-alarma-box h6 { margin: 0 0 6px; font-size: 12px; color: #b91c1c; }
+          .receta-alarma-box ul { margin: 0; padding-left: 18px; font-size: 11px; color: #7f1d1d; }
+          .receta-footer-qr { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-top: 22px; }
+          .receta-qr-wrap { display: flex; align-items: center; gap: 10px; }
+          .receta-qr-box svg { width: 76px; height: 76px; border: 1px solid #e5e7eb; border-radius: 6px; }
+          .receta-qr-meta { font-size: 10px; color: #475569; display: flex; flex-direction: column; gap: 2px; }
           @media print { body { padding: 0; } }
         </style></head><body>
         ${cardHtml}
@@ -381,6 +407,131 @@ function renderResults(data) {
                        data.plan_tratamiento || 
                        'Seguir indicaciones generales médicas.';
   document.getElementById('receta-instructions-text').textContent = instructions;
+
+  // 6. Guardián Clínico CDSS, DDx, Evidencia Vinculada y QR + Alarma en Receta
+  renderClinicalSafetyAndInsights(data);
+}
+
+function renderClinicalSafetyAndInsights(data) {
+  const seg = data.seguridad_clinica || {};
+  const bannerEl = document.getElementById('clinical-safety-banner');
+  if (bannerEl) {
+    const tri = seg.triaje || {};
+    const nivel = tri.nivel || 'VERDE';
+    const flags = seg.banderas_rojas || [];
+    const medAlerts = seg.alertas_medicamentos || [];
+    const calc = seg.calculos_clinicos || {};
+    const imc = calc.imc;
+
+    const badgeCls = nivel === 'ROJO' ? 'triage-red'
+                   : nivel === 'NARANJA' ? 'triage-orange'
+                   : nivel === 'AMARILLO' ? 'triage-yellow' : 'triage-green';
+
+    let alertsHtml = '';
+    medAlerts.forEach(a => {
+      const isCrit = a.severidad === 'CRITICA';
+      alertsHtml += `
+        <div class="cdss-alert-card ${isCrit ? 'cdss-crit' : 'cdss-warn'}">
+          <div class="cdss-alert-head">
+            <span class="cdss-sev-pill">${esc(a.severidad)}</span>
+            <strong>${esc(a.medicamento)}: ${esc(a.titulo)}</strong>
+          </div>
+          <p>${esc(a.detalle)}</p>
+          <div class="cdss-rec"><strong>Acción recomendada:</strong> ${esc(a.recomendacion)}</div>
+        </div>`;
+    });
+    flags.forEach(rf => {
+      alertsHtml += `
+        <div class="cdss-alert-card cdss-flag">
+          <div class="cdss-alert-head">
+            <span class="cdss-sev-pill">${esc(rf.codigo)}</span>
+            <strong>${esc(rf.titulo)}</strong>
+          </div>
+          <div class="cdss-rec"><strong>Protocolo inmediato:</strong> ${esc(rf.accion_inmediata)}</div>
+        </div>`;
+    });
+
+    bannerEl.innerHTML = `
+      <div class="cdss-top-row">
+        <div class="cdss-triage-wrap">
+          <span class="triage-badge ${badgeCls}">TRIAJE ${esc(nivel)} (ESI ${tri.codigo_esi || 4})</span>
+          <span class="triage-meta">${esc(tri.etiqueta || '')} &bull; Espera máx: <strong>${esc(tri.tiempo_espera_max || '—')}</strong></span>
+        </div>
+        <div class="cdss-scores-row">
+          <span class="cdss-score-chip">NEWS2: <strong>${calc.news2 ?? 0}</strong></span>
+          <span class="cdss-score-chip">qSOFA: <strong>${calc.qsofa ?? 0}/3</strong></span>
+          ${imc ? `<span class="cdss-score-chip">IMC: <strong>${imc.valor}</strong> (${esc(imc.categoria)})</span>` : ''}
+        </div>
+      </div>
+      ${alertsHtml ? `<div class="cdss-alerts-stack">${alertsHtml}</div>` : '<div class="cdss-ok-strip">✅ Sin alergias cruzadas ni interacciones farmacológicas críticas detectadas.</div>'}
+    `;
+    bannerEl.style.display = 'block';
+  }
+
+  // DDx 3 niveles
+  const ddxSec = document.getElementById('result-section-ddx');
+  const ddxEl = document.getElementById('result-ddx');
+  const ddxList = data.diagnostico_diferencial || [];
+  if (ddxSec && ddxEl) {
+    if (ddxList.length > 0) {
+      ddxEl.innerHTML = ddxList.map(item => {
+        const lvl = (item.nivel || 'Principal').toLowerCase();
+        const lvlCls = lvl.includes('grave') || lvl.includes('descartar') ? 'ddx-grave' : lvl.includes('alternativo') ? 'ddx-alt' : 'ddx-pri';
+        return `
+          <div class="ddx-card ${lvlCls}">
+            <div class="ddx-card-top">
+              <span class="ddx-level">${esc(item.nivel || 'Principal')}</span>
+              <strong>${esc(item.condicion || '')}</strong>
+            </div>
+            <p>${esc(item.justificacion || '')}</p>
+            ${item.accion_descarte ? `<div class="ddx-action"><span>Sugerencia:</span> ${esc(item.accion_descarte)}</div>` : ''}
+          </div>`;
+      }).join('');
+      ddxSec.style.display = 'block';
+    } else {
+      ddxSec.style.display = 'none';
+    }
+  }
+
+  // Evidencia Vinculada
+  const evSec = document.getElementById('result-section-evidence');
+  const evEl = document.getElementById('result-evidence');
+  const evList = data.evidencia_vinculada || [];
+  if (evSec && evEl) {
+    if (evList.length > 0) {
+      evEl.innerHTML = evList.map(ev => `
+        <div class="evidence-item">
+          <span class="evidence-cat">${esc(ev.categoria)}</span>
+          <strong class="evidence-ent">${esc(ev.entidad)}</strong>
+          <span class="evidence-quote">“${esc(ev.cita_textual)}”</span>
+        </div>`).join('');
+      evSec.style.display = 'block';
+    } else {
+      evSec.style.display = 'none';
+    }
+  }
+
+  // Signos de alarma en casa + QR en Receta
+  const alarmaBox = document.getElementById('receta-alarma-box');
+  const alarmaList = document.getElementById('receta-alarma-list');
+  const homeWarnings = seg.signos_alarma_casa || [];
+  if (alarmaBox && alarmaList) {
+    if (homeWarnings.length > 0) {
+      alarmaList.innerHTML = homeWarnings.map(w => `<li>${esc(w)}</li>`).join('');
+      alarmaBox.style.display = 'block';
+    } else {
+      alarmaBox.style.display = 'none';
+    }
+  }
+
+  const qrBox = document.getElementById('receta-qr-box');
+  const verifEl = document.getElementById('receta-verif-code');
+  if (qrBox && data.receta_qr_svg) {
+    qrBox.innerHTML = data.receta_qr_svg;
+  }
+  if (verifEl) {
+    verifEl.textContent = data.codigo_verificacion || 'MED-BORRADOR';
+  }
 }
 
 /* ── PATIENTS DIRECTORY & SEARCH ── */
@@ -737,6 +888,8 @@ function waitForBackend() {
         setTimeout(() => {
           loadingScreen.classList.add('hidden');
           loadPatients();
+          if (typeof loadAppointments === 'function') loadAppointments();
+          if (typeof refreshDashboard === 'function') refreshDashboard();
         }, 600);
       })
       .catch(() => setTimeout(checkBackend, 1500));

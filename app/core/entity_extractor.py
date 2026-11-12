@@ -42,6 +42,14 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta, sin texto a
     "pronostico": "SOLO si el texto lo menciona o puede inferirse claramente. Si no hay información suficiente, escribir: 'Pendiente de valoración para establecer pronóstico.'",
     "plan_tratamiento": "Indicaciones médicas mencionadas en el texto: medicamentos con dosis, vía y periodicidad; estudios solicitados; medidas indicadas."
   },
+  "diagnostico_diferencial": [
+    {
+      "condicion": "Nombre de la entidad o diagnóstico diferencial a considerar",
+      "nivel": "Principal | Alternativo | Descartar (Grave)",
+      "justificacion": "Por qué se considera según síntomas/signos del caso",
+      "accion_descarte": "Estudio o dato clínico sugerido para confirmar o descartar"
+    }
+  ],
   "receta_paciente": "Instrucciones de cuidado y administración de medicamentos redactadas de forma clara y directa en español para que el paciente las entienda (ej: '1. Tomar Paracetamol 500mg cada 8 horas por 3 días...')"
 }
 
@@ -205,6 +213,7 @@ def _empty_structure() -> dict:
             "pronostico": "Pendiente de valoración para establecer pronóstico.",
             "plan_tratamiento": "No especificado",
         },
+        "diagnostico_diferencial": [],
         "receta_paciente": "No especificada"
     }
 
@@ -279,6 +288,12 @@ def _heuristic_extract(text: str) -> dict:
         (r'dolor abdominal|dolor de est[oó]mago', "Dolor abdominal"),
         (r'falta de aire|disnea', "Disnea"),
         (r'hinchaz[oó]n|edema', "Edema"),
+        (r'dolor(?:\s+en\s+(?:el\s+)?)?\s*pecho|dolor\s+tor[aá]cico|dolor\s+precordial', "Dolor torácico"),
+        (r'diaforesis|sudoraci[oó]n\s+fr[ií]a', "Diaforesis"),
+        (r'petequias|sangrado|epistaxis|gingivorragia', "Sangrado / Petequias"),
+        (r'dolor\s+retroocular|detr[aá]s\s+de\s+los\s+ojos', "Dolor retroocular"),
+        (r'artralgias|dolor\s+articular|mialgias|dolor\s+muscular', "Mialgias / Artralgias"),
+        (r'disartria|asimetria\s+facial|hemiparesia|debilidad\s+s[uú]bita', "Déficit neurológico focal"),
     ]
     for pat, label in sintomas_map:
         if re.search(r'\b(?:' + pat + r')\b', text, re.IGNORECASE):
@@ -291,6 +306,9 @@ def _heuristic_extract(text: str) -> dict:
     diags_map = [
         (r'diabetes(?:\s+descontrolada|\s+tipo\s*2)?', "Diabetes mellitus tipo 2"),
         (r'hipertensi[oó]n|presi[oó]n alta|descontrol hipertensivo', "Hipertensión arterial"),
+        (r'dengue', "Sospecha de Dengue"),
+        (r'infarto|s[ií]ndrome coronario|angina', "Síndrome coronario agudo"),
+        (r'sepsis', "Sepsis"),
         (r'cefalea|dolor de cabeza', "Cefalea"),
         (r'infecci[oó]n(?: respiratoria| de garganta| urinaria)?', "Infección"),
     ]
@@ -303,10 +321,18 @@ def _heuristic_extract(text: str) -> dict:
     # 4. Medicamentos
     meds = []
     med_patterns = [
-        (r'metformina(?:\s+(\d+\s*(?:mg|miligramos)))?', "Metformina", "850 mg", "oral", "cada 12 horas", "con los alimentos"),
+        (r'metformina(?:\s+(\d+\s*(?:mg|g|miligramos)))?', "Metformina", "850 mg", "oral", "cada 12 horas", "con los alimentos"),
         (r'losart[aá]n(?:\s+(\d+\s*(?:mg|miligramos)))?', "Losartán", "50 mg", "oral", "cada 24 horas", "por 30 días"),
-        (r'paracetamol(?:\s+(\d+\s*(?:mg|miligramos)))?', "Paracetamol", "500 mg", "oral", "cada 8 horas", "por 3 a 5 días"),
+        (r'paracetamol(?:\s+(\d+\s*(?:mg|g|miligramos)))?', "Paracetamol", "500 mg", "oral", "cada 8 horas", "por 3 a 5 días"),
         (r'glibenclamida(?:\s+(\d+\s*(?:mg|miligramos)))?', "Glibenclamida", "5 mg", "oral", "cada 24 horas", "antes del desayuno"),
+        (r'amoxicilina(?:\s+(\d+\s*(?:mg|miligramos)))?', "Amoxicilina", "500 mg", "oral", "cada 8 horas", "por 7 días"),
+        (r'ampicilina(?:\s+(\d+\s*(?:mg|miligramos)))?', "Ampicilina", "500 mg", "oral", "cada 6 horas", "por 7 días"),
+        (r'ketorolaco(?:\s+(\d+\s*(?:mg|miligramos)))?', "Ketorolaco", "10 mg", "oral", "cada 8 horas", "por 3 días"),
+        (r'ibuprofeno(?:\s+(\d+\s*(?:mg|miligramos)))?', "Ibuprofeno", "400 mg", "oral", "cada 8 horas", "por 5 días"),
+        (r'naproxeno(?:\s+(\d+\s*(?:mg|miligramos)))?', "Naproxeno", "500 mg", "oral", "cada 12 horas", "por 5 días"),
+        (r'aspirina|[aá]cido\s+acetilsalic[ií]lico(?:\s+(\d+\s*(?:mg|miligramos)))?', "Ácido acetilsalicílico (Aspirina)", "100 mg", "oral", "cada 24 horas", "continuo"),
+        (r'ceftriaxona(?:\s+(\d+\s*(?:mg|g|gramos|miligramos)))?', "Ceftriaxona", "1 g", "IV", "cada 24 horas", "por 5 días"),
+        (r'warfarina(?:\s+(\d+\s*(?:mg|miligramos)))?', "Warfarina", "5 mg", "oral", "cada 24 horas", "control INR"),
         (r'pastillas?\s+(?:de\s+la\s+|para\s+el\s+)?az[uú]car', "Hipoglucemiante oral (Ajuste)", "Dosis ajustada", "oral", "cada 12-24 horas", "continuo"),
         (r'pastillas?\s+(?:de\s+la\s+|para\s+la\s+)?presi[oó]n', "Antihipertensivo (Ajuste)", "Dosis ajustada", "oral", "cada 24 horas", "continuo"),
     ]
@@ -314,8 +340,36 @@ def _heuristic_extract(text: str) -> dict:
         m = re.search(pat, text, re.IGNORECASE)
         if m:
             dose = m.group(1) if (m.groups() and m.group(1)) else def_dose
-            meds.append({"nombre": name, "dosis": dose, "via": via, "periodicidad": freq, "duracion": dur})
+            # Intentar extraer periodicidad literal del texto cercano si aparece "cada X horas"
+            window = text[m.start():min(len(text), m.end() + 70)]
+            freq_m = re.search(r'(cada\s+\d{1,2}\s*horas?)', window, re.IGNORECASE)
+            dur_m = re.search(r'(por\s+\d{1,2}\s*d[ií]as?)', window, re.IGNORECASE)
+            meds.append({
+                "nombre": name,
+                "dosis": dose,
+                "via": via,
+                "periodicidad": freq_m.group(1) if freq_m else freq,
+                "duracion": dur_m.group(1) if dur_m else dur,
+            })
     result["medicamentos"] = meds
+
+    # 4.1 Diagnóstico diferencial heurístico en 3 niveles
+    ddx = []
+    low_t = text.lower()
+    if any(k in low_t for k in ["dengue", "fiebre", "petequias", "retroocular"]):
+        ddx.append({"condicion": "Dengue (con o sin signos de alarma)", "nivel": "Principal", "justificacion": "Síndrome febril con síntomas sistémicos compatibles en zona endémica.", "accion_descarte": "Biometría hemática urgente (plaquetas/hematocrito) y NS1/IgM."})
+        ddx.append({"condicion": "Chikungunya / Zika / Infección viral aguda", "nivel": "Alternativo", "justificacion": "Cuadro febril con mialgias/artralgias.", "accion_descarte": "Evolución clínica y panel viral si disponible."})
+        ddx.append({"condicion": "Sepsis bacteriana / Leptospirosis", "nivel": "Descartar (Grave)", "justificacion": "Fiebre con riesgo de choque o disfunción orgánica.", "accion_descarte": "Signos vitales seriados, EGO, química sanguínea y lactato."})
+    elif any(k in low_t for k in ["pecho", "toracico", "precordial"]):
+        ddx.append({"condicion": "Síndrome Coronario Agudo (IAM / Angina inestable)", "nivel": "Descartar (Grave)", "justificacion": "Dolor torácico agudo requiere descarte prioritario de isquemia.", "accion_descarte": "ECG de 12 derivaciones (<10 min) y troponinas seriadas."})
+        ddx.append({"condicion": "Tromboembolia pulmonar / Disección aórtica", "nivel": "Descartar (Grave)", "justificacion": "Causas potencialmente fatales de dolor torácico.", "accion_descarte": "Saturación O2, Dímero D / AngioTAC según probabilidad."})
+        ddx.append({"condicion": "Reflujo gastroesofágico / Costocondritis", "nivel": "Alternativo", "justificacion": "Causas benignas tras descartar patología cardiopulmonar.", "accion_descarte": "Revaloración clínica posterior a ECG normal."})
+    elif any(k in low_t for k in ["glucosa", "diabetes", "poliuria", "polidipsia"]):
+        ddx.append({"condicion": "Descontrol glucémico en Diabetes Mellitus tipo 2", "nivel": "Principal", "justificacion": "Hiperglucemia o síntomas cardinales metabólicos.", "accion_descarte": "HbA1c, química sanguínea y examen general de orina."})
+        ddx.append({"condicion": "Cetoacidosis diabética / Estado hiperosmolar", "nivel": "Descartar (Grave)", "justificacion": "Descompensación aguda si glucosa >250-300 mg/dL.", "accion_descarte": "Cetonas en orina/sangre, electrolitos y gasometría."})
+    elif sintomas:
+        ddx.append({"condicion": f"Cuadro agudo asociado a {', '.join(sintomas[:2])}", "nivel": "Principal", "justificacion": "Presentación clínica inicial referida.", "accion_descarte": "Exploración física completa y estudios dirigidos."})
+    result["diagnostico_diferencial"] = ddx
 
     # 5. Exploración física construida
     exploracion = []

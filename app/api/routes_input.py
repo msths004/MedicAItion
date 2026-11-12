@@ -11,6 +11,7 @@ from app.core.transcriber import transcribe
 from app.core.entity_extractor import extract_entities
 from app.core.cie10_mapper import map_to_cie10
 from app.core.record_builder import build_record
+from app.core.safety_engine import evaluate_clinical_safety, extract_linked_evidence
 from app.core.template_renderer import render_nota_medica
 from app.db.local_db import get_patient_by_curp
 
@@ -94,7 +95,25 @@ def _run_pipeline(
         mode=llm_mode,
         api_key=api_key
     )
-    record = build_record(curp, clues, text, entities, cie10_codes)
+    seguridad_clinica = evaluate_clinical_safety(
+        entities=entities,
+        patient_data=patient_data,
+        texto_original=text,
+    )
+    evidencia_vinculada = extract_linked_evidence(
+        texto_original=text,
+        entities=entities,
+        codigos_cie10=cie10_codes,
+    )
+    record = build_record(
+        curp,
+        clues,
+        text,
+        entities,
+        cie10_codes,
+        seguridad_clinica=seguridad_clinica,
+        evidencia_vinculada=evidencia_vinculada,
+    )
 
     # Inyectar el event_id en el borrador si ya existe, para que el modal lo use
     if event_id:

@@ -16,17 +16,23 @@ Endpoints:
   GET    /api/consultations/search/semantic   — Búsqueda semántica Nivel 3
 """
 
-from fastapi import APIRouter, HTTPException, Body, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Body, BackgroundTasks, Request
+from fastapi.responses import HTMLResponse, Response
 from typing import Optional
+import html
 
+from app.core.safety_engine import evaluate_clinical_safety
+from app.core.qr_svg import generate_qr_svg
 from app.db.local_db import (
     create_consulta,
     get_consultas_by_evento,
     get_consulta_by_id,
+    get_patient_by_curp,
     index_consulta_semantically,
     index_evento_semantically,
     get_patient_events,
     SessionLocal,
+    EventoClinico,
     Consulta,
 )
 
@@ -107,7 +113,55 @@ async def create_consulta_endpoint(
     }
     """
     try:
+        # Verificación de seguridad clínica en servidor antes de firmar consulta inmutable
+        evento_id = data.get("evento_id")
+        patient_data = None
+        if evento_id:
+            db = SessionLocal()
+            try:
+                ev = db.query(EventoClinico).filter(EventoClinico.id == evento_id).first()
+                if ev and ev.patient_curp:
+                    patient_data = get_patient_by_curp(ev.patient_curp)
+            finally:
+                db.close()
+
+        receta_meds = (data.get("receta") or {}).get("medicamentos", [])
+        entidades = data.get("entidades") or {}
+        eval_entities = {
+            "sintomas_referidos": entidades.get("sintomas_referidos", []),
+            "diagnosticos_tentativos": entidades.get("diagnosticos_tentativos", []),
+            "signos_vitales": entidades.get("signos_vitales", []),
+            "medicamentos": receta_meds,
+        }
+        safety = evaluate_clinical_safety(
+            entities=eval_entities,
+            patient_data=patient_data,
+            texto_original=data.get("texto_original", ""),
+        )
+        if safety.get("bloqueo_seguridad") and not (data.get("justificacion_seguridad") or "").strip():
+            crit_msgs = [
+                f"{a.get('medicamento')}: {a.get('titulo')}"
+                for a in safety.get("alertas_medicamentos", [])
+                if a.get("severidad") == "CRITICA"
+            ]
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "Bloqueo de seguridad farmacológica activa. Requiere justificación médica o ajuste de receta.",
+                    "alertas_criticas": crit_msgs,
+                    "seguridad_clinica": safety,
+                },
+            )
+
+        # Persistir evaluación CDSS dentro de entidades para auditoría histórica NOM-004
+        entidades["seguridad_clinica"] = safety
+        if data.get("justificacion_seguridad"):
+            entidades["justificacion_seguridad"] = str(data["justificacion_seguridad"]).strip()
+        data["entidades"] = entidades
+
         consulta = create_consulta(data)
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -171,6 +225,66 @@ def get_receta(consulta_id: str):
         "fecha_hora": consulta.get("fecha_hora"),
         "receta": consulta.get("receta", {}),
     }
+
+
+@router.get("/{consulta_id}/receta/qr")
+def get_receta_qr(consulta_id: str, request: Request):
+    """Genera el código QR en SVG apuntando a la verificación oficial de la receta."""
+    consulta = get_consulta_by_id(consulta_id)
+    if not consulta:
+        raise HTTPException(status_code=404, detail="Consulta no encontrada")
+    verify_url = str(request.base_url).rstrip("/") + f"/api/consultations/{consulta_id}/verificar"
+    svg = generate_qr_svg(verify_url, size_px=120)
+    return Response(content=svg, media_type="image/svg+xml")
+
+
+@router.get("/{consulta_id}/verificar", response_class=HTMLResponse)
+def verify_receta_html(consulta_id: str):
+    """Página pública de verificación digital de receta médica emitida por MedicAItion."""
+    consulta = get_consulta_by_id(consulta_id)
+    if not consulta:
+        raise HTTPException(status_code=404, detail="Consulta no encontrada")
+    receta = consulta.get("receta") or {}
+    meds = receta.get("medicamentos") or []
+    folio = f"MED-{consulta_id[:8].upper()}"
+    med_rows = "".join(
+        f"<li><strong>{html.escape(str(m.get('nombre', '—')))}</strong> — "
+        f"{html.escape(str(m.get('dosis', '—')))} {html.escape(str(m.get('via', '')))} "
+        f"({html.escape(str(m.get('periodicidad', '—')))})</li>"
+        for m in meds if isinstance(m, dict)
+    ) or "<li>Sin fármacos listados</li>"
+
+    page = f"""<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Verificación de Receta — {folio}</title>
+  <style>
+    body {{ font-family: system-ui, -apple-system, sans-serif; background:#f1f5f9; color:#0f172a; padding:24px; }}
+    .card {{ max-width:560px; margin:0 auto; background:#fff; border-radius:16px; padding:24px; box-shadow:0 12px 30px rgba(15,23,42,.08); border-top:6px solid #ee2a42; }}
+    .badge {{ display:inline-block; background:#dcfce7; color:#166534; font-weight:700; font-size:12px; padding:4px 10px; border-radius:999px; }}
+    h1 {{ font-size:20px; margin:12px 0 4px; }}
+    .meta {{ color:#475569; font-size:13px; margin-bottom:16px; }}
+    ul {{ padding-left:18px; line-height:1.6; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">RECETA VERIFICADA &bull; NOM-004-SSA3-2012</span>
+    <h1>MedicAItion — Cruz Roja Mérida</h1>
+    <div class="meta">
+      <div><strong>Folio:</strong> {folio}</div>
+      <div><strong>Médico tratante:</strong> {html.escape(str(consulta.get('doctor_nombre') or 'No especificado'))}</div>
+      <div><strong>Fecha de emisión:</strong> {html.escape(str(consulta.get('fecha_hora') or '—'))}</div>
+      <div><strong>CURP Paciente:</strong> {html.escape(str(consulta.get('patient_curp') or '—'))}</div>
+    </div>
+    <h3>Medicamentos Autorizados</h3>
+    <ul>{med_rows}</ul>
+  </div>
+</body>
+</html>"""
+    return HTMLResponse(content=page)
 
 
 # ── ADDENDUM (NOM-004: no modifica la nota original) ─────────────

@@ -20,12 +20,13 @@ def get_model() -> WhisperModel:
     return _model
 
 
-def transcribe(audio_path: str) -> str:
+def transcribe(audio: str | __import__('numpy').ndarray) -> str:
     """
     Transcribe el audio al texto usando Faster-Whisper.
+    Acepta tanto la ruta a un archivo como un array de numpy a 16kHz.
     Retorna el texto transcrito en español.
     """
     model = get_model()
-    segments, info = model.transcribe(audio_path, language="es", beam_size=5)
+    segments, info = model.transcribe(audio, language="es", beam_size=5)
     text = " ".join(segment.text.strip() for segment in segments)
     return text.strip()

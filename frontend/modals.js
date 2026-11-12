@@ -211,6 +211,24 @@ async function openAssociateNoteModal() {
   const now = new Date();
   const datetimeLocal = now.toISOString().slice(0, 16);
 
+  const seg = AppState.lastProcessedRecord?.seguridad_clinica || {};
+  const critAlerts = (seg.alertas_medicamentos || []).filter(a => a.severidad === 'CRITICA');
+  const safetyBlockHtml = seg.bloqueo_seguridad ? `
+    <div id="modal-safety-override-box" style="background:#fef2f2;border:1.5px solid #ef4444;border-radius:12px;padding:12px 14px;margin-bottom:14px;color:#7f1d1d;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+        ⛔ Alerta Crítica de Seguridad Farmacológica
+      </div>
+      <ul style="margin:0 0 8px;padding-left:18px;font-size:12px;line-height:1.45;">
+        ${critAlerts.map(a => `<li><strong>${_modalEsc(a.medicamento)}:</strong> ${_modalEsc(a.titulo)}</li>`).join('')}
+      </ul>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:6px;">
+        <input type="checkbox" id="modal-safety-confirm-check" style="margin-top:2px;" />
+        <span>Confirmo que evalué el riesgo clínico y autorizo el registro bajo justificación médica explícita:</span>
+      </label>
+      <input type="text" id="modal-safety-justification" class="input-field" style="background:#fff;color:#0f172a;border-color:#fca5a5;" placeholder="Ej. Se ajustará alternativa segura / beneficio supera riesgo..." />
+    </div>
+  ` : '';
+
   const html = `
     <div class="overlay-header">
       <h3>Asociar Nota y Recetas como consulta a Evento Clínico</h3>
@@ -218,6 +236,8 @@ async function openAssociateNoteModal() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
+
+    ${safetyBlockHtml}
 
     <div class="overlay-field">
       <label>Elegir evento clínico</label>
@@ -271,6 +291,16 @@ async function handleAssociateNote() {
   const record = AppState.lastProcessedRecord;
   if (!record)   return showToast('No hay notas para asociar — procesa el caso primero', 'error');
 
+  let justificacion = null;
+  if (record.seguridad_clinica?.bloqueo_seguridad) {
+    const checked = document.getElementById('modal-safety-confirm-check')?.checked;
+    const reason = document.getElementById('modal-safety-justification')?.value.trim();
+    if (!checked || !reason) {
+      return showToast('⚠️ Alerta crítica activa: marca la confirmación e ingresa la justificación médica', 'error');
+    }
+    justificacion = reason;
+  }
+
   if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
 
   try {
@@ -280,6 +310,7 @@ async function handleAssociateNote() {
       doctor_nombre: doctor,
       fecha_hora:    datetime ? new Date(datetime).toISOString() : new Date().toISOString(),
       resumen_doctor: desc || null,
+      justificacion_seguridad: justificacion,
       nota_medica:   record.nota_clinica || {},
       receta: {
         medicamentos:  record.medicamentos || record.entidades_extraidas?.medicamentos || [],
@@ -289,6 +320,8 @@ async function handleAssociateNote() {
         codigos_cie10:          record.codigos_cie10 || {},
         sintomas_referidos:     record.entidades_extraidas?.sintomas_referidos || [],
         diagnosticos_tentativos: record.entidades_extraidas?.diagnosticos_tentativos || [],
+        signos_vitales:         record.entidades_extraidas?.signos_vitales || [],
+        diagnostico_diferencial: record.diagnostico_diferencial || [],
       },
       texto_original: record.texto_original || '',
     };
@@ -301,11 +334,31 @@ async function handleAssociateNote() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: 'Error desconocido' }));
-      throw new Error(err.detail || 'Error al guardar la consulta');
+      const msg = typeof err.detail === 'object' ? (err.detail.message || JSON.stringify(err.detail)) : err.detail;
+      throw new Error(msg || 'Error al guardar la consulta');
+    }
+
+    const savedConsulta = await res.json().catch(() => null);
+    if (savedConsulta && savedConsulta.id) {
+      const qrBox = document.getElementById('receta-qr-box');
+      const verifEl = document.getElementById('receta-verif-code');
+      if (verifEl) verifEl.textContent = `MED-${savedConsulta.id.substring(0, 8).toUpperCase()}`;
+      if (qrBox) {
+        qrBox.innerHTML = `<img src="${API}/api/consultations/${encodeURIComponent(savedConsulta.id)}/receta/qr" alt="QR Verificación" style="width:76px;height:76px;" />`;
+      }
     }
 
     closeOverlay();
     showToast('✅ Consulta guardada exitosamente en el evento clínico', 'success');
+
+    // Marcar cita vinculada como Atendida y refrescar tablero clínico
+    if (AppState.activeAppointmentId && !String(AppState.activeAppointmentId).startsWith('appt-')) {
+      if (typeof updateAppointmentField === 'function') {
+        updateAppointmentField(AppState.activeAppointmentId, { status: 'Atendida' });
+      }
+      AppState.activeAppointmentId = null;
+    }
+    if (typeof refreshDashboard === 'function') refreshDashboard();
 
     // Limpiar el estado del borrador en memoria
     AppState.lastProcessedRecord = null;

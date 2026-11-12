@@ -71,6 +71,19 @@ def render_nota_medica(record: dict, template_name: str = "nota_evolucion.html")
         "timestamp_formateado": _format_timestamp(record.get("timestamp", "")),
     }
 
+    # Asegurar que datos_demograficos exista
+    if "datos_demograficos" not in context or not isinstance(context["datos_demograficos"], dict):
+        nombre_pat = record.get("nombre_completo")
+        if not nombre_pat:
+            partes = [record.get("nombres", ""), record.get("primer_apellido", ""), record.get("segundo_apellido", "")]
+            nombre_pat = " ".join(p for p in partes if p).strip()
+        context["datos_demograficos"] = {
+            "nombre": nombre_pat or record.get("curp") or "Paciente",
+            "edad": record.get("edad"),
+            "sexo": record.get("sexo"),
+            "curp": record.get("curp"),
+        }
+
     # Asegurar que nota_clinica exista incluso si el LLM no la generó
     if "nota_clinica" not in context or not context["nota_clinica"]:
         context["nota_clinica"] = {
@@ -91,5 +104,18 @@ def render_nota_medica(record: dict, template_name: str = "nota_evolucion.html")
             "tratamientos": [],
             "medicamentos": [],
         }
+
+    # Asegurar que codigos_cie10 exista
+    if "codigos_cie10" not in context or not isinstance(context["codigos_cie10"], dict):
+        context["codigos_cie10"] = {
+            "sintomas_referidos": [],
+            "diagnosticos_tentativos": [],
+            "tratamientos": [],
+        }
+
+    if "texto_redactado" not in context:
+        context["texto_redactado"] = ""
+    if "texto_original" not in context:
+        context["texto_original"] = ""
 
     return template.render(**context)

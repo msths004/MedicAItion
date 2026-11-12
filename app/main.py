@@ -11,6 +11,9 @@ from app.api.routes_input import router as input_router
 from app.api.routes_patients import router as patients_router
 from app.api.routes_institutions import router as institutions_router
 from app.api.routes_consultations import router as consultations_router
+from app.api.routes_appointments import router as appointments_router
+from app.api.routes_wearables import router as wearables_router
+from app.api.routes_analytics import router as analytics_router
 from app.db.local_db import create_tables as create_local_tables
 from app.db.global_db import create_tables as create_global_tables, register_institution
 
@@ -105,6 +108,9 @@ app.include_router(input_router)
 app.include_router(patients_router)
 app.include_router(institutions_router)
 app.include_router(consultations_router)
+app.include_router(appointments_router)
+app.include_router(wearables_router)
+app.include_router(analytics_router)
 
 # Servir frontend estático
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

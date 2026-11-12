@@ -252,6 +252,168 @@ class AuditLog(Base):
     details      = Column(Text, nullable=True)      # JSON: datos o cambios
 
 
+class Appointment(Base):
+    """
+    Citas médicas y flujo de sala de espera / triaje persistidas en SQLite.
+    """
+    __tablename__ = "appointments"
+
+    id                = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_curp      = Column(String, nullable=True, index=True)
+    patient_name      = Column(String, nullable=False)
+    date_str          = Column(String, nullable=False, index=True)   # "YYYY-MM-DD"
+    time_str          = Column(String, nullable=False, default="09:00")
+    reason            = Column(String, nullable=False, default="Consulta general")
+    status            = Column(String, nullable=False, default="Programada")  # Programada | En Sala / Triaje | En Consulta | Atendida | No asistió
+    triage_level      = Column(String, nullable=False, default="VERDE")       # ROJO | NARANJA | AMARILLO | VERDE
+    wearable          = Column(Boolean, default=False)
+    wearable_text     = Column(String, nullable=True)
+    doctor_nombre     = Column(String, nullable=True, default="Dr. Roberto M.")
+    clues_institucion = Column(String, nullable=True, default="YUC-CR-001")
+    created_at        = Column(DateTime, default=datetime.utcnow)
+    updated_at        = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class VitalReading(Base):
+    """
+    Lecturas biométricas de Wearables (Web Bluetooth BLE / CSV / JSON / Manual).
+    """
+    __tablename__ = "vital_readings"
+
+    id            = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_curp  = Column(String, nullable=True, index=True)
+    patient_name  = Column(String, nullable=True)
+    device_name   = Column(String, nullable=False, default="Sensor BLE")
+    source        = Column(String, nullable=False, default="wearable")  # ble | csv | manual | wearable
+    heart_rate    = Column(Float, nullable=True)
+    spo2          = Column(Float, nullable=True)
+    systolic_bp   = Column(Float, nullable=True)
+    diastolic_bp  = Column(Float, nullable=True)
+    temperature   = Column(Float, nullable=True)
+    steps         = Column(Float, nullable=True)
+    alert_flag    = Column(Boolean, default=False)
+    alert_message = Column(String, nullable=True)
+    recorded_at   = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+def _seed_sprint2_defaults():
+    """Siembra citas y lecturas iniciales si las tablas nuevas están vacías."""
+    db = SessionLocal()
+    try:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if db.query(Appointment).count() == 0:
+            from datetime import timedelta
+            y = datetime.now().year
+            plus3 = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
+            seeds = [
+                Appointment(
+                    patient_curp="GOPC790814HYNCLN04",
+                    patient_name="Carlos Manuel G.",
+                    date_str=today_str,
+                    time_str="09:00",
+                    reason="Consulta de seguimiento",
+                    status="En Sala / Triaje",
+                    triage_level="VERDE",
+                    wearable=True,
+                    wearable_text="Garmin Active • ❤️ 72 lpm",
+                ),
+                Appointment(
+                    patient_curp="MOBK070228HYNRTVA3",
+                    patient_name="Kevin Enrique M.",
+                    date_str=today_str,
+                    time_str="09:45",
+                    reason="Dolor abdominal",
+                    status="Programada",
+                    triage_level="AMARILLO",
+                    wearable=True,
+                    wearable_text="Apple Watch S9 • Wearable conectado",
+                ),
+                Appointment(
+                    patient_curp="TESTCURP1234567890",
+                    patient_name="Juan Pérez G.",
+                    date_str=today_str,
+                    time_str="10:30",
+                    reason="Control general",
+                    status="Programada",
+                    triage_level="VERDE",
+                    wearable=True,
+                    wearable_text="Galaxy Watch 6 • Sincronizado",
+                ),
+                Appointment(
+                    patient_curp="GOPC790814HYNCLN04",
+                    patient_name="Carlos Manuel G.",
+                    date_str=plus3,
+                    time_str="11:15",
+                    reason="Revisión de laboratorios (HbA1c y Lípidos)",
+                    status="Programada",
+                    triage_level="VERDE",
+                    wearable=True,
+                    wearable_text="Garmin Active conectado",
+                ),
+                Appointment(
+                    patient_curp="TESTCURP1234567890",
+                    patient_name="Juan Pérez G.",
+                    date_str=f"{y}-12-10",
+                    time_str="10:00",
+                    reason="Control hipertensión trimestral",
+                    status="Programada",
+                    triage_level="VERDE",
+                    wearable=False,
+                ),
+            ]
+            db.add_all(seeds)
+
+        if db.query(VitalReading).count() == 0:
+            vitals_seeds = [
+                VitalReading(
+                    patient_curp="GOPC790814HYNCLN04",
+                    patient_name="Carlos Manuel G.",
+                    device_name="Garmin Active",
+                    source="wearable",
+                    heart_rate=72,
+                    spo2=98,
+                    systolic_bp=122,
+                    diastolic_bp=78,
+                    temperature=36.5,
+                    steps=5840,
+                    alert_flag=False,
+                ),
+                VitalReading(
+                    patient_curp="MOBK070228HYNRTVA3",
+                    patient_name="Kevin Enrique M.",
+                    device_name="Apple Watch S9",
+                    source="wearable",
+                    heart_rate=82,
+                    spo2=98,
+                    systolic_bp=120,
+                    diastolic_bp=78,
+                    temperature=36.8,
+                    steps=4120,
+                    alert_flag=False,
+                ),
+                VitalReading(
+                    patient_curp="TESTCURP1234567890",
+                    patient_name="Juan Pérez G.",
+                    device_name="Galaxy Watch 6",
+                    source="wearable",
+                    heart_rate=74,
+                    spo2=99,
+                    systolic_bp=124,
+                    diastolic_bp=80,
+                    temperature=36.5,
+                    steps=6420,
+                    alert_flag=False,
+                ),
+            ]
+            db.add_all(vitals_seeds)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[DB] Error sembrando datos iniciales Sprint 2: {e}")
+    finally:
+        db.close()
+
+
 # ─────────────────────────────────────────────────────────────────
 # INICIALIZACIÓN DE TABLAS
 # ─────────────────────────────────────────────────────────────────
@@ -270,7 +432,8 @@ def create_tables():
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE consultas ADD COLUMN texto_redactado TEXT;"))
         print("[DB] Migración completada: Columna 'texto_redactado' agregada ✅")
-        
+
+    _seed_sprint2_defaults()
     print("[DB] Tablas verificadas/creadas correctamente.")
 
 

@@ -1,27 +1,19 @@
 import noisereduce as nr
-import soundfile as sf
 import numpy as np
-import tempfile
-import os
+from faster_whisper.audio import decode_audio
 
 
-def suppress_noise(audio_path: str) -> str:
+def suppress_noise(audio_path: str) -> np.ndarray:
     """
     Aplica reducción de ruido al archivo de audio.
-    Retorna la ruta del audio limpio en formato WAV temporal.
+    Soporta formatos WebM/MP4 gracias a faster_whisper.
+    Retorna el audio limpio como un array de NumPy a 16kHz.
     """
-    data, rate = sf.read(audio_path)
+    # decode_audio maneja WebM, OGG, M4A, etc. sin FFMPEG externo (usa PyAV).
+    # Siempre lo convierte a 16000 Hz, que es lo que Whisper necesita.
+    data = decode_audio(audio_path, sampling_rate=16000)
 
-    # Convertir a mono si es estéreo
-    if data.ndim > 1:
-        data = data.mean(axis=1)
+    # Aplicar reducción de ruido (noisereduce soporta arrays directos)
+    reduced = nr.reduce_noise(y=data, sr=16000, stationary=False, prop_decrease=0.75)
 
-    # Aplicar reducción de ruido
-    reduced = nr.reduce_noise(y=data, sr=rate, stationary=False, prop_decrease=0.75)
-
-    # Guardar en archivo temporal
-    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-    sf.write(tmp.name, reduced, rate)
-    tmp.close()
-
-    return tmp.name
+    return reduced
