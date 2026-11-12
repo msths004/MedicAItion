@@ -57,10 +57,13 @@ function _pulsoEsc(str) {
  * - Piernas y botas robóticas articuladas con animación continua de caminata (walk cycle),
  *   flotación, saludo y salto elástico al darle clic.
  */
+let _pulsoSvgSeq = 0;
+
 function PulsoAvatar({ state = 'reposo', size = 104 } = {}) {
   const st = ['reposo', 'escuchando', 'pensando', 'alerta', 'contento'].includes(state)
     ? state
     : 'reposo';
+  const uid = `pm${++_pulsoSvgSeq}`;
 
   const isAlert = st === 'alerta';
   const isThinking = st === 'pensando';
@@ -107,47 +110,35 @@ function PulsoAvatar({ state = 'reposo', size = 104 } = {}) {
     <div class="pulso-3d-stage" style="width:${size}px; height:${size}px;">
     <svg class="pulso-avatar-svg cyber-med-avatar state-${st}" width="${size}" height="${size}" viewBox="0 0 140 156" role="img" aria-label="Modelo 3D Cyber-Med en estado ${st}">
       <defs>
-        <!-- Sombra 3D volumétrica de oclusión ambiental -->
-        <filter id="cm3dDepth" x="-20%" y="-20%" width="140%" height="145%">
-          <feDropShadow dx="0" dy="4" stdDeviation="2.5" flood-color="#020617" flood-opacity="0.55" />
-          <feDropShadow dx="-2" dy="-2" stdDeviation="1.2" flood-color="#BAE6FD" flood-opacity="0.35" />
-        </filter>
-        <filter id="cmNeonGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="2.2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <linearGradient id="cmCrystalGrad" x1="35" y1="2" x2="100" y2="40" gradientUnits="userSpaceOnUse">
+        <linearGradient id="${uid}_crystal" x1="35" y1="2" x2="100" y2="40" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stop-color="#FFFFFF" />
           <stop offset="30%" stop-color="#A5F3FC" />
           <stop offset="65%" stop-color="${crystalMid}" />
           <stop offset="100%" stop-color="#0369A1" />
         </linearGradient>
-        <radialGradient id="cmArmor3d" cx="35%" cy="22%" r="78%">
+        <radialGradient id="${uid}_armor3d" cx="35%" cy="22%" r="78%">
           <stop offset="0%" stop-color="#93C5FD" />
           <stop offset="32%" stop-color="#3B82F6" />
           <stop offset="72%" stop-color="#1D4ED8" />
           <stop offset="100%" stop-color="#0F172A" />
         </radialGradient>
-        <linearGradient id="cmArmorSide3d" x1="20" y1="25" x2="120" y2="90" gradientUnits="userSpaceOnUse">
+        <linearGradient id="${uid}_armorSide" x1="20" y1="25" x2="120" y2="90" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stop-color="#1E3A8A" />
           <stop offset="50%" stop-color="#172554" />
           <stop offset="100%" stop-color="#090D16" />
         </linearGradient>
-        <radialGradient id="cmScreenGrad" cx="50%" cy="40%" r="70%">
+        <radialGradient id="${uid}_screen" cx="50%" cy="40%" r="70%">
           <stop offset="0%" stop-color="#0F2942" />
           <stop offset="65%" stop-color="#09152B" />
           <stop offset="100%" stop-color="#020617" />
         </radialGradient>
-        <linearGradient id="cmCoatGrad" x1="35" y1="84" x2="108" y2="136" gradientUnits="userSpaceOnUse">
+        <linearGradient id="${uid}_coat" x1="35" y1="84" x2="108" y2="136" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stop-color="#FFFFFF" />
           <stop offset="52%" stop-color="#F8FAFC" />
           <stop offset="82%" stop-color="#CBD5E1" />
           <stop offset="100%" stop-color="#64748B" />
         </linearGradient>
-        <radialGradient id="cmJointSphere" cx="32%" cy="30%" r="70%">
+        <radialGradient id="${uid}_joint" cx="32%" cy="30%" r="70%">
           <stop offset="0%" stop-color="#BAE6FD" />
           <stop offset="45%" stop-color="#2563EB" />
           <stop offset="100%" stop-color="#0F172A" />
@@ -159,52 +150,52 @@ function PulsoAvatar({ state = 'reposo', size = 104 } = {}) {
       <ellipse class="pulso-floor-shadow" cx="70" cy="149" rx="22" ry="3.5" fill="#0F172A" opacity="0.55" />
 
       <!-- RIG 3D PRINCIPAL DEL PERSONAJE CYBER-MED -->
-      <g class="pulso-character-rig" filter="url(#cm3dDepth)">
+      <g class="pulso-character-rig">
 
-        <!-- 1. BRAZO MECÁNICO QUIRÚRGICO DORSAL 3D (CAPA TRASERA Z = -12px) -->
+        <!-- 1. BRAZO MECÁNICO QUIRÚRGICO DORSAL 3D -->
         <g class="pulso-mech-servo pulso-3d-layer-back">
           <line x1="46" y1="98" x2="31" y2="85" stroke="#0F172A" stroke-width="5" stroke-linecap="round" />
           <line x1="46" y1="98" x2="31" y2="85" stroke="#60A5FA" stroke-width="2.4" stroke-linecap="round" />
           <line x1="37" y1="91" x2="26" y2="98" stroke="#1E293B" stroke-width="3" stroke-linecap="round" />
           <path d="M 26 98 L 20 95 M 26 98 L 22 102" stroke="#E2E8F0" stroke-width="2.2" stroke-linecap="round" />
           <line x1="21" y1="99" x2="34" y2="106" stroke="#EF4444" stroke-width="1.6" stroke-dasharray="2 1" />
-          <circle cx="29" cy="83" r="4.8" fill="url(#cmJointSphere)" stroke="#0F172A" stroke-width="2" />
+          <circle cx="29" cy="83" r="4.8" fill="url(#${uid}_joint)" stroke="#0F172A" stroke-width="2" />
           <circle cx="29" cy="83" r="1.8" fill="#EF4444" />
           <path d="M 29 78 L 27 71 M 25 80 L 18 75 M 24 84 L 17 85 M 32 79 L 37 73" stroke="#E2E8F0" stroke-width="2.2" stroke-linecap="round" />
         </g>
 
         <!-- 2. PIERNAS ROBÓTICAS CILÍNDRICAS 3D CON CICLO DE CAMINATA -->
         <g class="pulso-foot-left pulso-leg-left">
-          <rect x="49" y="124" width="15" height="17" rx="5" fill="url(#cmArmor3d)" stroke="#0F172A" stroke-width="2.4" />
+          <rect x="49" y="124" width="15" height="17" rx="5" fill="url(#${uid}_armor3d)" stroke="#0F172A" stroke-width="2.4" />
           <ellipse cx="56.5" cy="132" rx="6" ry="2.2" fill="#93C5FD" opacity="0.7" />
-          <path d="M 45 139 Q 57 134 66 139 L 67 146 L 44 146 Z" fill="url(#cmArmor3d)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M 45 139 Q 57 134 66 139 L 67 146 L 44 146 Z" fill="url(#${uid}_armor3d)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
           <path d="M 48 141 Q 56 138 63 141" fill="none" stroke="#BAE6FD" stroke-width="1.6" stroke-linecap="round" />
         </g>
         <g class="pulso-foot-right pulso-leg-right">
-          <rect x="76" y="124" width="15" height="17" rx="5" fill="url(#cmArmor3d)" stroke="#0F172A" stroke-width="2.4" />
+          <rect x="76" y="124" width="15" height="17" rx="5" fill="url(#${uid}_armor3d)" stroke="#0F172A" stroke-width="2.4" />
           <ellipse cx="83.5" cy="132" rx="6" ry="2.2" fill="#93C5FD" opacity="0.7" />
-          <path d="M 74 139 Q 83 134 95 139 L 96 146 L 73 146 Z" fill="url(#cmArmor3d)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M 74 139 Q 83 134 95 139 L 96 146 L 73 146 Z" fill="url(#${uid}_armor3d)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
           <path d="M 77 141 Q 85 138 92 141" fill="none" stroke="#BAE6FD" stroke-width="1.6" stroke-linecap="round" />
         </g>
 
         <!-- 3. TORSO ROBÓTICO 3D Y BATA MÉDICA ESCULPIDA CON VOLUMEN -->
         <g class="pulso-torso-rig pulso-3d-layer-mid">
           <!-- Sombra lateral 3D de extrusión del torso -->
-          <rect x="52" y="84" width="36" height="45" rx="7" fill="url(#cmArmorSide3d)" stroke="#0F172A" stroke-width="2.4" />
+          <rect x="52" y="84" width="36" height="45" rx="7" fill="url(#${uid}_armorSide)" stroke="#0F172A" stroke-width="2.4" />
           <!-- Monitor ECG de pecho con cristal curvo -->
-          <rect x="57" y="88" width="26" height="16" rx="4" fill="url(#cmScreenGrad)" stroke="#38BDF8" stroke-width="1.8" />
-          <polyline class="pulso-ecg-line" filter="url(#cmNeonGlow)" points="59,96 64,96 66.5,91 69,101 71.5,94 74,96 81,96" fill="none" stroke="${hudPrimary}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="57" y="88" width="26" height="16" rx="4" fill="url(#${uid}_screen)" stroke="#38BDF8" stroke-width="1.8" />
+          <polyline class="pulso-ecg-line" points="59,96 64,96 66.5,91 69,101 71.5,94 74,96 81,96" fill="none" stroke="${hudPrimary}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           <!-- Cinturón pélvico 3D con bisel iluminado -->
-          <rect x="55" y="113" width="30" height="13" rx="4" fill="url(#cmArmor3d)" stroke="#0F172A" stroke-width="2.2" />
+          <rect x="55" y="113" width="30" height="13" rx="4" fill="url(#${uid}_armor3d)" stroke="#0F172A" stroke-width="2.2" />
           <path d="M 70 116.5 V 122.5 M 67 119.5 H 73" stroke="#EF4444" stroke-width="2.8" stroke-linecap="round" />
 
           <!-- Lado izquierdo de la bata blanca con pliegue 3D -->
-          <path d="M 43 84 L 60 84 L 60 133 L 40 133 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M 43 84 L 60 84 L 60 133 L 40 133 Z" fill="url(#${uid}_coat)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
           <path d="M 45 87 L 43 130" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" opacity="0.9" />
           <polygon points="51,84 60,84 60,105 50,96" fill="#E2E8F0" stroke="#0F172A" stroke-width="2" stroke-linejoin="round" />
 
           <!-- Lado derecho de la bata blanca con pliegue 3D -->
-          <path d="M 80 84 L 97 84 L 100 133 L 80 133 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M 80 84 L 97 84 L 100 133 L 80 133 Z" fill="url(#${uid}_coat)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
           <path d="M 94 87 L 96 130" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" opacity="0.6" />
           <polygon points="89,84 80,84 80,105 90,96" fill="#E2E8F0" stroke="#0F172A" stroke-width="2" stroke-linejoin="round" />
 
@@ -216,21 +207,21 @@ function PulsoAvatar({ state = 'reposo', size = 104 } = {}) {
 
           <!-- Bolsillo 3D derecho con pluma clínica -->
           <rect x="83" y="113" width="12" height="14" rx="2.5" fill="#E2E8F0" stroke="#334155" stroke-width="1.8" />
-          <rect x="85" y="106" width="4" height="9" rx="2" fill="url(#cmJointSphere)" stroke="#0F172A" stroke-width="1.5" />
+          <rect x="85" y="106" width="4" height="9" rx="2" fill="url(#${uid}_joint)" stroke="#0F172A" stroke-width="1.5" />
         </g>
 
         <!-- 4. BRAZO IZQUIERDO ESFÉRICO 3D -->
         <g class="pulso-arm-left pulso-3d-layer-front">
-          <path d="M 45 85 L 33 108 L 44 113 L 50 94 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" />
+          <path d="M 45 85 L 33 108 L 44 113 L 50 94 Z" fill="url(#${uid}_coat)" stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" />
           <circle cx="43" cy="96" r="4.2" fill="#DBEAFE" stroke="#1E40AF" stroke-width="1.6" stroke-dasharray="2 1" />
           <circle cx="43" cy="96" r="1.6" fill="#EF4444" />
-          <circle cx="37.5" cy="114.5" r="6.8" fill="url(#cmJointSphere)" stroke="#0F172A" stroke-width="2.4" />
+          <circle cx="37.5" cy="114.5" r="6.8" fill="url(#${uid}_joint)" stroke="#0F172A" stroke-width="2.4" />
         </g>
 
         <!-- 5. BRAZO DERECHO ESFÉRICO 3D CON JERINGA DE CRISTAL LUMINOSA -->
         <g class="pulso-arm-right pulso-3d-layer-front">
-          <path d="M 95 85 L 107 108 L 96 113 L 90 94 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" />
-          <circle cx="102.5" cy="114.5" r="6.8" fill="url(#cmJointSphere)" stroke="#0F172A" stroke-width="2.4" />
+          <path d="M 95 85 L 107 108 L 96 113 L 90 94 Z" fill="url(#${uid}_coat)" stroke="#0F172A" stroke-width="2.4" stroke-linejoin="round" />
+          <circle cx="102.5" cy="114.5" r="6.8" fill="url(#${uid}_joint)" stroke="#0F172A" stroke-width="2.4" />
           <g transform="rotate(-38 103 104)">
             <rect x="98.5" y="91" width="8" height="16" rx="2.5" fill="#34D399" stroke="#0F172A" stroke-width="2" />
             <rect x="100" y="92.5" width="2.2" height="13" rx="1" fill="#A7F3D0" opacity="0.85" />
@@ -247,39 +238,39 @@ function PulsoAvatar({ state = 'reposo', size = 104 } = {}) {
           <!-- CORONA DE 3 CRISTALES 3D CON CARAS DE LUZ Y SOMBRA -->
           <g class="pulso-antenna-rig">
             <!-- Cristal izquierdo 3D -->
-            <polygon points="30,34 39,13 53,23 47,34" fill="url(#cmCrystalGrad)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+            <polygon points="30,34 39,13 53,23 47,34" fill="url(#${uid}_crystal)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
             <polygon points="39,13 44,34 30,34" fill="#FFFFFF" opacity="0.42" />
             <!-- Cristal derecho 3D -->
-            <polygon points="87,23 101,14 110,34 93,34" fill="url(#cmCrystalGrad)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+            <polygon points="87,23 101,14 110,34 93,34" fill="url(#${uid}_crystal)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
             <polygon points="101,14 96,34 87,23" fill="#FFFFFF" opacity="0.42" />
             <!-- Gran cristal central 3D -->
-            <polygon class="pulso-antenna-tip" points="50,26 70,2 90,26 84,33 56,33" fill="url(#cmCrystalGrad)" stroke="#0F172A" stroke-width="2.8" stroke-linejoin="round" />
+            <polygon class="pulso-antenna-tip" points="50,26 70,2 90,26 84,33 56,33" fill="url(#${uid}_crystal)" stroke="#0F172A" stroke-width="2.8" stroke-linejoin="round" />
             <polygon points="70,2 70,32 52,26" fill="#FFFFFF" opacity="0.5" />
             <polygon points="70,2 88,26 70,32" fill="#0284C7" opacity="0.32" />
             <line x1="70" y1="3" x2="70" y2="31" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
           </g>
 
           <!-- Extrusión trasera 3D del casco (da grosor real de bloque 3D) -->
-          <rect x="24" y="27" width="92" height="61" rx="17" fill="url(#cmArmorSide3d)" stroke="#0F172A" stroke-width="2.8" />
+          <rect x="24" y="27" width="92" height="61" rx="17" fill="url(#${uid}_armorSide)" stroke="#0F172A" stroke-width="2.8" />
 
           <!-- Módulos auriculares 3D esféricos laterales -->
-          <rect x="18" y="41" width="10" height="29" rx="5" fill="url(#cmJointSphere)" stroke="#0F172A" stroke-width="2.5" />
+          <rect x="18" y="41" width="10" height="29" rx="5" fill="url(#${uid}_joint)" stroke="#0F172A" stroke-width="2.5" />
           <ellipse cx="22.5" cy="54" rx="2.4" ry="8" fill="#BAE6FD" opacity="0.85" />
-          <rect x="112" y="41" width="10" height="29" rx="5" fill="url(#cmJointSphere)" stroke="#0F172A" stroke-width="2.5" />
+          <rect x="112" y="41" width="10" height="29" rx="5" fill="url(#${uid}_joint)" stroke="#0F172A" stroke-width="2.5" />
           <ellipse cx="116.5" cy="54" rx="2.4" ry="8" fill="#BAE6FD" opacity="0.85" />
 
           <!-- Carcasa frontal 3D del casco monitor -->
-          <rect x="27" y="24" width="86" height="60" rx="16" fill="url(#cmArmor3d)" stroke="#0F172A" stroke-width="2.8" />
+          <rect x="27" y="24" width="86" height="60" rx="16" fill="url(#${uid}_armor3d)" stroke="#0F172A" stroke-width="2.8" />
           <!-- Brillo especular 3D superior e izquierdo -->
           <path d="M 38 28.5 H 102" stroke="#E0F2FE" stroke-width="3" stroke-linecap="round" opacity="0.9" />
           <path d="M 31 36 V 72" stroke="#93C5FD" stroke-width="2.2" stroke-linecap="round" opacity="0.65" />
 
           <!-- Bisel interior hundido 3D de la pantalla -->
           <rect x="33" y="30" width="74" height="49" rx="11" fill="#020617" stroke="#1E3A8A" stroke-width="2.2" />
-          <rect x="35" y="32" width="70" height="45" rx="9.5" fill="url(#cmScreenGrad)" />
+          <rect x="35" y="32" width="70" height="45" rx="9.5" fill="url(#${uid}_screen)" />
 
           <!-- CADUCEO MÉDICO HOLOGRÁFICO 3D -->
-          <g class="pulso-caduceus" filter="url(#cmNeonGlow)" stroke="${hudPrimary}" fill="none" stroke-linecap="round">
+          <g class="pulso-caduceus" stroke="${hudPrimary}" fill="none" stroke-linecap="round">
             <path d="M 70 38 C 63 33, 56 35, 53 39 C 58 40, 64 40, 70 39 Z" fill="${hudPrimary}" opacity="0.92" />
             <path d="M 70 38 C 77 33, 84 35, 87 39 C 82 40, 76 40, 70 39 Z" fill="${hudPrimary}" opacity="0.92" />
             <line x1="70" y1="34" x2="70" y2="49" stroke-width="1.9" />

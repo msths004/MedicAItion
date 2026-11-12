@@ -7997,7 +7997,8 @@ body.mode-patient-portal #pulso-floating-root {
   display: flex;
   align-items: center;
   justify-content: center;
-  transform-style: preserve-3d;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
   transition: transform 0.16s ease-out;
   animation: pulso3dTurntable 4.2s infinite ease-in-out;
 }
