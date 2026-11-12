@@ -162,7 +162,9 @@ function setPulsoAvatarState(newState) {
   if (headerIcon) headerIcon.innerHTML = PulsoAvatar({ state: newState, size: 44 });
 
   document.querySelectorAll('.pulso-state-chip').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.state === newState);
+    const active = btn.dataset.state === newState;
+    btn.classList.toggle('active', active);
+    btn.classList.toggle('is-active', active);
   });
 }
 
@@ -175,6 +177,7 @@ function togglePulsoPanel(forceOpen) {
 
   if (panel) {
     panel.classList.toggle('open', next);
+    panel.classList.toggle('is-open', next);
     panel.setAttribute('aria-hidden', next ? 'false' : 'true');
   }
   if (fab) {
@@ -258,12 +261,13 @@ async function checkPulsoLocalAiStatus() {
   }
 
   if (dot) {
-    dot.className = `pulso-status-dot ${_PulsoState.ollamaConnected ? 'online' : 'fallback'}`;
+    dot.className = `pulso-conn-dot ${_PulsoState.ollamaConnected ? 'is-online' : 'is-local-fallback'}`;
   }
   if (lbl) {
     lbl.textContent = _PulsoState.statusLabel;
   }
   if (cfgBadge) {
+    cfgBadge.className = `pulso-cfg-badge ${_PulsoState.ollamaConnected ? 'is-online' : 'is-fallback'}`;
     cfgBadge.textContent = _PulsoState.ollamaConnected
       ? `🟢 IA local conectada (${_PulsoState.model})`
       : '🟡 Ollama desconectado (Motor Local Integrado Activo)';
@@ -331,8 +335,8 @@ function _renderPulsoMessages() {
     const isUser = m.role === 'user';
     const hasSoap = !isUser && m.soapStructured && idx === _PulsoState.messages.length - 1;
     return `
-      <div class="pulso-msg ${isUser ? 'pulso-msg-user' : 'pulso-msg-bot'}">
-        <div class="pulso-msg-body">${isUser ? _pulsoEsc(m.text) : _formatPulsoMarkdown(m.text)}</div>
+      <div class="pulso-msg ${isUser ? 'pulso-msg-user' : 'pulso-msg-assistant'}">
+        <div class="pulso-msg-bubble">${isUser ? _pulsoEsc(m.text) : _formatPulsoMarkdown(m.text)}</div>
         ${hasSoap ? `
           <button type="button" class="pulso-apply-soap-btn" onclick="applyPulsoSoapToExpediente()">
             📋 Pasar borrador SOAP al Expediente Activo
@@ -536,11 +540,15 @@ function resetPulsoToCorner() {
 
 function _initPulsoDraggable() {
   const fab = document.getElementById('pulso-fab-btn');
+  const header = document.querySelector('.pulso-chat-header');
   const root = document.getElementById('pulso-floating-root');
   if (!fab || !root) return;
 
-  fab.addEventListener('pointerdown', (e) => {
+  let suppressNextClick = false;
+
+  const startDrag = (e, isFab) => {
     if (e.button !== undefined && e.button !== 0) return;
+    if (!isFab && e.target.closest('button')) return;
     const rect = root.getBoundingClientRect();
     _PulsoState.drag.active = true;
     _PulsoState.drag.moved = false;
@@ -548,10 +556,10 @@ function _initPulsoDraggable() {
     _PulsoState.drag.startY = e.clientY;
     _PulsoState.drag.origLeft = rect.left;
     _PulsoState.drag.origTop = rect.top;
-    fab.setPointerCapture?.(e.pointerId);
-  });
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch (_) {}
+  };
 
-  fab.addEventListener('pointermove', (e) => {
+  const moveDrag = (e) => {
     if (!_PulsoState.drag.active) return;
     const dx = e.clientX - _PulsoState.drag.startX;
     const dy = e.clientY - _PulsoState.drag.startY;
@@ -560,38 +568,49 @@ function _initPulsoDraggable() {
     }
     if (!_PulsoState.drag.moved) return;
 
-    const maxLeft = Math.max(16, window.innerWidth - 96);
-    const maxTop = Math.max(16, window.innerHeight - 104);
-    const newLeft = Math.min(maxLeft, Math.max(16, _PulsoState.drag.origLeft + dx));
-    const newTop = Math.min(maxTop, Math.max(16, _PulsoState.drag.origTop + dy));
+    const maxLeft = Math.max(12, window.innerWidth - 96);
+    const maxTop = Math.max(12, window.innerHeight - 104);
+    const newLeft = Math.min(maxLeft, Math.max(12, _PulsoState.drag.origLeft + dx));
+    const newTop = Math.min(maxTop, Math.max(12, _PulsoState.drag.origTop + dy));
 
     root.style.right = 'auto';
     root.style.bottom = 'auto';
     root.style.left = `${newLeft}px`;
     root.style.top = `${newTop}px`;
     root.classList.toggle('pulso-left-side', newLeft < 400);
-  });
+  };
 
-  const endDrag = (e) => {
+  const endDrag = (e, isFab) => {
     if (!_PulsoState.drag.active) return;
     const wasMoved = _PulsoState.drag.moved;
     _PulsoState.drag.active = false;
-    fab.releasePointerCapture?.(e.pointerId);
-    if (!wasMoved) {
-      togglePulsoPanel();
+    try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch (_) {}
+    if (isFab && wasMoved) {
+      suppressNextClick = true;
+      setTimeout(() => { suppressNextClick = false; }, 200);
     }
   };
 
-  fab.addEventListener('pointerup', endDrag);
-  fab.addEventListener('pointercancel', endDrag);
+  fab.addEventListener('pointerdown', (e) => startDrag(e, true));
+  fab.addEventListener('pointermove', moveDrag);
+  fab.addEventListener('pointerup', (e) => endDrag(e, true));
+  fab.addEventListener('pointercancel', (e) => endDrag(e, true));
 
-  // Soporte de teclado accesible (Enter / Space) en el botón flotante
-  fab.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      togglePulsoPanel();
+  fab.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (suppressNextClick) {
+      suppressNextClick = false;
+      return;
     }
+    togglePulsoPanel();
   });
+
+  if (header) {
+    header.addEventListener('pointerdown', (e) => startDrag(e, false));
+    header.addEventListener('pointermove', moveDrag);
+    header.addEventListener('pointerup', (e) => endDrag(e, false));
+    header.addEventListener('pointercancel', (e) => endDrag(e, false));
+  }
 }
 
 function initPulsoAssistant() {

@@ -7964,6 +7964,10 @@ body.mode-patient-portal #pulso-floating-root {
   pointer-events: auto;
 }
 
+#pulso-floating-root.pulso-left-side {
+  align-items: flex-start;
+}
+
 /* Botón Flotante Arrastrable (FAB) */
 .pulso-fab-btn {
   position: relative;
@@ -8145,7 +8149,8 @@ body.mode-patient-portal #pulso-floating-root {
   margin-bottom: 12px;
 }
 
-.pulso-chat-panel.is-open {
+.pulso-chat-panel.is-open,
+.pulso-chat-panel.open {
   display: flex;
 }
 
