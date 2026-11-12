@@ -236,13 +236,17 @@ async function refreshWearablesCard() {
     OpsState.latestVitals = latest;
     const list = document.getElementById('connected-devices-list');
     if (list) {
-      list.innerHTML = latest.slice(0, 3).map(r => `
+      const visible = latest.slice(0, 2);
+      const extra = latest.length > 2
+        ? `<div class="device-more-link" onclick="openWearableModal()">+${latest.length - 2} dispositivo(s) más ›</div>`
+        : '';
+      list.innerHTML = visible.map(r => `
         <div class="device-item ${r.alert ? 'device-alert' : ''}" onclick="${r.curp ? `openPatientProfile('${_opsEsc(r.curp)}')` : ''}">
           <div class="device-title">${_opsEsc(r.patientName || r.curp || 'Paciente')}</div>
           <div class="device-sub">(${_opsEsc(r.device)}) - ${r.alert
             ? `<span class="status-alert">⚠ ${_opsEsc(r.alert_message)}</span>`
             : `<span class="status-connected">FC ${r.heart_rate ?? '--'} • SpO2 ${r.spo2 ?? '--'}% ✅</span>`}</div>
-        </div>`).join('') || '<div class="device-item"><div class="device-sub">Sin lecturas. Conecta un dispositivo.</div></div>';
+        </div>`).join('') + extra || '<div class="device-item"><div class="device-sub">Sin lecturas. Conecta un dispositivo.</div></div>';
     }
     const first = latest.find(r => r.heart_rate) || latest[0];
     if (first) {

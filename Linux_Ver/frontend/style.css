@@ -4188,7 +4188,7 @@ body {
 
 /* ── DASHBOARD (RESUMEN) ── */
 .dashboard-container {
-  max-width: 1400px;
+  max-width: 1560px;
   margin: 0 auto;
   animation: fadeInView 0.4s ease-out;
 }
@@ -4199,7 +4199,7 @@ body {
 }
 
 .dashboard-greeting {
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .dashboard-greeting h1 {
@@ -4967,20 +4967,30 @@ body.recording .record-timer-digital {
 /* ── BENTO GRID ROWS ── */
 .bento-row-top {
   display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  gap: 22px;
-  margin-bottom: 22px;
+  grid-template-columns: 1.12fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+  align-items: stretch;
 }
 
 .bento-row-bottom {
   display: grid;
-  grid-template-columns: 1.15fr 0.72fr 0.78fr;
-  gap: 22px;
+  grid-template-columns: 1.12fr 1fr 1fr;
+  gap: 20px;
   align-items: stretch;
 }
 
-.bento-card-header h3 {
-  font-size: 13.5px;
+.bento-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.bento-card-header h3,
+.bento-card-title {
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.4px;
   color: var(--text-primary);
@@ -5001,20 +5011,22 @@ body.recording .record-timer-digital {
 .agenda-card {
   background: var(--bg-panel);
   border-radius: 24px;
-  padding: 24px 26px;
+  padding: 22px 24px;
   box-shadow: 0 8px 28px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
 }
 
 .agenda-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .agenda-item {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .agenda-time {
@@ -5040,14 +5052,15 @@ body.recording .record-timer-digital {
 
 .agenda-pill-card {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 13px 18px;
+  gap: 10px;
+  padding: 12px 16px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 16px;
   transition: all 0.2s ease;
 }
 
@@ -5066,7 +5079,11 @@ body.recording .record-timer-digital {
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 3px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .agenda-patient-sub {
@@ -5133,19 +5150,20 @@ body.recording .record-timer-digital {
 .wearables-card {
   background: var(--bg-panel);
   border-radius: 24px;
-  padding: 24px 26px;
+  padding: 22px 24px;
   box-shadow: 0 8px 28px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 14px;
 }
 
 .wearables-visual-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  margin: 12px 0 16px 0;
+  margin: 0;
 }
 
 .smartwatch-illustration-wrap {
@@ -5220,11 +5238,18 @@ body.recording .record-timer-digital {
 
 .wearables-bottom-grid {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1.15fr 0.85fr;
   gap: 16px;
   align-items: center;
-  padding-top: 8px;
+  padding-top: 12px;
+  margin-top: auto;
   border-top: 1px solid var(--border);
+}
+
+.telemetry-chart {
+  height: 42px;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .connected-devices-list {
@@ -5233,14 +5258,40 @@ body.recording .record-timer-digital {
   gap: 8px;
 }
 
+.device-item {
+  padding: 8px 11px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.device-item:hover {
+  border-color: #93c5fd;
+  transform: translateX(2px);
+}
+
+.device-more-link {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0284c7;
+  cursor: pointer;
+  padding-left: 4px;
+}
+
+.device-more-link:hover {
+  text-decoration: underline;
+}
+
 .device-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .device-sub {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-secondary);
   font-weight: 500;
 }
@@ -5401,43 +5452,27 @@ body.recording .record-timer-digital {
 }
 
 /* ── CARD 4: ALERTAS EPIDEMIOLÓGICAS & INSIGHTS IA ── */
-.epidemiologia-column {
+.epidemiologia-card {
+  background: var(--bg-panel);
+  border-radius: 24px;
+  padding: 22px 24px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
 }
 
-.epidemiologia-section-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: 0.3px;
-  line-height: 1.3;
-  margin: 4px 0 10px 4px;
-  text-transform: uppercase;
+.epi-card-header {
+  margin-bottom: 2px;
 }
 
 .epidemiologia-inner-card {
   flex: 1;
-  background: var(--bg-panel);
-  border-radius: 22px;
-  padding: 20px 22px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-}
-
-.epi-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.epi-brand {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--text-primary);
+  justify-content: flex-start;
+  gap: 10px;
 }
 
 .epi-live-badge {
@@ -5447,6 +5482,7 @@ body.recording .record-timer-digital {
   background: #ffe4e6;
   padding: 3px 10px;
   border-radius: 999px;
+  white-space: nowrap;
 }
 
 .epi-topic {
@@ -5454,14 +5490,17 @@ body.recording .record-timer-digital {
   font-weight: 600;
   color: var(--text-secondary);
   line-height: 1.35;
-  margin: 10px 0;
+  margin: 0;
 }
 
 .epi-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  padding-top: 6px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
 }
 
 .epi-stat-val {
@@ -5482,16 +5521,18 @@ body.recording .record-timer-digital {
   background: var(--bg-panel);
   border-radius: 24px;
   padding: 22px 24px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 12px;
 }
 
 .tasks-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-top: 14px;
+  gap: 10px;
+  margin-top: 2px;
 }
 
 .task-item {
@@ -5499,13 +5540,16 @@ body.recording .record-timer-digital {
   align-items: flex-start;
   gap: 12px;
   cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 12px;
-  transition: background 0.2s ease;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
 .task-item:hover {
-  background: var(--bg-card);
+  border-color: #cbd5e1;
+  transform: translateX(2px);
 }
 
 .task-icon {
@@ -6496,22 +6540,28 @@ body.light-theme .evidence-cat { background: #dbeafe; color: #1d4ed8; }
 
 .doctor-workflow-bar {
   display: grid;
-  grid-template-columns: 1.4fr 1.1fr 1.2fr;
-  gap: 14px;
-  margin-bottom: 18px;
+  grid-template-columns: 1.35fr 1fr 1.15fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: stretch;
 }
-@media (max-width: 1120px) {
+@media (max-width: 1180px) {
   .doctor-workflow-bar { grid-template-columns: 1fr; }
 }
 
 .next-patient-card,
 .kpi-strip,
 .quick-actions-grid {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: 18px;
-  padding: 14px 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  padding: 14px 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+.next-patient-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 [data-theme="dark"] .next-patient-card,
 [data-theme="dark"] .kpi-strip,
@@ -6554,42 +6604,46 @@ body.light-theme .evidence-cat { background: #dbeafe; color: #1d4ed8; }
 .kpi-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  align-items: center;
+  gap: 10px;
+  align-items: stretch;
 }
 .kpi-tile {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 6px;
+  padding: 10px 6px;
   border-radius: 12px;
   background: rgba(148, 163, 184, 0.09);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  min-width: 0;
+  transition: transform 0.15s ease, background 0.15s ease;
 }
-.kpi-tile:hover { transform: translateY(-2px); }
-.kpi-val { font-size: 20px; font-weight: 800; line-height: 1.1; }
-.kpi-lbl { font-size: 10.5px; opacity: 0.72; text-align: center; margin-top: 3px; }
+.kpi-tile:hover { transform: translateY(-2px); background: rgba(148, 163, 184, 0.15); }
+.kpi-val { font-size: 21px; font-weight: 800; line-height: 1.1; }
+.kpi-lbl { font-size: 11px; font-weight: 600; opacity: 0.76; text-align: center; margin-top: 4px; white-space: nowrap; }
 .kpi-tile-alert.has-critical { background: rgba(239, 68, 68, 0.14); color: #dc2626; }
 
 .quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
+  align-content: center;
 }
 .quick-action-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 11px;
+  padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: rgba(148, 163, 184, 0.08);
   color: inherit;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .quick-action-btn:hover { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); }
 .quick-action-btn.qa-primary { background: #111c2d; color: #fff; border-color: #111c2d; }
@@ -6654,12 +6708,15 @@ body.light-theme .evidence-cat { background: #dbeafe; color: #1d4ed8; }
 .task-icon.task-info { background: #0284c7; color: #fff; }
 
 /* Epidemiology Mini List */
-.epi-mini-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; }
-.epi-mini-row { display: flex; justify-content: space-between; opacity: 0.88; }
+.epi-mini-list { margin-top: 2px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.epi-mini-row { display: flex; justify-content: space-between; align-items: center; opacity: 0.9; padding: 3px 2px; border-bottom: 1px dashed rgba(148, 163, 184, 0.2); }
+.epi-mini-row:last-child { border-bottom: none; }
 .epi-open-reports {
-  margin-top: 10px; width: 100%; border: none; border-radius: 8px; padding: 6px 10px;
-  background: rgba(15, 23, 42, 0.08); color: inherit; font-weight: 700; font-size: 11.5px; cursor: pointer;
+  margin-top: auto; width: 100%; border: 1px solid rgba(148, 163, 184, 0.22); border-radius: 10px; padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.06); color: inherit; font-weight: 700; font-size: 12px; cursor: pointer;
+  transition: background 0.15s ease;
 }
+.epi-open-reports:hover { background: rgba(15, 23, 42, 0.11); }
 [data-theme="dark"] .epi-open-reports { background: rgba(255, 255, 255, 0.1); }
 .epi-badge-high { background: #dc2626 !important; color: #fff !important; }
 

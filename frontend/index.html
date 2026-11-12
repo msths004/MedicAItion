@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5.3.0" />
+  <link rel="stylesheet" href="style.css?v=5.4.0" />
 </head>
 <body class="mode-dashboard">
 
@@ -266,7 +266,7 @@
               <div class="kpi-strip">
                 <div class="kpi-tile" onclick="switchMainTab('agenda')" title="Ver agenda del día">
                   <span class="kpi-val" id="kpi-pendientes">—</span>
-                  <span class="kpi-lbl">Pendientes hoy</span>
+                  <span class="kpi-lbl">Pendientes</span>
                 </div>
                 <div class="kpi-tile" onclick="switchMainTab('agenda')" title="Pacientes esperando en sala">
                   <span class="kpi-val" id="kpi-sala">—</span>
@@ -441,15 +441,15 @@
                     </div>
                     <!-- Heart Rate Area Chart -->
                     <div class="telemetry-chart">
-                      <svg width="100%" height="38" viewBox="0 0 220 38" preserveAspectRatio="none">
+                      <svg width="100%" height="42" viewBox="0 0 220 42" preserveAspectRatio="none">
                         <defs>
                           <linearGradient id="hr-area" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"/>
+                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.32"/>
                             <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
                           </linearGradient>
                         </defs>
-                        <path d="M0 28 Q 15 26, 25 12 T 50 22 T 75 16 T 105 25 T 135 14 T 165 22 T 195 15 T 220 24 L 220 38 L 0 38 Z" fill="url(#hr-area)"/>
-                        <path d="M0 28 Q 15 26, 25 12 T 50 22 T 75 16 T 105 25 T 135 14 T 165 22 T 195 15 T 220 24" fill="none" stroke="#2563eb" stroke-width="2"/>
+                        <path d="M0 30 C 12 30, 18 12, 28 12 C 38 12, 42 28, 52 28 C 62 28, 68 15, 78 15 C 88 15, 96 29, 108 29 C 120 29, 126 10, 138 10 C 150 10, 156 26, 168 26 C 180 26, 186 14, 198 14 C 208 14, 214 25, 220 25 L 220 42 L 0 42 Z" fill="url(#hr-area)"/>
+                        <path d="M0 30 C 12 30, 18 12, 28 12 C 38 12, 42 28, 52 28 C 62 28, 68 15, 78 15 C 88 15, 96 29, 108 29 C 120 29, 126 10, 138 10 C 150 10, 156 26, 168 26 C 180 26, 186 14, 198 14 C 208 14, 214 25, 220 25" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
                       </svg>
                     </div>
 
@@ -547,13 +547,12 @@
               </div>
 
               <!-- CARD 4: ALERTAS EPIDEMIOLÓGICAS & INSIGHTS IA -->
-              <div class="epidemiologia-column" id="bento-epidemiologia-card">
-                <h3 class="epidemiologia-section-title">ALERTAS EPIDEMIOLÓGICAS<br/>&amp; INSIGHTS IA</h3>
-                <div class="bento-card epidemiologia-inner-card">
-                  <div class="epi-top-row">
-                    <span class="epi-brand">Cerebro IA</span>
-                    <span class="epi-live-badge" id="epi-live-badge">En tiempo real</span>
-                  </div>
+              <div class="bento-card epidemiologia-card" id="bento-epidemiologia-card">
+                <div class="bento-card-header epi-card-header">
+                  <span class="bento-card-title">ALERTAS EPIDEMIOLÓGICAS &amp; IA</span>
+                  <span class="epi-live-badge" id="epi-live-badge">En tiempo real</span>
+                </div>
+                <div class="epidemiologia-inner-card">
                   <p class="epi-topic" id="epi-topic">Dengue en Mérida -<br/>Alertas rápidas:</p>
                   <div class="epi-stats-grid">
                     <div class="epi-stat">
@@ -1316,11 +1315,11 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.3.0"></script>
-  <script src="overlays.js?v=5.3.0"></script>
-  <script src="modals.js?v=5.3.0"></script>
-  <script src="calendar.js?v=5.3.0"></script>
-  <script src="clinical_ops.js?v=5.3.0"></script>
-  <script src="app.js?v=5.3.0"></script>
+  <script src="state.js?v=5.4.0"></script>
+  <script src="overlays.js?v=5.4.0"></script>
+  <script src="modals.js?v=5.4.0"></script>
+  <script src="calendar.js?v=5.4.0"></script>
+  <script src="clinical_ops.js?v=5.4.0"></script>
+  <script src="app.js?v=5.4.0"></script>
 </body>
 </html>
