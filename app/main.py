@@ -16,6 +16,7 @@ from app.api.routes_wearables import router as wearables_router
 from app.api.routes_analytics import router as analytics_router
 from app.api.routes_citizen import router as citizen_router
 from app.api.routes_security import router as security_router
+from app.api.routes_legal import router as legal_router
 from app.db.local_db import create_tables as create_local_tables
 from app.db.global_db import create_tables as create_global_tables, register_institution
 
@@ -115,6 +116,7 @@ app.include_router(wearables_router)
 app.include_router(analytics_router)
 app.include_router(citizen_router)
 app.include_router(security_router)
+app.include_router(legal_router)
 
 # Servir frontend estático
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

@@ -34,6 +34,7 @@ from app.core.fhir_exporter import build_fhir_bundle
 from app.core.ask_expediente import answer_patient_question
 from app.db.local_db import (
     register_patient,
+    upsert_consent_record,
     update_patient,
     get_patient_by_curp,
     get_all_patients,
@@ -76,9 +77,21 @@ def search_semantic(q: str):
 
 @router.post("/register", status_code=201)
 def register_patient_endpoint(data: dict = Body(...)):
-    """Registra un nuevo paciente con el formulario completo (25+ campos)."""
+    """Registra un nuevo paciente con el formulario completo (25+ campos) y consentimiento LFPDPPP."""
+    consent = data.get("consent")
+    if isinstance(consent, dict):
+        if not consent.get("accepted_privacy_notice") or not consent.get("accepted_clinical_processing"):
+            raise HTTPException(
+                status_code=422,
+                detail="Se requiere aceptación expresa del Aviso de Privacidad (LFPDPPP) y autorización para el tratamiento cifrado de datos clínicos.",
+            )
     try:
-        return register_patient(data)
+        patient = register_patient(data)
+        if isinstance(consent, dict):
+            consent_payload = dict(consent)
+            consent_payload.setdefault("signer_name", patient.get("nombre_completo") or patient.get("curp"))
+            patient["consent"] = upsert_consent_record(patient["curp"], consent_payload)
+        return patient
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:

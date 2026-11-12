@@ -167,6 +167,11 @@
           <span>Reportes y Estadísticas</span>
         </button>
 
+        <button class="sidebar-nav-btn" id="nav-btn-legal" onclick="switchMainTab('legal')" title="Aviso de Privacidad, Consentimientos, Cifrado y Derechos ARCO (México / Yucatán)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>Legal y Privacidad</span>
+        </button>
+
         <button class="sidebar-nav-btn" id="nav-btn-config" onclick="switchMainTab('config')" title="Roles (RBAC), Cédula Profesional, Offline y Bitácora NOM-024">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span>Configuración</span>
@@ -874,6 +879,141 @@
         </section>
 
         <!-- =================================================================
+             VIEW 6: LEGAL, PRIVACIDAD Y SEGURIDAD DEL PACIENTE (MX / YUCATÁN)
+             ================================================================= -->
+        <section class="view-panel" id="panel-legal-section" style="display:none">
+          <div class="legal-page-header">
+            <div>
+              <h2>Marco Legal, Consentimiento Informado y Seguridad Clínica</h2>
+              <p class="legal-page-subtitle">
+                Cumplimiento Federal (México: LFPDPPP, NOM-004-SSA3-2012, NOM-024-SSA3-2012, COFEPRIS) &amp; Piloto Yucatán (SSY / INAIP) con arquitectura multi-CLUES escalable.
+              </p>
+            </div>
+            <div class="legal-header-badges">
+              <span class="legal-jurisdiction-pill" id="legal-consent-status-badge">Verificando consentimiento...</span>
+            </div>
+          </div>
+
+          <div class="legal-encryption-banner" id="legal-encryption-banner">
+            <div class="legal-enc-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="legal-enc-body">
+              <div class="legal-enc-title" id="legal-enc-title">Bóveda Criptográfica ChaCha20 + HMAC-SHA256</div>
+              <div class="legal-enc-sub" id="legal-enc-sub">Verificando cifrado en reposo y sellos de inmutabilidad NOM-004...</div>
+            </div>
+            <div class="legal-enc-metrics" id="legal-enc-metrics"></div>
+          </div>
+
+          <div class="legal-grid-layout">
+            <div class="legal-card">
+              <div class="legal-card-header">
+                <h3>1. Gestión de Consentimiento Informado y Derechos ARCO</h3>
+                <span class="legal-chip">LFPDPPP Arts. 8°, 22–28</span>
+              </div>
+
+              <div class="legal-form-row">
+                <div class="legal-field">
+                  <label for="legal-target-select">Titular / Expediente</label>
+                  <select id="legal-target-select" class="input-field" onchange="loadTargetConsent()">
+                    <option value="SYSTEM">Operador / Sistema MedicAItion (Aviso General)</option>
+                  </select>
+                </div>
+                <div class="legal-field">
+                  <label for="legal-signer-name">Nombre quien otorga / firma</label>
+                  <input id="legal-signer-name" type="text" class="input-field" placeholder="Médico Responsable o Paciente Titular" />
+                </div>
+              </div>
+
+              <div class="legal-consent-checks">
+                <label class="legal-check-item required">
+                  <input type="checkbox" id="legal-chk-privacy" checked />
+                  <div>
+                    <strong>Aviso de Privacidad Integral (México &amp; Yucatán)</strong>
+                    <small>Obligatorio (LFPDPPP Art. 15–17 / LGPDPPSO). Tratamiento exclusivo para atención médica y prevención epidemiológica.</small>
+                  </div>
+                </label>
+
+                <label class="legal-check-item required">
+                  <input type="checkbox" id="legal-chk-clinical" checked />
+                  <div>
+                    <strong>Expediente Clínico Cifrado e Inmutable (NOM-004-SSA3-2012)</strong>
+                    <small>Obligatorio para notas médicas cifradas en reposo con sello HMAC-SHA256 y conservación mínima legal de 5 años (Numeral 5.4).</small>
+                  </div>
+                </label>
+
+                <label class="legal-check-item">
+                  <input type="checkbox" id="legal-chk-local-ai" checked />
+                  <div>
+                    <strong>Asistencia de IA Clínica 100% Local Offline (CDSS / SaMD)</strong>
+                    <small>Procesamiento dentro del equipo médico sin transmisión externa de datos sensibles ni historial.</small>
+                  </div>
+                </label>
+
+                <label class="legal-check-item warning">
+                  <input type="checkbox" id="legal-chk-cloud-ai" />
+                  <div>
+                    <strong>Transferencia Cifrada Opcional a IA Externa / Nube (Art. 36 LFPDPPP)</strong>
+                    <small>Desactivado por defecto para máxima protección del paciente. Si se desmarca, MedicAItion bloquea envíos a modelos en la nube.</small>
+                  </div>
+                </label>
+
+                <label class="legal-check-item">
+                  <input type="checkbox" id="legal-chk-ice-qr" checked />
+                  <div>
+                    <strong>Pasaporte de Emergencias QR / ICE (Uso Vital Prehospitalario)</strong>
+                    <small>Permite consultar grupo sanguíneo, alergias graves y contacto de emergencia al escanear el código QR del paciente.</small>
+                  </div>
+                </label>
+
+                <label class="legal-check-item">
+                  <input type="checkbox" id="legal-chk-wearables" checked />
+                  <div>
+                    <strong>Bitácora de Signos Vitales, Adherencia y Telemonitoreo</strong>
+                    <small>Autoriza el registro cifrado de mediciones diarias para seguimiento médico y alertas clínicas.</small>
+                  </div>
+                </label>
+              </div>
+
+              <div class="legal-actions-bar">
+                <button type="button" class="btn-primary-gradient" onclick="saveTargetConsent()">Guardar y Firmar Consentimiento</button>
+                <button type="button" class="btn-secondary-outline" onclick="exportTargetArco()">Exportar ARCO (Portabilidad JSON)</button>
+                <button type="button" class="btn-danger-outline" onclick="revokeTargetConsent()">Revocar Usos Opcionales</button>
+              </div>
+
+              <div class="legal-proof-box" id="legal-consent-proof-box">
+                Sin firma registrada para este titular todavía.
+              </div>
+            </div>
+
+            <div class="legal-card">
+              <div class="legal-card-header">
+                <h3>2. Normatividad Aplicable y Seguridad del Paciente</h3>
+                <span class="legal-chip">Yucatán &amp; Escalable Multi-CLUES</span>
+              </div>
+
+              <div class="legal-jurisdiction-box" id="legal-jurisdiction-meta">
+                Cargando metadatos jurisdiccionales...
+              </div>
+
+              <div class="legal-norms-list" id="legal-norms-list">
+                Cargando marco normativo...
+              </div>
+
+              <div class="legal-doc-block">
+                <h4>Aviso de Privacidad Integral (Resumen Ejecutivo)</h4>
+                <p id="legal-privacy-full-text">Cargando aviso de privacidad...</p>
+              </div>
+
+              <div class="legal-disclaimer-box">
+                <h4>Descargo Clínico y Responsabilidad Profesional (COFEPRIS / LGS)</h4>
+                <p id="legal-clinical-disclaimer-text">Cargando descargo clínico...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================================
              VIEW 2: NUEVA CONSULTA (Captura + Previsualización NOM-004)
              ================================================================= -->
         <section class="view-panel" id="consulta-layout" style="display:none">
@@ -1566,6 +1706,41 @@
     </div>
   </div>
 
+  <!-- MODAL DE PERMISO Y AVISO LEGAL INICIAL (LFPDPPP MÉXICO / YUCATÁN) -->
+  <div class="llm-modal-overlay" id="legal-gate-overlay">
+    <div class="llm-modal wearable-modal-box" style="max-width:620px;">
+      <div class="modal-top-badge">⚖️</div>
+      <h2>Permiso de Uso de Datos y Marco Legal</h2>
+      <p class="modal-sub">
+        Operación regulada bajo leyes de <strong>México y el Estado de Yucatán</strong> (<em>LFPDPPP, LGPDPPSO, NOM-004-SSA3-2012 y NOM-024-SSA3-2012</em>), con arquitectura preparada para expansión nacional e internacional.
+      </p>
+
+      <div class="legal-gate-highlight">
+        <strong>🔐 Seguridad del Paciente como Prioridad #1:</strong> Toda información clínica sensible se almacena bajo cifrado autenticado en reposo (<strong>ChaCha20 + HMAC-SHA256</strong>), inmutabilidad documental NOM-004 y guardián farmacológico de alergias/triaje.
+      </div>
+
+      <div class="legal-checks-stack" style="margin-top:12px;">
+        <label class="legal-chk-row">
+          <input type="checkbox" id="gate-chk-privacy" checked />
+          <span>He leído y acepto el <strong>Aviso de Privacidad Integral (México / Yucatán)</strong> y el tratamiento cifrado de datos clínicos sensibles.</span>
+        </label>
+        <label class="legal-chk-row">
+          <input type="checkbox" id="gate-chk-responsibility" checked />
+          <span>Comprendo que MedicAItion es un <strong>copiloto CDSS de apoyo clínico</strong>; el criterio médico y la prescripción corresponden al profesional autorizado.</span>
+        </label>
+        <label class="legal-chk-row">
+          <input type="checkbox" id="gate-chk-cloud" />
+          <span><em>(Opcional)</em> Autorizo envío a <strong>IA en Nube externa</strong> cuando tenga API Key; si no se marca, todo el procesamiento permanecerá <strong>100% local offline</strong>.</span>
+        </label>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+        <button type="button" class="llm-modal-close" style="flex:1; background:#0f172a;" onclick="acceptLegalGateConsent()">✅ Acepto y Autorizo Datos Cifrados</button>
+        <button type="button" class="btn-outline-pill" onclick="closeLegalConsentGate(); switchMainTab('legal');">📄 Ver Apartado Legal Completo</button>
+      </div>
+    </div>
+  </div>
+
   <!-- GENERIC OVERLAY CONTAINER (Expediente Clínico & Consultas) -->
   <div class="app-overlay" id="app-overlay">
     <div class="app-overlay-content" id="app-overlay-content">
@@ -1573,11 +1748,11 @@
     </div>
   </div>
 
-  <script src="state.js?v=5.6.0"></script>
-  <script src="overlays.js?v=5.6.0"></script>
-  <script src="modals.js?v=5.6.0"></script>
-  <script src="calendar.js?v=5.6.0"></script>
-  <script src="clinical_ops.js?v=5.6.0"></script>
-  <script src="app.js?v=5.6.0"></script>
+  <script src="state.js?v=5.7.0"></script>
+  <script src="overlays.js?v=5.7.0"></script>
+  <script src="modals.js?v=5.7.0"></script>
+  <script src="calendar.js?v=5.7.0"></script>
+  <script src="clinical_ops.js?v=5.7.0"></script>
+  <script src="app.js?v=5.7.0"></script>
 </body>
 </html>

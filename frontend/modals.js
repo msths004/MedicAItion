@@ -556,6 +556,22 @@ function openRegisterPatientModal() {
         <textarea id="reg-anotaciones" class="textarea-field" rows="3" placeholder="Observaciones generales del paciente..."></textarea>
       </div>
 
+      <div class="legal-modal-consent-box">
+        <div class="legal-modal-consent-title">Consentimiento Informado Express — LFPDPPP (Arts. 8°, 9°, 15–17) &amp; NOM-004-SSA3-2012</div>
+        <label class="legal-modal-check">
+          <input type="checkbox" id="reg-consent-privacy" checked />
+          <span><strong>Obligatorio:</strong> El paciente autoriza el tratamiento cifrado de sus datos personales sensibles de salud bajo el Aviso de Privacidad MedicAItion (México / Yucatán SSY) y la custodia de su expediente clínico NOM-004.</span>
+        </label>
+        <label class="legal-modal-check">
+          <input type="checkbox" id="reg-consent-ice" checked />
+          <span><strong>Opcional (Emergencia Vital):</strong> Habilitar Pasaporte Médico QR / ICE (alergias críticas, tipo de sangre y contacto de emergencia).</span>
+        </label>
+        <label class="legal-modal-check">
+          <input type="checkbox" id="reg-consent-cloud" />
+          <span><strong>Opcional (Transferencia Nube Art. 36):</strong> Permitir envío de resúmenes a IA externa. Si se deja sin marcar, MedicAItion opera 100% offline local.</span>
+        </label>
+      </div>
+
     </div>
 
     <div class="overlay-actions">
@@ -580,6 +596,13 @@ async function handleRegisterPatient() {
   if (!nombres)        return showToast('El nombre es obligatorio', 'error');
   if (!curp)           return showToast('El CURP/ID es obligatorio', 'error');
   if (!ubicacion)      return showToast('La dirección de casa es obligatoria', 'error');
+
+  const privacyAccepted = !!document.getElementById('reg-consent-privacy')?.checked;
+  if (!privacyAccepted) {
+    return showToast('Debe aceptar el Aviso de Privacidad y consentimiento NOM-004/LFPDPPP para registrar datos sensibles', 'error');
+  }
+  const iceAccepted = !!document.getElementById('reg-consent-ice')?.checked;
+  const cloudAccepted = !!document.getElementById('reg-consent-cloud')?.checked;
 
   if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
 
@@ -611,6 +634,16 @@ async function handleRegisterPatient() {
                                  .map(s => s.trim())
                                  .filter(Boolean),
     anotaciones_generales:     document.getElementById('reg-anotaciones')?.value.trim() || null,
+    consent: {
+      accepted_privacy_notice: true,
+      accepted_clinical_processing: true,
+      accepted_ai_local_processing: true,
+      accepted_ice_qr_emergency: iceAccepted,
+      accepted_cloud_llm_transfer: cloudAccepted,
+      accepted_wearables_monitoring: true,
+      signed_by_name: `${nombres} ${primerApellido}`.trim(),
+      signer_role: 'patient_or_representative',
+    },
   };
 
   try {

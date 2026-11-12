@@ -29,6 +29,15 @@ import json
 import uuid
 import os
 
+from app.core.crypto_vault import (
+    compute_consent_hash,
+    compute_consulta_seal,
+    decrypt_text,
+    encrypt_text,
+    is_encrypted,
+    verify_consulta_seal,
+)
+
 load_dotenv()
 
 LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "data/medicaition_local.db")
@@ -186,6 +195,9 @@ class Consulta(Base):
     # ── Addenda (no modifica la nota original, solo agrega) ──────
     notas_addendum = Column(Text, nullable=True)
 
+    # ── Sello criptográfico de integridad NOM-004 (HMAC-SHA256) ──
+    integrity_seal = Column(String, nullable=True)
+
     # ── Timestamp de creación (NUNCA se modifica) ────────────────
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -337,6 +349,33 @@ class PractitionerProfile(Base):
     updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class ConsentRecord(Base):
+    """
+    Registro de Consentimiento Informado y Permisos LFPDPPP / NOM-004 / NOM-024
+    para México (Jurisdicción inicial Yucatán, escalable a nivel nacional/internacional).
+    """
+    __tablename__ = "consent_records"
+
+    id                           = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    patient_curp                 = Column(String, nullable=False, index=True)  # CURP o "SISTEMA" para operador
+    consent_version              = Column(String, nullable=False, default="v2.0-MX-YUC-LFPDPPP")
+    jurisdiction                 = Column(String, nullable=False, default="México — Estado de Yucatán (Escalable)")
+    accepted_privacy_notice      = Column(Boolean, default=False)
+    accepted_clinical_processing = Column(Boolean, default=False)
+    accepted_ai_local_processing = Column(Boolean, default=True)
+    accepted_cloud_llm_transfer  = Column(Boolean, default=False)
+    accepted_ice_qr_emergency    = Column(Boolean, default=True)
+    accepted_wearable_telemetry  = Column(Boolean, default=True)
+    revoked                      = Column(Boolean, default=False)
+    revoked_reason               = Column(Text, nullable=True)
+    revoked_at                   = Column(DateTime, nullable=True)
+    signer_name                  = Column(String, nullable=True)
+    operator_name                = Column(String, nullable=True)
+    proof_hash                   = Column(String, nullable=True)
+    signed_at                    = Column(DateTime, default=datetime.utcnow)
+    updated_at                   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 def _seed_sprint2_defaults():
     """Siembra citas y lecturas iniciales si las tablas nuevas están vacías."""
     db = SessionLocal()
@@ -478,6 +517,10 @@ def create_tables():
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE consultas ADD COLUMN cedula_profesional TEXT;"))
 
+    if "integrity_seal" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE consultas ADD COLUMN integrity_seal TEXT;"))
+
     p_columns = [col["name"] for col in inspector.get_columns("patients")]
     if "tipo_sangre" not in p_columns:
         with engine.begin() as conn:
@@ -486,6 +529,7 @@ def create_tables():
     _seed_sprint2_defaults()
     _seed_sprint3_defaults()
     _seed_sprint4_defaults()
+    migrate_encrypt_existing_records()
     print("[DB] Tablas verificadas/creadas correctamente.")
 
 
@@ -517,9 +561,9 @@ def register_patient(data: dict) -> dict:
             fecha_nacimiento=data.get("fecha_nacimiento"),
             sexo=data.get("sexo"),
             folio_hospital=data.get("folio_hospital"),
-            ubicacion_casa=data.get("ubicacion_casa"),
-            rfc=data.get("rfc"),
-            nss=data.get("nss"),
+            ubicacion_casa=encrypt_text(data.get("ubicacion_casa")),
+            rfc=encrypt_text(data.get("rfc")),
+            nss=encrypt_text(data.get("nss")),
             expediente_externo=data.get("expediente_externo"),
             nacionalidad=data.get("nacionalidad", "Mexicana"),
             lugar_nacimiento=data.get("lugar_nacimiento"),
@@ -527,13 +571,13 @@ def register_patient(data: dict) -> dict:
             ocupacion=data.get("ocupacion"),
             tipo_paciente=data.get("tipo_paciente"),
             programa_medico=data.get("programa_medico"),
-            telefono_local=data.get("telefono_local"),
-            celular=data.get("celular"),
-            email=data.get("email"),
-            contacto_emergencia_nombre=data.get("contacto_emergencia_nombre"),
-            contacto_emergencia_tel=data.get("contacto_emergencia_tel"),
+            telefono_local=encrypt_text(data.get("telefono_local")),
+            celular=encrypt_text(data.get("celular")),
+            email=encrypt_text(data.get("email")),
+            contacto_emergencia_nombre=encrypt_text(data.get("contacto_emergencia_nombre")),
+            contacto_emergencia_tel=encrypt_text(data.get("contacto_emergencia_tel")),
             aseguradoras=json.dumps(data.get("aseguradoras", []), ensure_ascii=False),
-            anotaciones_generales=data.get("anotaciones_generales"),
+            anotaciones_generales=encrypt_text(data.get("anotaciones_generales")),
             altura_cm=data.get("altura_cm"),
             peso_kg=data.get("peso_kg"),
             tipo_sangre=data.get("tipo_sangre"),
@@ -543,12 +587,17 @@ def register_patient(data: dict) -> dict:
         db.commit()
         db.refresh(patient)
 
-        # Log audit action
+        # Log audit action (sin exponer PII sensible en texto claro en bitácora)
         log_audit_action(
             action="REGISTRO",
             patient_curp=curp,
-            operator="Personal Administrativo",
-            details_dict=data,
+            operator=data.get("operator") or "Personal Administrativo",
+            details_dict={
+                "curp": curp,
+                "nombre_completo": patient.nombre_completo,
+                "clues_institucion": patient.clues_institucion,
+                "encrypted_at_rest": True,
+            },
             db=db
         )
 
@@ -582,12 +631,21 @@ def update_patient(curp: str, data: dict) -> dict | None:
             "celular", "email", "contacto_emergencia_nombre", "contacto_emergencia_tel",
             "anotaciones_generales", "altura_cm", "peso_kg", "tipo_sangre", "clues_institucion",
         ]
+        encrypted_fields = {
+            "ubicacion_casa", "rfc", "nss", "telefono_local", "celular", "email",
+            "contacto_emergencia_nombre", "contacto_emergencia_tel", "anotaciones_generales",
+        }
         for field in editable_fields:
             if field in data:
-                old_val = getattr(patient, field)
+                raw_old = getattr(patient, field)
+                old_val = decrypt_text(raw_old) if field in encrypted_fields else raw_old
                 new_val = data[field]
                 if old_val != new_val:
-                    diff[field] = {"old": old_val, "new": new_val}
+                    diff[field] = (
+                        {"old": "[CIFRADO]", "new": "[ACTUALIZADO]"}
+                        if field in encrypted_fields
+                        else {"old": old_val, "new": new_val}
+                    )
 
         if "aseguradoras" in data:
             old_aseg = json.loads(patient.aseguradoras) if patient.aseguradoras else []
@@ -595,10 +653,11 @@ def update_patient(curp: str, data: dict) -> dict | None:
             if old_aseg != new_aseg:
                 diff["aseguradoras"] = {"old": old_aseg, "new": new_aseg}
 
-        # Apply updates
+        # Apply updates (cifrando campos sensibles en reposo)
         for field in editable_fields:
             if field in data:
-                setattr(patient, field, data[field])
+                val = encrypt_text(data[field]) if field in encrypted_fields else data[field]
+                setattr(patient, field, val)
 
         if "aseguradoras" in data:
             patient.aseguradoras = json.dumps(data["aseguradoras"], ensure_ascii=False)
@@ -697,9 +756,9 @@ def _patient_to_dict(patient: Patient, include_auxiliaries: bool = False) -> dic
         "fecha_nacimiento": patient.fecha_nacimiento,
         "sexo": patient.sexo,
         "folio_hospital": patient.folio_hospital,
-        "ubicacion_casa": patient.ubicacion_casa,
-        "rfc": patient.rfc,
-        "nss": patient.nss,
+        "ubicacion_casa": decrypt_text(patient.ubicacion_casa),
+        "rfc": decrypt_text(patient.rfc),
+        "nss": decrypt_text(patient.nss),
         "expediente_externo": patient.expediente_externo,
         "nacionalidad": patient.nacionalidad,
         "lugar_nacimiento": patient.lugar_nacimiento,
@@ -707,36 +766,37 @@ def _patient_to_dict(patient: Patient, include_auxiliaries: bool = False) -> dic
         "ocupacion": patient.ocupacion,
         "tipo_paciente": patient.tipo_paciente,
         "programa_medico": patient.programa_medico,
-        "telefono_local": patient.telefono_local,
-        "celular": patient.celular,
-        "email": patient.email,
-        "contacto_emergencia_nombre": patient.contacto_emergencia_nombre,
-        "contacto_emergencia_tel": patient.contacto_emergencia_tel,
+        "telefono_local": decrypt_text(patient.telefono_local),
+        "celular": decrypt_text(patient.celular),
+        "email": decrypt_text(patient.email),
+        "contacto_emergencia_nombre": decrypt_text(patient.contacto_emergencia_nombre),
+        "contacto_emergencia_tel": decrypt_text(patient.contacto_emergencia_tel),
         "aseguradoras": json.loads(patient.aseguradoras) if patient.aseguradoras else [],
-        "anotaciones_generales": patient.anotaciones_generales,
+        "anotaciones_generales": decrypt_text(patient.anotaciones_generales),
         "altura_cm": patient.altura_cm,
         "peso_kg": patient.peso_kg,
         "tipo_sangre": patient.tipo_sangre,
         "bmi": bmi,             # Calculado al vuelo
         "edad": edad,           # Calculado al vuelo
         "clues_institucion": patient.clues_institucion,
-        "resumen_ia": patient.resumen_ia,
+        "resumen_ia": decrypt_text(patient.resumen_ia),
         "resumen_ia_fecha": patient.resumen_ia_fecha.isoformat() if patient.resumen_ia_fecha else None,
         "created_at": patient.created_at.isoformat() if patient.created_at else None,
         "updated_at": patient.updated_at.isoformat() if patient.updated_at else None,
+        "encrypted_at_rest": True,
     }
 
     if include_auxiliaries:
         result["alergias"] = [
             {
-                "id": a.id, "descripcion": a.descripcion, "tipo": a.tipo,
+                "id": a.id, "descripcion": decrypt_text(a.descripcion), "tipo": a.tipo,
                 "severidad": a.severidad, "created_at": a.created_at.isoformat() if a.created_at else None
             }
             for a in patient.alergias
         ]
         result["antecedentes"] = [
             {
-                "id": a.id, "tipo": a.tipo, "descripcion": a.descripcion,
+                "id": a.id, "tipo": a.tipo, "descripcion": decrypt_text(a.descripcion),
                 "fecha": a.fecha, "created_at": a.created_at.isoformat() if a.created_at else None
             }
             for a in patient.antecedentes
@@ -858,16 +918,17 @@ def delete_patient(curp: str) -> bool:
 def add_alergia(curp: str, data: dict) -> dict:
     db = SessionLocal()
     try:
+        desc_plain = data.get("descripcion", "")
         alergia = Alergia(
             patient_curp=curp,
-            descripcion=data.get("descripcion", ""),
+            descripcion=encrypt_text(desc_plain),
             tipo=data.get("tipo"),
             severidad=data.get("severidad"),
         )
         db.add(alergia)
         db.commit()
         db.refresh(alergia)
-        return {"id": alergia.id, "descripcion": alergia.descripcion,
+        return {"id": alergia.id, "descripcion": desc_plain,
                 "tipo": alergia.tipo, "severidad": alergia.severidad}
     finally:
         db.close()
@@ -889,16 +950,17 @@ def delete_alergia(alergia_id: str) -> bool:
 def add_antecedente(curp: str, data: dict) -> dict:
     db = SessionLocal()
     try:
+        desc_plain = data.get("descripcion", "")
         ant = Antecedente(
             patient_curp=curp,
             tipo=data.get("tipo"),
-            descripcion=data.get("descripcion", ""),
+            descripcion=encrypt_text(desc_plain),
             fecha=data.get("fecha"),
         )
         db.add(ant)
         db.commit()
         db.refresh(ant)
-        return {"id": ant.id, "tipo": ant.tipo, "descripcion": ant.descripcion, "fecha": ant.fecha}
+        return {"id": ant.id, "tipo": ant.tipo, "descripcion": desc_plain, "fecha": ant.fecha}
     finally:
         db.close()
 
@@ -1077,19 +1139,40 @@ def create_consulta(data: dict) -> dict:
             except Exception:
                 pass
 
+        consulta_id = str(uuid.uuid4())
+        nota_raw = json.dumps(data.get("nota_medica", {}), ensure_ascii=False)
+        receta_raw = json.dumps(data.get("receta", {}), ensure_ascii=False)
+        entidades_raw = json.dumps(data.get("entidades", {}), ensure_ascii=False)
+        texto_orig_raw = data.get("texto_original", "") or ""
+        texto_red_raw = data.get("texto_redactado", "") or ""
+
+        seal = compute_consulta_seal({
+            "id": consulta_id,
+            "evento_id": evento_id,
+            "patient_curp": evento.patient_curp,
+            "doctor_nombre": data.get("doctor_nombre"),
+            "cedula_profesional": data.get("cedula_profesional"),
+            "fecha_hora": fecha_hora.isoformat(),
+            "nota_medica_json": nota_raw,
+            "receta_json": receta_raw,
+            "entidades_json": entidades_raw,
+            "texto_original": texto_orig_raw,
+        })
+
         consulta = Consulta(
-            id=str(uuid.uuid4()),
+            id=consulta_id,
             evento_id=evento_id,
             patient_curp=evento.patient_curp,
             doctor_nombre=data.get("doctor_nombre"),
             cedula_profesional=data.get("cedula_profesional"),
             fecha_hora=fecha_hora,
-            resumen_doctor=data.get("resumen_doctor"),
-            nota_medica_json=json.dumps(data.get("nota_medica", {}), ensure_ascii=False),
-            receta_json=json.dumps(data.get("receta", {}), ensure_ascii=False),
-            entidades_json=json.dumps(data.get("entidades", {}), ensure_ascii=False),
-            texto_original=data.get("texto_original", ""),
-            texto_redactado=data.get("texto_redactado", ""),
+            resumen_doctor=encrypt_text(data.get("resumen_doctor")),
+            nota_medica_json=encrypt_text(nota_raw),
+            receta_json=encrypt_text(receta_raw),
+            entidades_json=encrypt_text(entidades_raw),
+            texto_original=encrypt_text(texto_orig_raw),
+            texto_redactado=encrypt_text(texto_red_raw),
+            integrity_seal=seal,
         )
         db.add(consulta)
 
@@ -1145,14 +1228,36 @@ def get_consulta_by_id(consulta_id: str) -> dict | None:
 
 
 def _consulta_to_dict(consulta: Consulta) -> dict:
-    """Serializa una Consulta a dict, con documentos parseados desde JSON."""
-    def _safe_parse(text):
-        if not text:
+    """Serializa una Consulta a dict, descifrando documentos y verificando su sello NOM-004."""
+    def _safe_parse(raw_text):
+        if not raw_text:
             return {}
         try:
-            return json.loads(text)
+            plain = decrypt_text(raw_text)
+            return json.loads(plain)
         except Exception:
             return {}
+
+    nota_plain = decrypt_text(consulta.nota_medica_json) or "{}"
+    receta_plain = decrypt_text(consulta.receta_json) or "{}"
+    ent_plain = decrypt_text(consulta.entidades_json) or "{}"
+    orig_plain = decrypt_text(consulta.texto_original) or ""
+    red_plain = decrypt_text(consulta.texto_redactado) or ""
+    resumen_plain = decrypt_text(consulta.resumen_doctor)
+    addendum_plain = decrypt_text(consulta.notas_addendum)
+
+    seal_ok = verify_consulta_seal({
+        "id": consulta.id,
+        "evento_id": consulta.evento_id,
+        "patient_curp": consulta.patient_curp,
+        "doctor_nombre": consulta.doctor_nombre,
+        "cedula_profesional": consulta.cedula_profesional,
+        "fecha_hora": consulta.fecha_hora.isoformat() if consulta.fecha_hora else "",
+        "nota_medica_json": nota_plain,
+        "receta_json": receta_plain,
+        "entidades_json": ent_plain,
+        "texto_original": orig_plain,
+    }, getattr(consulta, "integrity_seal", None))
 
     return {
         "id": consulta.id,
@@ -1161,13 +1266,16 @@ def _consulta_to_dict(consulta: Consulta) -> dict:
         "doctor_nombre": consulta.doctor_nombre,
         "cedula_profesional": consulta.cedula_profesional,
         "fecha_hora": consulta.fecha_hora.isoformat() if consulta.fecha_hora else None,
-        "resumen_doctor": consulta.resumen_doctor,
-        "nota_medica": _safe_parse(consulta.nota_medica_json),
-        "receta": _safe_parse(consulta.receta_json),
-        "entidades": _safe_parse(consulta.entidades_json),
-        "texto_original": consulta.texto_original,
-        "texto_redactado": consulta.texto_redactado or "",
-        "notas_addendum": consulta.notas_addendum,
+        "resumen_doctor": resumen_plain,
+        "nota_medica": _safe_parse(nota_plain),
+        "receta": _safe_parse(receta_plain),
+        "entidades": _safe_parse(ent_plain),
+        "texto_original": orig_plain,
+        "texto_redactado": red_plain,
+        "notas_addendum": addendum_plain,
+        "integrity_seal": getattr(consulta, "integrity_seal", None),
+        "integrity_verified": seal_ok,
+        "encrypted_at_rest": is_encrypted(consulta.nota_medica_json),
         "created_at": consulta.created_at.isoformat() if consulta.created_at else None,
     }
 
@@ -1279,9 +1387,7 @@ def index_patient_profile_semantically(data: dict):
             f"CURP: {curp}.",
             f"Folio: {data.get('folio_hospital') or ''}.",
             f"Ocupación: {data.get('ocupacion') or ''}.",
-            f"Ubicación y Domicilio: {data.get('ubicacion_casa') or ''}.",
-            f"Lugar de Nacimiento: {data.get('lugar_nacimiento') or ''}.",
-            f"Anotaciones y Antecedentes Clínicos: {data.get('anotaciones_generales') or ''}."
+            f"Anotaciones Clínicas: {data.get('anotaciones_generales') or ''}."
         ]))
 
         col = get_collection("patients_semantic")
@@ -1440,7 +1546,7 @@ def _daily_log_to_dict(row: PatientDailyLog) -> dict:
         "weight_kg": row.weight_kg,
         "medication_taken": bool(row.medication_taken),
         "mood_or_pain": row.mood_or_pain,
-        "symptoms_note": row.symptoms_note,
+        "symptoms_note": decrypt_text(row.symptoms_note),
         "alert_flag": bool(row.alert_flag),
         "alert_message": row.alert_message,
         "recorded_at": row.recorded_at.isoformat() if row.recorded_at else None,
@@ -1485,7 +1591,7 @@ def add_patient_daily_log(curp: str, data: dict) -> dict:
             weight_kg=data.get("weight_kg"),
             medication_taken=bool(data.get("medication_taken", True)),
             mood_or_pain=data.get("mood_or_pain") or "Bien",
-            symptoms_note=data.get("symptoms_note"),
+            symptoms_note=encrypt_text(data.get("symptoms_note")),
             alert_flag=alert_flag,
             alert_message=alert_msg or None,
         )
@@ -1779,5 +1885,316 @@ def get_all_audit_logs(limit: int = 100, action: str | None = None, curp: str | 
                 "details": details,
             })
         return out
+    finally:
+        db.close()
+
+
+
+# ─────────────────────────────────────────────────────────────────
+# LEGAL: CIFRADO EN REPOSO, CONSENTIMIENTO INFORMADO Y ARCO (MÉXICO/YUCATÁN)
+# ─────────────────────────────────────────────────────────────────
+
+def migrate_encrypt_existing_records() -> dict:
+    """
+    Cifra de forma idempotente registros legados en texto claro y sella
+    consultas que aún no cuenten con sello HMAC-SHA256 NOM-004.
+    """
+    db = SessionLocal()
+    migrated = {"patients": 0, "consultas": 0, "aux": 0}
+    try:
+        p_fields = (
+            "ubicacion_casa", "rfc", "nss", "telefono_local", "celular", "email",
+            "contacto_emergencia_nombre", "contacto_emergencia_tel",
+            "anotaciones_generales", "resumen_ia",
+        )
+        for p in db.query(Patient).all():
+            changed = False
+            for fld in p_fields:
+                val = getattr(p, fld)
+                if val and not is_encrypted(val):
+                    setattr(p, fld, encrypt_text(val))
+                    changed = True
+            if changed:
+                migrated["patients"] += 1
+
+        for a in db.query(Alergia).all():
+            if a.descripcion and not is_encrypted(a.descripcion):
+                a.descripcion = encrypt_text(a.descripcion)
+                migrated["aux"] += 1
+
+        for ant in db.query(Antecedente).all():
+            if ant.descripcion and not is_encrypted(ant.descripcion):
+                ant.descripcion = encrypt_text(ant.descripcion)
+                migrated["aux"] += 1
+
+        for dl in db.query(PatientDailyLog).all():
+            if dl.symptoms_note and not is_encrypted(dl.symptoms_note):
+                dl.symptoms_note = encrypt_text(dl.symptoms_note)
+                migrated["aux"] += 1
+
+        c_fields = (
+            "resumen_doctor", "nota_medica_json", "receta_json",
+            "entidades_json", "texto_original", "texto_redactado", "notas_addendum",
+        )
+        for c in db.query(Consulta).all():
+            changed = False
+            nota_plain = decrypt_text(c.nota_medica_json) or "{}"
+            rec_plain = decrypt_text(c.receta_json) or "{}"
+            ent_plain = decrypt_text(c.entidades_json) or "{}"
+            orig_plain = decrypt_text(c.texto_original) or ""
+
+            for fld in c_fields:
+                val = getattr(c, fld)
+                if val and not is_encrypted(val):
+                    setattr(c, fld, encrypt_text(val))
+                    changed = True
+
+            if not getattr(c, "integrity_seal", None):
+                c.integrity_seal = compute_consulta_seal({
+                    "id": c.id,
+                    "evento_id": c.evento_id,
+                    "patient_curp": c.patient_curp,
+                    "doctor_nombre": c.doctor_nombre,
+                    "cedula_profesional": c.cedula_profesional,
+                    "fecha_hora": c.fecha_hora.isoformat() if c.fecha_hora else "",
+                    "nota_medica_json": nota_plain,
+                    "receta_json": rec_plain,
+                    "entidades_json": ent_plain,
+                    "texto_original": orig_plain,
+                })
+                changed = True
+
+            if changed:
+                migrated["consultas"] += 1
+
+        if any(migrated.values()):
+            db.commit()
+        return migrated
+    except Exception as e:
+        db.rollback()
+        print(f"[CryptoMigration] Error cifrando registros existentes: {e}")
+        return migrated
+    finally:
+        db.close()
+
+
+def _consent_to_dict(c: ConsentRecord) -> dict:
+    return {
+        "id": c.id,
+        "patient_curp": c.patient_curp,
+        "consent_version": c.consent_version,
+        "jurisdiction": c.jurisdiction,
+        "accepted_privacy_notice": bool(c.accepted_privacy_notice),
+        "accepted_clinical_processing": bool(c.accepted_clinical_processing),
+        "accepted_ai_local_processing": bool(c.accepted_ai_local_processing),
+        "accepted_cloud_llm_transfer": bool(c.accepted_cloud_llm_transfer),
+        "accepted_ice_qr_emergency": bool(c.accepted_ice_qr_emergency),
+        "accepted_wearable_telemetry": bool(c.accepted_wearable_telemetry),
+        "revoked": bool(c.revoked),
+        "revoked_reason": c.revoked_reason,
+        "revoked_at": c.revoked_at.isoformat() if c.revoked_at else None,
+        "signer_name": c.signer_name,
+        "operator_name": c.operator_name,
+        "proof_hash": c.proof_hash,
+        "signed_at": c.signed_at.isoformat() if c.signed_at else None,
+        "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+    }
+
+
+def get_latest_consent(curp: str) -> dict | None:
+    db = SessionLocal()
+    try:
+        target = (curp or "").strip().upper()
+        row = (
+            db.query(ConsentRecord)
+            .filter(ConsentRecord.patient_curp == target)
+            .order_by(ConsentRecord.updated_at.desc())
+            .first()
+        )
+        return _consent_to_dict(row) if row else None
+    finally:
+        db.close()
+
+
+def upsert_consent_record(curp: str, data: dict) -> dict:
+    """Registra o actualiza el consentimiento informado expreso (LFPDPPP / NOM-004)."""
+    db = SessionLocal()
+    try:
+        target = (curp or "").strip().upper()
+        if not target:
+            raise ValueError("El identificador CURP o SISTEMA es obligatorio.")
+
+        accepted_privacy = bool(data.get("accepted_privacy_notice", False))
+        accepted_clinical = bool(data.get("accepted_clinical_processing", False))
+        if not accepted_privacy or not accepted_clinical:
+            raise ValueError(
+                "Se requiere aceptación expresa del Aviso de Privacidad (LFPDPPP) y tratamiento clínico cifrado."
+            )
+
+        now = datetime.utcnow()
+        canonical = {
+            "patient_curp": target,
+            "consent_version": data.get("consent_version") or "v2.0-MX-YUC-LFPDPPP",
+            "jurisdiction": data.get("jurisdiction") or "México — Estado de Yucatán (Escalable)",
+            "accepted_privacy_notice": accepted_privacy,
+            "accepted_clinical_processing": accepted_clinical,
+            "accepted_ai_local_processing": bool(data.get("accepted_ai_local_processing", True)),
+            "accepted_cloud_llm_transfer": bool(data.get("accepted_cloud_llm_transfer", False)),
+            "accepted_ice_qr_emergency": bool(data.get("accepted_ice_qr_emergency", True)),
+            "accepted_wearable_telemetry": bool(data.get("accepted_wearable_telemetry", True)),
+            "signer_name": (data.get("signer_name") or target).strip(),
+            "signed_at": now.isoformat(),
+        }
+        proof = compute_consent_hash(canonical)
+
+        rec = ConsentRecord(
+            id=str(uuid.uuid4()),
+            patient_curp=target,
+            consent_version=canonical["consent_version"],
+            jurisdiction=canonical["jurisdiction"],
+            accepted_privacy_notice=canonical["accepted_privacy_notice"],
+            accepted_clinical_processing=canonical["accepted_clinical_processing"],
+            accepted_ai_local_processing=canonical["accepted_ai_local_processing"],
+            accepted_cloud_llm_transfer=canonical["accepted_cloud_llm_transfer"],
+            accepted_ice_qr_emergency=canonical["accepted_ice_qr_emergency"],
+            accepted_wearable_telemetry=canonical["accepted_wearable_telemetry"],
+            revoked=False,
+            signer_name=canonical["signer_name"],
+            operator_name=(data.get("operator_name") or "Médico").strip(),
+            proof_hash=proof,
+            signed_at=now,
+            updated_at=now,
+        )
+        db.add(rec)
+        log_audit_action(
+            action="CONSENTIMIENTO_FIRMADO",
+            patient_curp=target,
+            operator=rec.operator_name,
+            details_dict={
+                "version": rec.consent_version,
+                "cloud_llm": rec.accepted_cloud_llm_transfer,
+                "ice_qr": rec.accepted_ice_qr_emergency,
+                "proof_hash": proof[:16],
+            },
+            db=db,
+        )
+        db.commit()
+        db.refresh(rec)
+        return _consent_to_dict(rec)
+    finally:
+        db.close()
+
+
+def revoke_consent_record(curp: str, reason: str, operator: str) -> dict | None:
+    """
+    Revoca usos opcionales (ICE QR, Cloud LLM, Wearables) por Derechos ARCO (Oposición/Cancelación)
+    preservando la retención legal mínima de 5 años exigida por NOM-004-SSA3-2012 Numeral 5.4.
+    """
+    db = SessionLocal()
+    try:
+        target = (curp or "").strip().upper()
+        row = (
+            db.query(ConsentRecord)
+            .filter(ConsentRecord.patient_curp == target)
+            .order_by(ConsentRecord.updated_at.desc())
+            .first()
+        )
+        now = datetime.utcnow()
+        if not row:
+            row = ConsentRecord(
+                id=str(uuid.uuid4()),
+                patient_curp=target,
+                accepted_privacy_notice=True,
+                accepted_clinical_processing=True,
+                accepted_ai_local_processing=True,
+                signer_name=target,
+                operator_name=operator,
+                signed_at=now,
+            )
+            db.add(row)
+
+        row.accepted_cloud_llm_transfer = False
+        row.accepted_ice_qr_emergency = False
+        row.accepted_wearable_telemetry = False
+        row.revoked = True
+        row.revoked_reason = (reason or "Oposición / Revocación ARCO solicitada por el titular").strip()
+        row.revoked_at = now
+        row.updated_at = now
+
+        log_audit_action(
+            action="REVOCACION_ARCO",
+            patient_curp=target,
+            operator=operator,
+            details_dict={
+                "motivo": row.revoked_reason,
+                "custodia_nom004": "Bloqueo por 5 años conforme a NOM-004-SSA3-2012 Numeral 5.4",
+            },
+            db=db,
+        )
+        db.commit()
+        db.refresh(row)
+        return _consent_to_dict(row)
+    finally:
+        db.close()
+
+
+def verify_encryption_and_integrity_audit() -> dict:
+    """
+    Audita directamente en SQLite que los datos sensibles estén cifrados en reposo
+    y que las consultas inmutables conserven intacto su sello criptográfico NOM-004.
+    """
+    from app.core.crypto_vault import vault_status
+    db = SessionLocal()
+    try:
+        patients = db.query(Patient).all()
+        consultas = db.query(Consulta).all()
+        consents = db.query(ConsentRecord).all()
+
+        p_encrypted = 0
+        p_check_fields = ("ubicacion_casa", "rfc", "nss", "celular", "email", "contacto_emergencia_nombre", "anotaciones_generales")
+        p_with_sensitive = 0
+        for p in patients:
+            vals = [getattr(p, f) for f in p_check_fields if getattr(p, f)]
+            if vals:
+                p_with_sensitive += 1
+                if all(is_encrypted(v) for v in vals):
+                    p_encrypted += 1
+
+        c_encrypted = 0
+        c_sealed = 0
+        c_tampered = 0
+        for c in consultas:
+            if is_encrypted(c.nota_medica_json) and is_encrypted(c.receta_json):
+                c_encrypted += 1
+            verified = verify_consulta_seal({
+                "id": c.id,
+                "evento_id": c.evento_id,
+                "patient_curp": c.patient_curp,
+                "doctor_nombre": c.doctor_nombre,
+                "cedula_profesional": c.cedula_profesional,
+                "fecha_hora": c.fecha_hora.isoformat() if c.fecha_hora else "",
+                "nota_medica_json": decrypt_text(c.nota_medica_json) or "{}",
+                "receta_json": decrypt_text(c.receta_json) or "{}",
+                "entidades_json": decrypt_text(c.entidades_json) or "{}",
+                "texto_original": decrypt_text(c.texto_original) or "",
+            }, getattr(c, "integrity_seal", None))
+            if verified is True:
+                c_sealed += 1
+            elif verified is False:
+                c_tampered += 1
+
+        return {
+            "vault": vault_status(),
+            "patients_total": len(patients),
+            "patients_sensitive_encrypted": p_encrypted,
+            "patients_with_sensitive": p_with_sensitive,
+            "consultas_total": len(consultas),
+            "consultas_encrypted": c_encrypted,
+            "consultas_seal_verified": c_sealed,
+            "consultas_tampered": c_tampered,
+            "active_consents": sum(1 for r in consents if not r.revoked),
+            "revoked_arco_locks": sum(1 for r in consents if r.revoked),
+            "patient_safety_ok": (c_tampered == 0 and p_encrypted == p_with_sensitive and c_encrypted == len(consultas)),
+        }
     finally:
         db.close()

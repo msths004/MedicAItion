@@ -13,7 +13,7 @@ from app.core.cie10_mapper import map_to_cie10
 from app.core.record_builder import build_record
 from app.core.safety_engine import evaluate_clinical_safety, extract_linked_evidence
 from app.core.template_renderer import render_nota_medica
-from app.db.local_db import get_patient_by_curp
+from app.db.local_db import get_latest_consent, get_patient_by_curp
 
 router = APIRouter(prefix="/api/input", tags=["Input"])
 
@@ -36,6 +36,28 @@ def _run_pipeline(
     """
     if not curp or not curp.strip():
         curp = f"URGENCIAS-{uuid.uuid4().hex[:8].upper()}"
+
+    # Guardián de Privacidad LFPDPPP: bloquear transferencia a nube externa sin consentimiento expreso
+    legal_privacy_guard = {
+        "cloud_transfer_blocked": False,
+        "encrypted_at_rest": True,
+        "mode_used": llm_mode,
+        "reason": None,
+    }
+    if (llm_mode or "auto").lower() == "claude" or (api_key and api_key.strip()):
+        p_consent = get_latest_consent(curp) if curp and not curp.startswith("URGENCIAS") else None
+        sys_consent = get_latest_consent("SISTEMA")
+        patient_cloud_ok = bool(p_consent and not p_consent.get("revoked") and p_consent.get("accepted_cloud_llm_transfer"))
+        sys_cloud_ok = bool(sys_consent and not sys_consent.get("revoked") and sys_consent.get("accepted_cloud_llm_transfer"))
+        if not (patient_cloud_ok or (not p_consent and sys_cloud_ok)):
+            llm_mode = "local"
+            api_key = None
+            legal_privacy_guard["cloud_transfer_blocked"] = True
+            legal_privacy_guard["mode_used"] = "local"
+            legal_privacy_guard["reason"] = (
+                "Protección LFPDPPP activa: no existe consentimiento expreso para transferir datos clínicos "
+                "a IA en la nube externa. Se procesó 100% en motor local cifrado."
+            )
 
     # Intentar obtener sexo y edad desde la DB
     patient_sex = "Otro"
@@ -118,6 +140,7 @@ def _run_pipeline(
     # Inyectar el event_id en el borrador si ya existe, para que el modal lo use
     if event_id:
         record["event_id"] = event_id
+    record["legal_privacy_guard"] = legal_privacy_guard
 
     # Generar la nota HTML para previsualización (no se persiste en BD)
     try:

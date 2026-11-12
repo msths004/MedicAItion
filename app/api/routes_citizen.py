@@ -21,6 +21,7 @@ from app.core.qr_svg import generate_qr_svg
 from app.db.local_db import (
     add_patient_daily_log,
     check_patient_exists,
+    get_latest_consent,
     get_patient_daily_logs,
     get_patient_full_history,
 )
@@ -198,7 +199,13 @@ def _build_portal_payload(curp: str) -> Dict[str, Any]:
 
 @router.get("/api/ice/{curp}")
 def get_ice_json(curp: str):
-    """Devuelve el Pasaporte Médico de Emergencia (ICE) en JSON (sin notas clínicas sensibles)."""
+    """Devuelve el Pasaporte Médico de Emergencia (ICE) en JSON (respetando revocación/permiso LFPDPPP)."""
+    consent = get_latest_consent(curp.upper())
+    if consent and (consent.get("revoked") or not consent.get("accepted_ice_qr_emergency")):
+        raise HTTPException(
+            status_code=403,
+            detail="Pasaporte ICE restringido por decisión de privacidad / Derechos ARCO del titular (LFPDPPP).",
+        )
     return _build_ice_payload(curp)
 
 
@@ -215,6 +222,18 @@ def get_ice_qr(curp: str, request: Request):
 @router.get("/ice/{curp}", response_class=HTMLResponse)
 def get_ice_passport_html(curp: str, request: Request):
     """Vista pública móvil ultra-rápida del Pasaporte Médico de Emergencia QR (ICE)."""
+    consent = get_latest_consent(curp.upper())
+    if consent and (consent.get("revoked") or not consent.get("accepted_ice_qr_emergency")):
+        return HTMLResponse(
+            status_code=403,
+            content="""<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+            <title>Pasaporte ICE Restringido — MedicAItion</title>
+            <style>body{font-family:system-ui,sans-serif;background:#0f172a;color:#f8fafc;padding:24px;display:flex;justify-content:center;align-items:center;min-height:90vh;}
+            .box{max-width:460px;background:#1e293b;border:1px solid #ef4444;border-radius:18px;padding:22px;text-align:center;}
+            h1{font-size:18px;margin:0 0 8px;color:#fca5a5;}p{font-size:13.5px;color:#cbd5e1;line-height:1.5;}</style></head>
+            <body><div class="box"><h1>🔒 Pasaporte ICE Restringido por Privacidad</h1>
+            <p>El titular ejerció su derecho de privacidad / oposición ARCO conforme a la LFPDPPP (México / Yucatán). Para atención médica urgente, consulte directamente en ventanilla clínica autorizada.</p></div></body></html>""",
+        )
     data = _build_ice_payload(curp)
     ice_url = str(request.base_url).rstrip("/") + f"/ice/{data['curp']}"
     qr_svg = generate_qr_svg(ice_url, size_px=112)

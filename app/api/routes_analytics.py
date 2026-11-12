@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter
 
+from app.core.crypto_vault import decrypt_text
 from app.db.local_db import SessionLocal, Consulta, Patient, Appointment, VitalReading, Alergia
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
@@ -45,7 +46,8 @@ def _safe_json(raw):
     if not raw:
         return {}
     try:
-        val = json.loads(raw)
+        plain = decrypt_text(raw)
+        val = json.loads(plain)
         return val if isinstance(val, dict) else {}
     except (TypeError, ValueError):
         return {}
@@ -93,7 +95,7 @@ def epidemiology(weeks: int = 8):
         for c in consultas:
             ent = _safe_json(c.entidades_json)
             nota = _safe_json(c.nota_medica_json)
-            groups = classify_consulta(ent, nota, c.texto_original or "")
+            groups = classify_consulta(ent, nota, decrypt_text(c.texto_original or "") or "")
             fh = c.fecha_hora or now
             wk = max(0, min(weeks - 1, int((now - fh).days // 7)))
             weekly.setdefault(wk, Counter())

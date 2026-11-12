@@ -1265,3 +1265,334 @@ function exportAuditLogsCsv() {
   a.click();
   URL.revokeObjectURL(a.href);
 }
+
+
+// =====================================================================
+// MARCO LEGAL, CONSENTIMIENTO INFORMADO Y SEGURIDAD (MÉXICO / YUCATÁN)
+// =====================================================================
+const _LegalState = {
+  framework: null,
+  securityAudit: null,
+  systemConsent: null,
+};
+
+async function checkLegalConsentGate() {
+  try {
+    const res = await fetch(`${API}/api/legal/consent/SYSTEM`);
+    if (!res.ok) return;
+    const data = await res.json();
+    _LegalState.systemConsent = data.consent || null;
+    const isSigned = !!(
+      data.has_consent &&
+      data.consent &&
+      data.consent.status === 'active' &&
+      data.consent.accepted_privacy_notice &&
+      data.consent.accepted_clinical_processing
+    );
+    if (!isSigned) {
+      openLegalConsentGate();
+    }
+  } catch (e) {
+    console.warn('No se pudo verificar el consentimiento legal inicial:', e);
+  }
+}
+
+function openLegalConsentGate() {
+  document.getElementById('legal-gate-overlay')?.classList.add('open');
+}
+
+function closeLegalConsentGate() {
+  document.getElementById('legal-gate-overlay')?.classList.remove('open');
+}
+
+async function acceptLegalGateConsent() {
+  const privacyOk = !!document.getElementById('gate-chk-privacy')?.checked;
+  const respOk    = !!document.getElementById('gate-chk-responsibility')?.checked;
+  const cloudOk   = !!document.getElementById('gate-chk-cloud')?.checked;
+
+  if (!privacyOk || !respOk) {
+    return showToast('Debes aceptar el Aviso de Privacidad y la responsabilidad clínica CDSS para continuar.', 'error');
+  }
+
+  const signer =
+    document.getElementById('active-operator-name')?.textContent?.trim() ||
+    'Médico Responsable / Operador';
+
+  try {
+    const res = await fetch(`${API}/api/legal/consent/SYSTEM`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accepted_privacy_notice: true,
+        accepted_clinical_processing: true,
+        accepted_ai_local_processing: true,
+        accepted_cloud_llm_transfer: cloudOk,
+        accepted_ice_qr_emergency: true,
+        accepted_wearables_monitoring: true,
+        signed_by_name: signer,
+        signer_role: 'operator',
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    _LegalState.systemConsent = data.consent || null;
+    closeLegalConsentGate();
+    showToast('✅ Consentimiento legal registrado y datos cifrados activos.', 'success');
+    if (AppState.mainTab === 'legal') loadLegalView();
+  } catch (err) {
+    showToast('Error al guardar consentimiento legal: ' + err.message, 'error');
+  }
+}
+
+async function loadLegalView() {
+  try {
+    const [fwRes, auditRes, ptsRes] = await Promise.all([
+      fetch(`${API}/api/legal/framework`),
+      fetch(`${API}/api/legal/security-audit`),
+      fetch(`${API}/api/patients/`),
+    ]);
+
+    if (fwRes.ok) {
+      const fwData = await fwRes.json();
+      _LegalState.framework = fwData.framework || {};
+      _LegalState.systemConsent = fwData.system_consent || null;
+      _renderLegalFramework(fwData.framework || {}, fwData.system_consent);
+    }
+
+    if (auditRes.ok) {
+      const auditData = await auditRes.json();
+      _LegalState.securityAudit = auditData;
+      _renderLegalSecurityAudit(auditData);
+    }
+
+    if (ptsRes.ok) {
+      const ptsData = await ptsRes.json();
+      const patients = Array.isArray(ptsData) ? ptsData : (ptsData.patients || []);
+      const sel = document.getElementById('legal-target-select');
+      if (sel) {
+        const prev = sel.value || 'SYSTEM';
+        sel.innerHTML = '<option value="SYSTEM">Operador / Sistema MedicAItion (Aviso General)</option>';
+        patients.forEach(p => {
+          const fullName = `${p.primer_apellido || ''} ${p.segundo_apellido || ''} ${p.nombres || ''}`.trim() || p.curp;
+          const opt = document.createElement('option');
+          opt.value = p.curp;
+          opt.textContent = `${fullName} (${p.curp})`;
+          sel.appendChild(opt);
+        });
+        if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+      }
+    }
+
+    await loadTargetConsent();
+  } catch (err) {
+    console.error('Error cargando vista Legal:', err);
+    showToast('Error cargando módulo legal: ' + err.message, 'error');
+  }
+}
+
+function _renderLegalSecurityAudit(audit) {
+  const titleEl   = document.getElementById('legal-enc-title');
+  const subEl     = document.getElementById('legal-enc-sub');
+  const metricsEl = document.getElementById('legal-enc-metrics');
+  const bannerEl  = document.getElementById('legal-encryption-banner');
+
+  const vault    = audit.vault || {};
+  const tampered = audit.consultas_tampered ?? 0;
+  const safeOk   = audit.patient_safety_ok !== false && tampered === 0;
+  const alg      = vault.cipher_suite || 'ChaCha20 + HMAC-SHA256 (256-bit)';
+
+  if (bannerEl) {
+    bannerEl.classList.toggle('alert-danger', !safeOk);
+  }
+  if (titleEl) {
+    titleEl.textContent = safeOk
+      ? `Bóveda Activa: ${alg} — Integridad Verificada`
+      : `⚠️ Alerta de Integridad NOM-004 (${tampered} registros alterados)`;
+  }
+  if (subEl) {
+    const encPatients = audit.patients_sensitive_encrypted ?? 0;
+    const totPatients = audit.patients_with_sensitive ?? audit.patients_total ?? encPatients;
+    const encConsults = audit.consultas_encrypted ?? 0;
+    const totConsults = audit.consultas_total ?? encConsults;
+    const sealedOk    = audit.consultas_seal_verified ?? totConsults;
+    const fp          = vault.key_fingerprint ? ` · Huella llave: ${vault.key_fingerprint}` : '';
+    subEl.textContent =
+      `Expedientes cifrados: ${encPatients}/${totPatients} · Consultas cifradas: ${encConsults}/${totConsults} · Sellos NOM-004 válidos: ${sealedOk}${fp}`;
+  }
+  if (metricsEl) {
+    const activeC = audit.active_consents ?? 0;
+    metricsEl.innerHTML = `
+      <span class="legal-metric-pill ${safeOk ? 'ok' : 'err'}">${safeOk ? '🔒 Cifrado En Reposo OK' : '⚠️ Revisar Sellos'}</span>
+      <span class="legal-metric-pill">${_opsEsc(String(activeC))} Consentimientos</span>
+    `;
+  }
+}
+
+function _renderLegalFramework(fw, sysConsent) {
+  const badgeEl   = document.getElementById('legal-consent-status-badge');
+  const metaEl    = document.getElementById('legal-jurisdiction-meta');
+  const normsEl   = document.getElementById('legal-norms-list');
+  const privEl    = document.getElementById('legal-privacy-full-text');
+  const discEl    = document.getElementById('legal-clinical-disclaimer-text');
+
+  if (badgeEl) {
+    const ok = sysConsent && sysConsent.status === 'active' && sysConsent.accepted_privacy_notice;
+    badgeEl.textContent = ok
+      ? `✓ Sistema Autorizado (v${fw.version || '1.0'})`
+      : '⚠ Consentimiento General Pendiente';
+    badgeEl.classList.toggle('signed', !!ok);
+  }
+
+  if (metaEl) {
+    const jur = fw.jurisdiccion_inicial || {};
+    const exp = fw.alcance_expansion || {};
+    const jurStr = typeof jur === 'string'
+      ? jur
+      : `${jur.pais || 'México'} — ${jur.estado_piloto || 'Yucatán (SSY / INAIP)'}${jur.ciudad ? ' (' + jur.ciudad + ')' : ''}`;
+    const expStr = typeof exp === 'string'
+      ? exp
+      : (exp.modelo || exp.descripcion || 'Arquitectura multi-CLUES federal (32 estados) e interoperabilidad HL7 FHIR R4');
+    metaEl.innerHTML = `
+      <div><strong>Jurisdicción Inicial:</strong> ${_opsEsc(jurStr)}</div>
+      <div><strong>Escalabilidad:</strong> ${_opsEsc(expStr)}</div>
+    `;
+  }
+
+  if (normsEl) {
+    const norms = fw.normatividad || [];
+    normsEl.innerHTML = norms.length
+      ? norms.map(n => `
+          <div class="legal-norm-item">
+            <div class="legal-norm-code">${_opsEsc(n.codigo || n.code || '')}</div>
+            <div>
+              <div class="legal-norm-title">${_opsEsc(n.titulo || n.title || '')}</div>
+              <div class="legal-norm-desc">${_opsEsc(n.aplicacion || n.description || '')}</div>
+            </div>
+          </div>
+        `).join('')
+      : '<p>Sin normas cargadas.</p>';
+  }
+
+  if (privEl) {
+    privEl.textContent = fw.aviso_privacidad_resumen || fw.privacy_notice || 'Aviso de privacidad LFPDPPP / LGPDPPSO.';
+  }
+  if (discEl) {
+    discEl.textContent = fw.descargo_clinico || fw.clinical_disclaimer || 'Sistema de apoyo clínico CDSS sujeto a criterio del médico titulado.';
+  }
+}
+
+async function loadTargetConsent() {
+  const curp = document.getElementById('legal-target-select')?.value || 'SYSTEM';
+  const proofBox = document.getElementById('legal-consent-proof-box');
+  try {
+    const res = await fetch(`${API}/api/legal/consent/${encodeURIComponent(curp)}`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    const c = data.consent;
+
+    document.getElementById('legal-chk-privacy').checked   = c ? !!c.accepted_privacy_notice : true;
+    document.getElementById('legal-chk-clinical').checked  = c ? !!c.accepted_clinical_processing : true;
+    document.getElementById('legal-chk-local-ai').checked  = c ? !!c.accepted_ai_local_processing : true;
+    document.getElementById('legal-chk-cloud-ai').checked  = c ? !!c.accepted_cloud_llm_transfer : false;
+    document.getElementById('legal-chk-ice-qr').checked    = c ? !!c.accepted_ice_qr_emergency : true;
+    document.getElementById('legal-chk-wearables').checked = c ? !!c.accepted_wearables_monitoring : true;
+
+    const signerInput = document.getElementById('legal-signer-name');
+    if (signerInput) signerInput.value = (c && c.signed_by_name) ? c.signed_by_name : '';
+
+    if (proofBox) {
+      if (data.has_consent && c) {
+        const badge = c.status === 'active' ? '🟢 ACTIVO' : '🟠 REVOCADO PARCIAL (Custodia NOM-004 Activa)';
+        proofBox.innerHTML = `
+          <strong>Estado:</strong> ${badge} · <strong>Firmante:</strong> ${_opsEsc(c.signed_by_name || 'N/D')} ·
+          <strong>Versión:</strong> ${_opsEsc(c.notice_version || '1.0')}<br>
+          <strong>Sello SHA-256:</strong> <code>${_opsEsc(c.proof_hash || '—')}</code> ·
+          <strong>Fecha UTC:</strong> ${_opsEsc(c.signed_at || c.updated_at || '—')}
+        `;
+      } else {
+        proofBox.textContent = 'Sin firma registrada para este titular todavía. Completa las autorizaciones y presiona "Guardar y Firmar Consentimiento".';
+      }
+    }
+  } catch (err) {
+    if (proofBox) proofBox.textContent = 'Error consultando consentimiento: ' + err.message;
+  }
+}
+
+async function saveTargetConsent() {
+  const curp = document.getElementById('legal-target-select')?.value || 'SYSTEM';
+  const signer = document.getElementById('legal-signer-name')?.value.trim() || (curp === 'SYSTEM' ? 'Médico Operador' : curp);
+  const privacy  = !!document.getElementById('legal-chk-privacy')?.checked;
+  const clinical = !!document.getElementById('legal-chk-clinical')?.checked;
+
+  if (!privacy || !clinical) {
+    return showToast('El Aviso de Privacidad y el Expediente NOM-004 son obligatorios para operar datos médicos.', 'error');
+  }
+
+  try {
+    const res = await fetch(`${API}/api/legal/consent/${encodeURIComponent(curp)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accepted_privacy_notice: privacy,
+        accepted_clinical_processing: clinical,
+        accepted_ai_local_processing: !!document.getElementById('legal-chk-local-ai')?.checked,
+        accepted_cloud_llm_transfer: !!document.getElementById('legal-chk-cloud-ai')?.checked,
+        accepted_ice_qr_emergency: !!document.getElementById('legal-chk-ice-qr')?.checked,
+        accepted_wearables_monitoring: !!document.getElementById('legal-chk-wearables')?.checked,
+        signed_by_name: signer,
+        signer_role: curp === 'SYSTEM' ? 'operator' : 'patient_or_representative',
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showToast('✅ Consentimiento firmado y sellado criptográficamente', 'success');
+    await loadLegalView();
+  } catch (err) {
+    showToast('Error al firmar consentimiento: ' + err.message, 'error');
+  }
+}
+
+async function exportTargetArco() {
+  const curp = document.getElementById('legal-target-select')?.value || 'SYSTEM';
+  if (curp === 'SYSTEM') {
+    return showToast('Selecciona un paciente del expediente para exportar su paquete ARCO.', 'error');
+  }
+  try {
+    const res = await fetch(`${API}/api/legal/arco/${encodeURIComponent(curp)}/export?download=true`);
+    if (!res.ok) throw new Error(await res.text());
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ARCO_${curp}_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📦 Paquete de Portabilidad ARCO exportado', 'success');
+  } catch (err) {
+    showToast('Error exportando paquete ARCO: ' + err.message, 'error');
+  }
+}
+
+async function revokeTargetConsent() {
+  const curp = document.getElementById('legal-target-select')?.value || 'SYSTEM';
+  if (!confirm(`¿Revocar usos opcionales (IA en Nube, QR/ICE, Telemonitoreo) para ${curp}? El expediente NOM-004 conservará custodia legal mínima de 5 años.`)) {
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/legal/consent/${encodeURIComponent(curp)}/revoke`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        revoke_cloud_llm: true,
+        revoke_ice_qr: true,
+        revoke_wearables: true,
+        reason: 'Revocación de consentimiento (Derechos ARCO / LFPDPPP Art. 8°)',
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    showToast(data.nom004_custody_lock ? '🔒 Usos opcionales revocados (custodia NOM-004 preservada)' : 'Consentimiento revocado', 'info');
+    await loadLegalView();
+  } catch (err) {
+    showToast('Error al revocar consentimiento: ' + err.message, 'error');
+  }
+}

@@ -24,3 +24,6 @@ desktop.ini
 # IDEs
 .idea/
 .vscode/
+
+data/.medicaition_master.key
+data/*.key

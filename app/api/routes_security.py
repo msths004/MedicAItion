@@ -26,6 +26,7 @@ from app.db.local_db import (
     get_all_audit_logs,
     get_practitioner_profiles,
     upsert_practitioner_profile,
+    verify_encryption_and_integrity_audit,
 )
 
 router = APIRouter(prefix="/api/security", tags=["Security & NOM-024"])
@@ -292,6 +293,21 @@ def check_offline_readiness():
         })
     except Exception as e:
         checks.append({"id": "qr_fhir", "name": "Generador QR + HL7 FHIR R4", "ok": False, "detail": str(e)})
+
+    # 6. Bóveda de Cifrado en Reposo ChaCha20-HMAC-SHA256 y Sellos NOM-004
+    try:
+        enc_audit = verify_encryption_and_integrity_audit()
+        checks.append({
+            "id": "encryption_nom004",
+            "name": "Cifrado en Reposo (ChaCha20-HMAC-SHA256) y Sellos NOM-004",
+            "ok": bool(enc_audit.get("patient_safety_ok")),
+            "detail": (
+                f"{enc_audit['patients_sensitive_encrypted']}/{enc_audit['patients_with_sensitive']} expedientes con PII cifrada, "
+                f"{enc_audit['consultas_seal_verified']}/{enc_audit['consultas_total']} consultas selladas sin alteración"
+            ),
+        })
+    except Exception as e:
+        checks.append({"id": "encryption_nom004", "name": "Cifrado en Reposo", "ok": False, "detail": str(e)})
 
     elapsed_ms = round((time.perf_counter() - t0) * 1000, 1)
     offline_capable = all(c["ok"] for c in checks)

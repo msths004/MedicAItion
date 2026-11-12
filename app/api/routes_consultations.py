@@ -23,6 +23,7 @@ import html
 
 from app.core.safety_engine import evaluate_clinical_safety
 from app.core.qr_svg import generate_qr_svg
+from app.core.crypto_vault import decrypt_text, encrypt_text
 from app.api.routes_security import require_permission
 from app.db.local_db import (
     create_consulta,
@@ -323,9 +324,12 @@ def add_addendum(consulta_id: str, request: Request, data: dict = Body(...)):
         nuevo_addendum = f"[{timestamp} | {op_sig}] {texto}"
 
         if consulta.notas_addendum:
-            consulta.notas_addendum = consulta.notas_addendum + "\n\n" + nuevo_addendum
+            prev_plain = decrypt_text(consulta.notas_addendum) or ""
+            combined_plain = prev_plain + "\n\n" + nuevo_addendum
         else:
-            consulta.notas_addendum = nuevo_addendum
+            combined_plain = nuevo_addendum
+
+        consulta.notas_addendum = encrypt_text(combined_plain)
 
         log_audit_action(
             action="ADDENDUM",
@@ -335,7 +339,7 @@ def add_addendum(consulta_id: str, request: Request, data: dict = Body(...)):
             db=db,
         )
         db.commit()
-        return {"status": "success", "addendum": consulta.notas_addendum}
+        return {"status": "success", "addendum": combined_plain}
     finally:
         db.close()
 

@@ -22,6 +22,7 @@ function switchMainTab(tab) {
   const btnRep  = document.getElementById('nav-btn-reportes');
   const btnIa   = document.getElementById('nav-btn-ia-tools');
   const btnCfg  = document.getElementById('nav-btn-config');
+  const btnLegal = document.getElementById('nav-btn-legal');
 
   if (btnDash) btnDash.classList.toggle('active', tab === 'dashboard');
   if (btnCons) btnCons.classList.toggle('active', tab === 'consulta');
@@ -30,6 +31,7 @@ function switchMainTab(tab) {
   if (btnRep)  btnRep.classList.toggle('active', tab === 'reportes');
   if (btnIa)   btnIa.classList.toggle('active', tab === 'herramientas');
   if (btnCfg)  btnCfg.classList.toggle('active', tab === 'config');
+  if (btnLegal) btnLegal.classList.toggle('active', tab === 'legal');
 
   document.body.className = `mode-${tab}`;
 
@@ -40,6 +42,7 @@ function switchMainTab(tab) {
   const reportsSection = document.getElementById('panel-reports-section');
   const toolsSection = document.getElementById('panel-herramientas-section');
   const configSection = document.getElementById('panel-config-section');
+  const legalSection = document.getElementById('panel-legal-section');
 
   if (dashSection) {
     dashSection.style.display = tab === 'dashboard' ? 'block' : 'none';
@@ -56,6 +59,10 @@ function switchMainTab(tab) {
   if (configSection) {
     configSection.style.display = tab === 'config' ? 'block' : 'none';
     if (tab === 'config' && typeof loadSecurityConfigView === 'function') loadSecurityConfigView();
+  }
+  if (legalSection) {
+    legalSection.style.display = tab === 'legal' ? 'block' : 'none';
+    if (tab === 'legal' && typeof loadLegalView === 'function') loadLegalView();
   }
   if (consultaLayout) consultaLayout.style.display = tab === 'consulta' ? 'grid' : 'none';
   if (patientSection) {
@@ -299,6 +306,12 @@ async function submitData() {
     document.getElementById('btn-associate-note').style.display = 'flex';
 
     showToast('Notas médicas generadas exitosamente', 'success');
+    if (data?.legal_privacy_guard?.cloud_transfer_blocked) {
+      showToast(
+        data.legal_privacy_guard.message || 'Protección LFPDPPP: envío a nube bloqueado sin consentimiento Art. 36; procesado 100% local.',
+        'info'
+      );
+    }
 
   } catch (err) {
     showToast('Error: ' + err.message, 'error');
@@ -1020,6 +1033,7 @@ function waitForBackend() {
           if (typeof loadActiveOperatorProfile === 'function') loadActiveOperatorProfile();
           if (typeof loadAppointments === 'function') loadAppointments();
           if (typeof refreshDashboard === 'function') refreshDashboard();
+          if (typeof checkLegalConsentGate === 'function') checkLegalConsentGate();
         }, 600);
       })
       .catch(() => setTimeout(checkBackend, 1500));
