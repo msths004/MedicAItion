@@ -46,11 +46,18 @@ function _pulsoEsc(str) {
 }
 
 /**
- * Renderiza el SVG inline del componente <PulsoAvatar /> fiel al diseño:
- * Robot cápsula turquesa (#14B8A6, borde #0F766E), visor oscuro (#0F172A),
- * ojos #5EEAD3, antena con punto ámbar (#F59E0B), chip y línea de pulso en el pecho.
+ * Renderiza el SVG inline del componente <PulsoAvatar /> con estética CYBER-MED:
+ * - Corona triple de cristales de hielo/cuarzo luminosos arriba del casco.
+ * - Casco monitor clínico azul acero (#1E40AF / #3B82F6, contorno #0F172A)
+ *   con pantalla oscura (#08142C), emblema Caduceo médico brillante, texto "CYBER-MED",
+ *   doble trazo ECG animado, matraz químico, cruz médica y termómetro digital inferior.
+ * - Cuerpo robótico con pantalla de pulso en el pecho, vestido con bata médica blanca,
+ *   emblema de engranaje en el hombro, bolsillo con instrumental clínico, brazo mecánico
+ *   auxiliar dorsal y jeringa luminosa en la mano derecha.
+ * - Piernas y botas robóticas articuladas con animación continua de caminata (walk cycle),
+ *   flotación, saludo y salto elástico al darle clic.
  */
-function PulsoAvatar({ state = 'reposo', size = 94 } = {}) {
+function PulsoAvatar({ state = 'reposo', size = 104 } = {}) {
   const st = ['reposo', 'escuchando', 'pensando', 'alerta', 'contento'].includes(state)
     ? state
     : 'reposo';
@@ -60,124 +67,232 @@ function PulsoAvatar({ state = 'reposo', size = 94 } = {}) {
   const isListening = st === 'escuchando';
   const isHappy = st === 'contento';
 
-  const eyeColor = isAlert ? '#F59E0B' : '#5EEAD3';
+  const hudPrimary = isAlert ? '#F59E0B' : (isHappy ? '#34D399' : '#5EEAD3');
+  const hudSecondary = isAlert ? '#EF4444' : '#38BDF8';
+  const crystalMid = isAlert ? '#FBBF24' : '#67E8F9';
 
-  let visorContent = '';
+  let visorOverlay = '';
   if (isThinking) {
-    visorContent = `
-      <g class="pulso-thinking-dots" fill="#5EEAD3">
-        <circle class="pulso-dot d1" cx="46" cy="48" r="4" />
-        <circle class="pulso-dot d2" cx="60" cy="48" r="4" />
-        <circle class="pulso-dot d3" cx="74" cy="48" r="4" />
+    visorOverlay = `
+      <g class="pulso-thinking-dots" fill="${hudPrimary}">
+        <rect x="44" y="55" width="7" height="7" rx="1.5" class="pulso-dot d1" />
+        <rect x="57" y="55" width="7" height="7" rx="1.5" class="pulso-dot d2" />
+        <rect x="70" y="55" width="7" height="7" rx="1.5" class="pulso-dot d3" />
       </g>
     `;
   } else {
-    visorContent = `
-      <g class="pulso-eyes-group">
-        <g class="pulso-eyes ${st === 'reposo' || st === 'contento' ? 'can-blink' : ''}">
-          <ellipse cx="46.5" cy="46" rx="6.6" ry="7.8" fill="${eyeColor}" />
-          <ellipse cx="73.5" cy="46" rx="6.6" ry="7.8" fill="${eyeColor}" />
-          ${!isAlert ? `
-            <circle class="pulso-pupil" cx="44.5" cy="43.2" r="2.4" fill="#FFFFFF" />
-            <circle class="pulso-pupil" cx="71.5" cy="43.2" r="2.4" fill="#FFFFFF" />
-            <circle cx="48.5" cy="49" r="1.1" fill="#FFFFFF" opacity="0.8" />
-            <circle cx="75.5" cy="49" r="1.1" fill="#FFFFFF" opacity="0.8" />
-          ` : ''}
-        </g>
-        <ellipse cx="38" cy="53" rx="4" ry="2.1" fill="#F472B6" opacity="${isAlert ? '0' : (isHappy ? '0.95' : '0.65')}" />
-        <ellipse cx="82" cy="53" rx="4" ry="2.1" fill="#F472B6" opacity="${isAlert ? '0' : (isHappy ? '0.95' : '0.65')}" />
-        ${isAlert
-          ? `<line x1="51" y1="57" x2="69" y2="57" stroke="#F59E0B" stroke-width="3.2" stroke-linecap="round" />`
-          : `<path class="pulso-mouth" d="${isHappy ? 'M 50 53.5 Q 60 63 70 53.5' : 'M 52 55 Q 60 61 68 55'}" fill="none" stroke="#5EEAD3" stroke-width="2.9" stroke-linecap="round" />`
-        }
+    visorOverlay = `
+      <!-- Doble línea de ECG en vivo dentro del monitor CYBER-MED -->
+      <g class="pulso-eyes ${st === 'reposo' || st === 'contento' ? 'can-blink' : ''}">
+        <!-- Trazo ECG 1 -->
+        <polyline class="pulso-ecg-line" points="40,51 47,51 49,45 51.5,56 54,49 56,51 62,51 64,44 66.5,56 69,51 74,51"
+          fill="none" stroke="${hudPrimary}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+        <!-- Trazo ECG 2 -->
+        <polyline class="pulso-ecg-line" points="40,61 46,61 48.5,56 51,65 53.5,59 56,61 61,61 63.5,55 66,65 68.5,61 74,61"
+          fill="none" stroke="${hudPrimary}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
       </g>
     `;
   }
 
   const soundWaves = isListening ? `
-    <g class="pulso-sound-waves" fill="none" stroke="#0F766E" stroke-width="2.6" stroke-linecap="round">
-      <path class="wave w1" d="M 103 38 Q 110 46 103 54" />
-      <path class="wave w2" d="M 109 32 Q 118 46 109 60" />
-      <path class="wave w1" d="M 17 38 Q 10 46 17 54" />
-      <path class="wave w2" d="M 11 32 Q 2 46 11 60" />
+    <g class="pulso-sound-waves" fill="none" stroke="#22D3EE" stroke-width="2.6" stroke-linecap="round">
+      <path class="wave w1" d="M 118 42 Q 126 52 118 62" />
+      <path class="wave w2" d="M 124 35 Q 135 52 124 69" />
+      <path class="wave w1" d="M 22 42 Q 14 52 22 62" />
+      <path class="wave w2" d="M 16 35 Q 5 52 16 69" />
     </g>
   ` : '';
 
   return `
-    <svg class="pulso-avatar-svg state-${st}" width="${size}" height="${size}" viewBox="0 0 120 136" role="img" aria-label="Avatar de Pulso en estado ${st}">
+    <svg class="pulso-avatar-svg cyber-med-avatar state-${st}" width="${size}" height="${size}" viewBox="0 0 140 156" role="img" aria-label="Avatar Cyber-Med de Pulso en estado ${st}">
       <defs>
-        <linearGradient id="pulsoBodyGrad" x1="20" y1="15" x2="95" y2="115" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#2DD4BF" />
-          <stop offset="55%" stop-color="#14B8A6" />
-          <stop offset="100%" stop-color="#0D9488" />
+        <linearGradient id="cmCrystalGrad" x1="40" y1="4" x2="95" y2="38" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#ECFEFF" />
+          <stop offset="45%" stop-color="${crystalMid}" />
+          <stop offset="100%" stop-color="#0284C7" />
         </linearGradient>
-        <linearGradient id="pulsoVisorGrad" x1="33" y1="28" x2="87" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#1E293B" />
-          <stop offset="100%" stop-color="#0F172A" />
+        <linearGradient id="cmArmorGrad" x1="25" y1="25" x2="115" y2="95" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#60A5FA" />
+          <stop offset="50%" stop-color="#2563EB" />
+          <stop offset="100%" stop-color="#1E3A8A" />
+        </linearGradient>
+        <linearGradient id="cmScreenGrad" x1="35" y1="30" x2="105" y2="82" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#0F172A" />
+          <stop offset="100%" stop-color="#08142C" />
+        </linearGradient>
+        <linearGradient id="cmCoatGrad" x1="35" y1="84" x2="105" y2="136" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#FFFFFF" />
+          <stop offset="70%" stop-color="#F1F5F9" />
+          <stop offset="100%" stop-color="#CBD5E1" />
         </linearGradient>
       </defs>
 
-      <!-- Sombra en el piso que reacciona al flotar/saltar -->
-      <ellipse class="pulso-floor-shadow" cx="60" cy="127" rx="28" ry="5" fill="#0F172A" opacity="0.22" />
+      <!-- Sombra dinámica en el suelo sincronizada con la caminata -->
+      <ellipse class="pulso-floor-shadow" cx="70" cy="148" rx="34" ry="5.5" fill="#0F172A" opacity="0.28" />
 
-      <!-- Cuerpo completo del muñequito (flota, respira y salta al hacer clic) -->
+      <!-- RIG PRINCIPAL DEL PERSONAJE CYBER-MED -->
       <g class="pulso-character-rig">
-        <!-- Pies articulados -->
-        <ellipse class="pulso-foot-left" cx="48" cy="117" rx="11.5" ry="6" fill="#0F766E" stroke="#0B4F4A" stroke-width="1.8" />
-        <ellipse class="pulso-foot-right" cx="72" cy="117" rx="11.5" ry="6" fill="#0F766E" stroke="#0B4F4A" stroke-width="1.8" />
 
-        <!-- Torso cápsula turquesa con volumen 3D -->
+        <!-- 1. BRAZO MECÁNICO QUIRÚRGICO DORSAL (izquierda atrás de la bata) -->
+        <g class="pulso-mech-servo">
+          <line x1="46" y1="98" x2="31" y2="85" stroke="#1E3A8A" stroke-width="4" stroke-linecap="round" />
+          <line x1="46" y1="98" x2="31" y2="85" stroke="#60A5FA" stroke-width="2" stroke-linecap="round" />
+          <!-- Pinza inferior con láser -->
+          <line x1="37" y1="91" x2="26" y2="98" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round" />
+          <path d="M 26 98 L 20 95 M 26 98 L 22 102" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" />
+          <line x1="21" y1="99" x2="34" y2="106" stroke="#EF4444" stroke-width="1.4" stroke-dasharray="2 1" />
+          <!-- Rotor multi-herramienta superior -->
+          <circle cx="29" cy="83" r="4.2" fill="#E2E8F0" stroke="#0F172A" stroke-width="2" />
+          <circle cx="29" cy="83" r="1.6" fill="#EF4444" />
+          <path d="M 29 78 L 27 72 M 25 80 L 19 76 M 24 84 L 18 85 M 32 79 L 36 74" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+        </g>
+
+        <!-- 2. PIERNAS ROBÓTICAS CON CICLO DE CAMINATA (WALK CYCLE) -->
+        <g class="pulso-foot-left pulso-leg-left">
+          <rect x="50" y="125" width="14" height="16" rx="4" fill="#1E40AF" stroke="#0F172A" stroke-width="2.6" />
+          <line x1="52" y1="132" x2="62" y2="132" stroke="#60A5FA" stroke-width="2" />
+          <path d="M 47 139 Q 57 136 65 139 L 66 145 L 46 145 Z" fill="#2563EB" stroke="#0F172A" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+        <g class="pulso-foot-right pulso-leg-right">
+          <rect x="76" y="125" width="14" height="16" rx="4" fill="#1E40AF" stroke="#0F172A" stroke-width="2.6" />
+          <line x1="78" y1="132" x2="88" y2="132" stroke="#60A5FA" stroke-width="2" />
+          <path d="M 75 139 Q 83 136 93 139 L 94 145 L 74 145 Z" fill="#2563EB" stroke="#0F172A" stroke-width="2.6" stroke-linejoin="round" />
+        </g>
+
+        <!-- 3. TORSO ROBÓTICO Y BATA MÉDICA BLANCA -->
         <g class="pulso-torso-rig">
-          <rect x="35" y="70" width="50" height="44" rx="20" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.8" />
-          <!-- Brillo lateral 3D en torso -->
-          <path d="M 42 76 Q 39 88 42 103" fill="none" stroke="#99F6E4" stroke-width="2.2" stroke-linecap="round" opacity="0.65" />
+          <!-- Pecho interior y cinturón con cruz roja -->
+          <rect x="54" y="84" width="32" height="44" rx="5" fill="#1E293B" stroke="#0F172A" stroke-width="2.5" />
+          <!-- Monitor ECG de pecho -->
+          <rect x="58" y="89" width="24" height="15" rx="3" fill="#09192F" stroke="#38BDF8" stroke-width="1.8" />
+          <polyline class="pulso-ecg-line" points="60,97 65,97 67,92 69.5,101 72,95 74,97 80,97" fill="none" stroke="${hudPrimary}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <!-- Cinturón pélvico robótico con cruz médica roja -->
+          <rect x="56" y="114" width="28" height="12" rx="3" fill="#3B82F6" stroke="#0F172A" stroke-width="2.2" />
+          <path d="M 70 117 V 123 M 67 120 H 73" stroke="#EF4444" stroke-width="2.6" stroke-linecap="round" />
 
-          <!-- Ventana de pecho con línea de pulso ECG animada y chip -->
-          <rect x="44" y="76" width="32" height="31" rx="8.5" fill="#CCFBF1" stroke="#0F766E" stroke-width="1.5" />
-          <polyline class="pulso-ecg-line" points="46,84 52,84 55,78 58.5,90 61.5,84 74,84" fill="none" stroke="#0F766E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-          <!-- Chip clínico en el pecho -->
-          <rect x="53" y="90" width="14" height="13" rx="2.5" fill="#E6FFFA" stroke="#0F766E" stroke-width="1.8" />
-          <rect class="pulso-chip-core" x="56.5" y="93.5" width="7" height="6" rx="1.2" fill="#0F766E" />
-          <line x1="56" y1="88" x2="56" y2="90" stroke="#0F766E" stroke-width="1.5" />
-          <line x1="60" y1="88" x2="60" y2="90" stroke="#0F766E" stroke-width="1.5" />
-          <line x1="64" y1="88" x2="64" y2="90" stroke="#0F766E" stroke-width="1.5" />
-          <line x1="56" y1="103" x2="56" y2="105" stroke="#0F766E" stroke-width="1.5" />
-          <line x1="60" y1="103" x2="60" y2="105" stroke="#0F766E" stroke-width="1.5" />
-          <line x1="64" y1="103" x2="64" y2="105" stroke="#0F766E" stroke-width="1.5" />
+          <!-- Lado izquierdo de la bata blanca -->
+          <path d="M 44 85 L 60 85 L 60 132 L 42 132 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.6" stroke-linejoin="round" />
+          <!-- Solapa izquierda -->
+          <polygon points="52,85 60,85 60,104 51,96" fill="#E2E8F0" stroke="#0F172A" stroke-width="2" stroke-linejoin="round" />
+
+          <!-- Lado derecho de la bata blanca -->
+          <path d="M 80 85 L 96 85 L 98 132 L 80 132 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.6" stroke-linejoin="round" />
+          <!-- Solapa derecha -->
+          <polygon points="88,85 80,85 80,104 89,96" fill="#E2E8F0" stroke="#0F172A" stroke-width="2" stroke-linejoin="round" />
+
+          <!-- Bolsillo izquierdo con otoscopio/herramientas médicas -->
+          <rect x="46" y="109" width="12" height="9" rx="1.5" fill="#94A3B8" stroke="#0F172A" stroke-width="1.8" />
+          <circle cx="55" cy="109" r="1.8" fill="#EF4444" />
+          <rect x="46" y="114" width="13" height="13" rx="3" fill="#475569" stroke="#0F172A" stroke-width="2.2" />
+          <line x1="49" y1="117" x2="49" y2="124" stroke="#94A3B8" stroke-width="1.6" stroke-linecap="round" />
+
+          <!-- Bolsillo derecho con pluma clínica -->
+          <rect x="83" y="113" width="11" height="13" rx="2" fill="#E2E8F0" stroke="#475569" stroke-width="1.8" />
+          <rect x="85" y="107" width="3.5" height="8" rx="1.5" fill="#38BDF8" stroke="#0F172A" stroke-width="1.5" />
         </g>
 
-        <!-- Brazo izquierdo articulado -->
+        <!-- 4. BRAZO IZQUIERDO (CON EMBLEMA CYBER-MED AI EN LA MANGA) -->
         <g class="pulso-arm-left">
-          <rect x="21" y="73" width="13" height="28" rx="6.5" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.6" />
+          <path d="M 45 86 L 34 108 L 44 112 L 50 94 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+          <!-- Logo engranaje azul en el hombro -->
+          <circle cx="43" cy="96" r="4" fill="#DBEAFE" stroke="#1E40AF" stroke-width="1.6" stroke-dasharray="2 1" />
+          <circle cx="43" cy="96" r="1.5" fill="#EF4444" />
+          <!-- Puño robótico azul -->
+          <circle cx="38" cy="114" r="6" fill="#2563EB" stroke="#0F172A" stroke-width="2.4" />
+          <circle cx="39" cy="114" r="2.2" fill="#60A5FA" />
         </g>
 
-        <!-- Brazo derecho articulado (saluda alegremente) -->
+        <!-- 5. BRAZO DERECHO (CON JERINGA BRILLANTE VERDE/CIAN Y SALUDO) -->
         <g class="pulso-arm-right">
-          <rect x="86" y="72" width="13" height="28" rx="6.5" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.6" />
+          <path d="M 95 86 L 106 108 L 96 112 L 90 94 Z" fill="url(#cmCoatGrad)" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="round" />
+          <!-- Puño robótico derecho -->
+          <circle cx="102" cy="114" r="6" fill="#2563EB" stroke="#0F172A" stroke-width="2.4" />
+          <!-- Jeringa luminosa Cyber-Med -->
+          <g transform="rotate(-38 103 104)">
+            <rect x="99" y="92" width="7" height="15" rx="2" fill="#6EE7B7" stroke="#0F172A" stroke-width="2" />
+            <line x1="100" y1="96" x2="104" y2="96" stroke="#065F46" stroke-width="1.4" />
+            <line x1="100" y1="100" x2="104" y2="100" stroke="#065F46" stroke-width="1.4" />
+            <!-- Émbolo -->
+            <line x1="102.5" y1="86" x2="102.5" y2="92" stroke="#94A3B8" stroke-width="2.2" />
+            <line x1="99" y1="86" x2="106" y2="86" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round" />
+            <!-- Aguja -->
+            <line x1="102.5" y1="107" x2="102.5" y2="114" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+          </g>
         </g>
 
-        <!-- Cabeza articulada (se inclina, asiente y gira ligeramente) -->
+        <!-- 6. CABEZA MONITOR "CYBER-MED" + CORONA DE CRISTALES -->
         <g class="pulso-head-rig">
-          <!-- Antena con punto ámbar (#F59E0B) -->
+          <!-- CORONA DE 3 CRISTALES DE CUARZO / HIELO -->
           <g class="pulso-antenna-rig">
-            <line x1="60" y1="11" x2="60" y2="23" stroke="#0F766E" stroke-width="3.2" stroke-linecap="round" />
-            <circle class="pulso-antenna-tip" cx="60" cy="8.5" r="5.8" fill="#F59E0B" stroke="#0F766E" stroke-width="2.2" />
-            <circle cx="58.2" cy="6.8" r="1.6" fill="#FEF3C7" />
+            <!-- Cristal izquierdo -->
+            <polygon points="31,34 40,15 52,24 46,34" fill="url(#cmCrystalGrad)" stroke="#0F172A" stroke-width="2.6" stroke-linejoin="round" />
+            <polyline points="40,15 43,27 52,24" fill="none" stroke="#ECFEFF" stroke-width="1.5" />
+            <!-- Cristal derecho -->
+            <polygon points="88,24 100,16 109,34 94,34" fill="url(#cmCrystalGrad)" stroke="#0F172A" stroke-width="2.6" stroke-linejoin="round" />
+            <polyline points="100,16 97,27 88,24" fill="none" stroke="#ECFEFF" stroke-width="1.5" />
+            <!-- Gran cristal central -->
+            <polygon class="pulso-antenna-tip" points="51,26 70,4 89,26 83,32 57,32" fill="url(#cmCrystalGrad)" stroke="#0F172A" stroke-width="2.8" stroke-linejoin="round" />
+            <polygon points="70,4 76,25 63,25" fill="#A5F3FC" opacity="0.65" />
+            <line x1="70" y1="5" x2="64" y2="26" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" />
           </g>
 
-          <!-- Orejas cápsula -->
-          <circle cx="24" cy="46" r="6.5" fill="#0F766E" />
-          <circle cx="96" cy="46" r="6.5" fill="#0F766E" />
+          <!-- Módulos auriculares laterales del casco -->
+          <rect x="20" y="42" width="9" height="27" rx="4" fill="#3B82F6" stroke="#0F172A" stroke-width="2.6" />
+          <ellipse cx="24.5" cy="55.5" rx="2.2" ry="7" fill="#93C5FD" />
+          <rect x="111" y="42" width="9" height="27" rx="4" fill="#3B82F6" stroke="#0F172A" stroke-width="2.6" />
+          <ellipse cx="115.5" cy="55.5" rx="2.2" ry="7" fill="#93C5FD" />
 
-          <!-- Cabeza cápsula turquesa (#14B8A6, borde #0F766E) -->
-          <rect x="25" y="22" width="70" height="47" rx="23" fill="url(#pulsoBodyGrad)" stroke="#0F766E" stroke-width="2.8" />
-          <!-- Brillo superior 3D en el casco -->
-          <path d="M 39 27 Q 60 23.5 81 27" fill="none" stroke="#CCFBF1" stroke-width="2.5" stroke-linecap="round" opacity="0.75" />
+          <!-- Casco monitor octogonal/redondeado azul acero -->
+          <rect x="27" y="25" width="86" height="60" rx="15" fill="url(#cmArmorGrad)" stroke="#0F172A" stroke-width="3" />
+          <!-- Bisel superior luminoso -->
+          <path d="M 40 29 H 100" stroke="#93C5FD" stroke-width="2.4" stroke-linecap="round" opacity="0.85" />
 
-          <!-- Visor oscuro (#0F172A) -->
-          <rect x="32" y="29" width="56" height="33" rx="16" fill="url(#pulsoVisorGrad)" stroke="#0B4F4A" stroke-width="1.5" />
+          <!-- Pantalla interior oscura (#08142C) -->
+          <rect x="34" y="31" width="72" height="48" rx="10" fill="url(#cmScreenGrad)" stroke="#1E293B" stroke-width="2" />
 
-          ${visorContent}
+          <!-- CADUCEO MÉDICO LUMINOSO SUPERIOR -->
+          <g class="pulso-caduceus" stroke="${hudPrimary}" fill="none" stroke-linecap="round">
+            <!-- Alas del Caduceo -->
+            <path d="M 70 38 C 63 33, 56 35, 53 39 C 58 40, 64 40, 70 39 Z" fill="${hudPrimary}" opacity="0.88" />
+            <path d="M 70 38 C 77 33, 84 35, 87 39 C 82 40, 76 40, 70 39 Z" fill="${hudPrimary}" opacity="0.88" />
+            <!-- Vara central y serpientes entrelazadas -->
+            <line x1="70" y1="34" x2="70" y2="49" stroke-width="1.8" />
+            <circle cx="70" cy="33.5" r="1.6" fill="${hudPrimary}" />
+            <path d="M 66 39 Q 74 42 66 45 Q 74 48 70 49" stroke-width="1.3" />
+            <path d="M 74 39 Q 66 42 74 45 Q 66 48 70 49" stroke-width="1.3" />
+          </g>
+
+          <!-- Etiqueta "CYBER-MED" -->
+          <text x="39" y="44" fill="${hudPrimary}" font-family="monospace, sans-serif" font-size="6.2" font-weight="800" letter-spacing="0.4">CYBER-MED</text>
+
+          <!-- Panel derecho del HUD: Matraz químico + barras + Cruz Médica -->
+          <rect x="78" y="40" width="22" height="16" rx="2.5" fill="#0F2942" stroke="${hudSecondary}" stroke-width="1.1" />
+          <!-- Matraz Erlenmeyer -->
+          <path d="M 87 43 H 91 M 88 43 V 46 L 85 52 H 93 L 90 46 V 43" fill="none" stroke="${hudPrimary}" stroke-width="1.3" stroke-linejoin="round" />
+          <line x1="86" y1="50" x2="92" y2="50" stroke="${hudPrimary}" stroke-width="1.5" />
+
+          <!-- Barras laterales derechas -->
+          <line x1="79" y1="59" x2="92" y2="59" stroke="${hudPrimary}" stroke-width="2" />
+          <line x1="79" y1="62.5" x2="87" y2="62.5" stroke="#93C5FD" stroke-width="2" />
+
+          <!-- Recuadro de Cruz Médica inferior derecha -->
+          <rect x="79" y="65" width="21" height="11" rx="2.2" fill="#0F2942" stroke="${hudPrimary}" stroke-width="1.3" />
+          <path d="M 89.5 67.5 V 73.5 M 86.5 70.5 H 92.5" stroke="${hudPrimary}" stroke-width="2.2" stroke-linecap="round" />
+
+          <!-- Trazos ECG o puntos de pensamiento a la izquierda -->
+          ${visorOverlay}
+
+          <!-- Barras de progreso inferiores izquierdas -->
+          <rect x="40" y="66" width="33" height="2.8" rx="1" fill="#1E293B" />
+          <rect x="40" y="66" width="23" height="2.8" rx="1" fill="#E0F2FE" />
+          <rect x="40" y="70.5" width="33" height="2.8" rx="1" fill="#1E293B" />
+          <rect x="40" y="70.5" width="19" height="2.8" rx="1" fill="${hudPrimary}" />
+
+          <!-- Termómetro digital blanco en la base del visor -->
+          <rect x="59" y="74.5" width="23" height="4.2" rx="2" fill="#F8FAFC" stroke="#0F172A" stroke-width="1.1" />
+          <rect x="63" y="75.6" width="9" height="2" rx="0.6" fill="#0F172A" />
+          <path d="M 82 75.5 L 87 76.6 L 82 77.7 Z" fill="#CBD5E1" />
+
           ${soundWaves}
         </g>
       </g>
@@ -208,9 +323,9 @@ function triggerPulsoClickReaction() {
 function setPulsoAvatarState(newState) {
   _PulsoState.avatarState = newState;
   const fabIcon = document.getElementById('pulso-fab-avatar');
-  if (fabIcon) fabIcon.innerHTML = PulsoAvatar({ state: newState, size: 96 });
+  if (fabIcon) fabIcon.innerHTML = PulsoAvatar({ state: newState, size: 106 });
   const headerIcon = document.getElementById('pulso-header-avatar');
-  if (headerIcon) headerIcon.innerHTML = PulsoAvatar({ state: newState, size: 46 });
+  if (headerIcon) headerIcon.innerHTML = PulsoAvatar({ state: newState, size: 48 });
 
   document.querySelectorAll('.pulso-state-chip').forEach(btn => {
     const active = btn.dataset.state === newState;
@@ -667,9 +782,9 @@ function _initPulsoDraggable() {
 
 function initPulsoAssistant() {
   const fabAvatar = document.getElementById('pulso-fab-avatar');
-  if (fabAvatar) fabAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 96 });
+  if (fabAvatar) fabAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 106 });
   const headerAvatar = document.getElementById('pulso-header-avatar');
-  if (headerAvatar) headerAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 46 });
+  if (headerAvatar) headerAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 48 });
 
   const urlInp = document.getElementById('cfg-pulso-url');
   if (urlInp) urlInp.value = _PulsoState.ollamaUrl;
