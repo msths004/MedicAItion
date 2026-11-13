@@ -71,8 +71,8 @@ const DR_OSO_ASSETS = {
   reposo: 'assets/dr_oso/dr_oso_reposo.png',
   escuchando: 'assets/dr_oso/dr_oso_escuchando.png',
   pensando: 'assets/dr_oso/dr_oso_pensando.png',
-  alerta: 'assets/dr_oso/dr_oso_alerta.png',
-  contento: 'assets/dr_oso/dr_oso_contento.png',
+  alerta: 'assets/dr_oso/dr_oso_emergency_call.png',
+  contento: 'assets/dr_oso/dr_oso_confirmed.png',
 };
 
 // Precarga inmediata de assets en segundo plano para cero latencia
