@@ -8748,171 +8748,230 @@ body.mode-patient-portal #pulso-floating-root {
 }
 
 /* =====================================================================
-   DR. OSO - EL OSO KAWAII (CARACTER MEDICAL KAWAII) ANIMACIONES Y ESTILOS
+   DR. OSO - EL OSO KAWAII MÉDICO (ILUSTRACIONES OFICIALES Y ANIMACIONES)
    ===================================================================== */
-.dr-oso-avatar {
-  filter: drop-shadow(0 14px 18px rgba(15, 23, 42, 0.22));
+.dr-oso-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  pointer-events: none;
 }
 
-.dr-oso-avatar .pulso-character-rig {
-  transform-origin: 70px 105px;
-  animation: drOsoWaddleFloat 2.8s infinite ease-in-out;
+.dr-oso-char-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center bottom;
+  animation: drOsoBreathingFloat 3s infinite ease-in-out;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes drOsoWaddleFloat {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  25%      { transform: translateY(-3.5px) rotate(-1.5deg); }
-  50%      { transform: translateY(0px) rotate(0deg); }
-  75%      { transform: translateY(-3.5px) rotate(1.5deg); }
+@keyframes drOsoBreathingFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-4px) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(1.5deg);
+  }
 }
 
-.dr-oso-avatar .pulso-floor-shadow {
-  transform-origin: 70px 148px;
-  animation: drOsoShadowPulse 2.8s infinite ease-in-out;
+.dr-oso-actual-img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100% - 8px);
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  filter: drop-shadow(0 12px 18px rgba(15, 23, 42, 0.32)) drop-shadow(0 0 10px rgba(56, 189, 248, 0.22));
+  transition: filter 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
 }
 
-@keyframes drOsoShadowPulse {
-  0%, 50%, 100% { transform: scaleX(1); opacity: 0.22; }
-  25%, 75%      { transform: scaleX(0.84); opacity: 0.13; }
+/* Sombra suave en el piso */
+.dr-oso-floor-shadow {
+  position: absolute;
+  bottom: 0px;
+  width: 65%;
+  height: 8px;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.32) 0%, rgba(15, 23, 42, 0) 72%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  animation: drOsoFloorPulse 3s infinite ease-in-out;
 }
 
-.dr-oso-avatar .dr-oso-head-rig {
-  transform-origin: 70px 72px;
-  animation: drOsoHeadBob 3.4s infinite ease-in-out;
+@keyframes drOsoFloorPulse {
+  0%, 50%, 100% {
+    transform: scaleX(1);
+    opacity: 0.28;
+  }
+  25%, 75% {
+    transform: scaleX(0.82);
+    opacity: 0.16;
+  }
 }
 
-@keyframes drOsoHeadBob {
-  0%, 100% { transform: rotate(-2.5deg) translateY(0); }
-  50%      { transform: rotate(2.5deg) translateY(-1.5px); }
+/* Reacción al clic: Salto elástico con alegría del Dr. Oso */
+.pulso-fab-btn.pulso-clicked-boing .dr-oso-char-wrap {
+  animation: drOsoClickJoy 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
-/* Patita derecha saludando con sus almohadillas y garritas tiernas */
-.dr-oso-avatar .dr-oso-arm-right {
-  transform-origin: 94px 92px;
-  animation: drOsoPawWave 1.6s infinite ease-in-out;
-}
-
-@keyframes drOsoPawWave {
-  0%, 100% { transform: rotate(-4deg) translateY(0); }
-  50%      { transform: rotate(-22deg) translateY(-3px); }
-}
-
-.dr-oso-wave-line {
-  animation: drOsoWaveLines 1.6s infinite ease-in-out;
-}
-
-@keyframes drOsoWaveLines {
-  0%, 100% { opacity: 0.35; transform: translateX(0); }
-  50%      { opacity: 1; transform: translateX(3px); }
-}
-
-/* Patita izquierda sosteniendo la tablita clínica con el corazón sonriente */
-.dr-oso-avatar .dr-oso-arm-left {
-  transform-origin: 46px 92px;
-  animation: drOsoClipboardBob 2.8s infinite ease-in-out;
-}
-
-@keyframes drOsoClipboardBob {
-  0%, 100% { transform: rotate(0deg); }
-  50%      { transform: rotate(3.5deg) translateY(-1px); }
-}
-
-/* Caminata y pasitos de oso tierno (Waddle cycle) */
-.dr-oso-avatar .dr-oso-leg-left {
-  transform-origin: 54px 138px;
-  animation: drOsoStepLeft 1.4s infinite ease-in-out;
-}
-
-.dr-oso-avatar .dr-oso-leg-right {
-  transform-origin: 86px 138px;
-  animation: drOsoStepRight 1.4s infinite ease-in-out;
-}
-
-@keyframes drOsoStepLeft {
-  0%, 100% { transform: translateY(0) scaleY(1); }
-  50%      { transform: translateY(-3px) scaleY(1.05); }
-}
-
-@keyframes drOsoStepRight {
-  0%, 100% { transform: translateY(-3px) scaleY(1.05); }
-  50%      { transform: translateY(0) scaleY(1); }
-}
-
-/* Ojos grandes kawaii parpadeando */
-.dr-oso-avatar .pulso-eyes.can-blink {
-  transform-origin: 70px 51px;
-  animation: drOsoBlink 4s infinite ease-in-out;
-}
-
-@keyframes drOsoBlink {
-  0%, 45%, 49%, 92%, 100% { transform: scaleY(1); }
-  47%, 95%                { transform: scaleY(0.08); }
-}
-
-/* Estetoscopio con pieza en forma de corazón latiendo con luz rosa */
-.dr-oso-avatar .pulso-steth-heart {
-  transform-origin: 70px 108px;
-  animation: drOsoHeartbeat 1.3s infinite ease-in-out;
-}
-
-@keyframes drOsoHeartbeat {
-  0%, 100% { transform: scale(1); }
-  14%      { transform: scale(1.22); filter: drop-shadow(0 0 5px rgba(244, 114, 182, 0.85)); }
-  28%      { transform: scale(1.06); }
-  42%      { transform: scale(1.18); filter: drop-shadow(0 0 4px rgba(244, 114, 182, 0.75)); }
-}
-
-/* Burbuja de pensamiento (pensando) */
-.dr-oso-thought-bubble {
-  transform-origin: 108px 22px;
-  animation: drOsoThoughtFloat 1.9s infinite ease-in-out;
-}
-
-@keyframes drOsoThoughtFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50%      { transform: translateY(-4px) scale(1.06); }
-}
-
-/* Destellos auditivos al escuchar */
-.dr-oso-listen-sparkles {
-  animation: drOsoSparklePulse 1.5s infinite ease-in-out;
-}
-
-@keyframes drOsoSparklePulse {
-  0%, 100% { opacity: 0.65; transform: scale(0.96); }
-  50%      { opacity: 1; transform: scale(1.1); }
-}
-
-/* Corazones flotantes de alegría (contento) */
-.dr-oso-happy-hearts {
-  animation: drOsoHeartsFloat 1.8s infinite ease-in-out;
-}
-
-@keyframes drOsoHeartsFloat {
-  0%, 100% { transform: translateY(0) scale(0.95); opacity: 0.8; }
-  50%      { transform: translateY(-6px) scale(1.08); opacity: 1; }
-}
-
-/* Reacción al clic: Salto alegre del Dr. Oso con saludo rápido de su patita */
-.pulso-fab-btn.pulso-clicked-boing .dr-oso-avatar .pulso-character-rig {
-  animation: drOsoClickJoy 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+.pulso-fab-btn.pulso-clicked-boing .dr-oso-actual-img {
+  filter: drop-shadow(0 18px 24px rgba(15, 23, 42, 0.42)) drop-shadow(0 0 18px rgba(244, 114, 182, 0.75)) !important;
 }
 
 @keyframes drOsoClickJoy {
   0%   { transform: translateY(0) scale(1, 1) rotate(0deg); }
-  22%  { transform: translateY(5px) scale(1.14, 0.86) rotate(-4deg); }
+  22%  { transform: translateY(6px) scale(1.14, 0.86) rotate(-4deg); }
   48%  { transform: translateY(-24px) scale(0.92, 1.12) rotate(6deg); }
-  74%  { transform: translateY(2px) scale(1.05, 0.95) rotate(-2deg); }
+  72%  { transform: translateY(2px) scale(1.05, 0.95) rotate(-2deg); }
   100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
 }
 
-.pulso-fab-btn.pulso-clicked-boing .dr-oso-avatar .dr-oso-arm-right {
-  animation: drOsoPawWaveRapid 0.18s infinite alternate ease-in-out !important;
+/* Overlays según el estado */
+/* Escuchando: ondas de audio y destellos */
+.dr-oso-listen-waves {
+  position: absolute;
+  top: 12px;
+  right: -4px;
+  pointer-events: none;
 }
 
-@keyframes drOsoPawWaveRapid {
-  0%   { transform: rotate(-6deg); }
-  100% { transform: rotate(-38deg); }
+.dr-oso-wave-ring {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #38bdf8;
+  animation: drOsoAudioRing 1.4s infinite ease-out;
+}
+
+.dr-oso-wave-ring.w2 {
+  animation-delay: 0.4s;
+}
+
+@keyframes drOsoAudioRing {
+  0%   { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.dr-oso-sparkle {
+  position: absolute;
+  font-size: 14px;
+  animation: drOsoSparkleBob 1.6s infinite ease-in-out;
+}
+
+.dr-oso-sparkle.s1 { top: -8px; left: -14px; }
+
+@keyframes drOsoSparkleBob {
+  0%, 100% { transform: scale(0.8) rotate(0deg); opacity: 0.7; }
+  50%      { transform: scale(1.2) rotate(15deg); opacity: 1; }
+}
+
+/* Pensando: bombilla de ideas flotante */
+.dr-oso-thought-badge {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  background: #ffffff;
+  border: 2px solid #f59e0b;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  animation: drOsoThoughtBob 1.8s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.dr-oso-bulb {
+  font-size: 16px;
+  line-height: 1;
+}
+
+@keyframes drOsoThoughtBob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-5px) scale(1.08); }
+}
+
+/* Alerta clínica: baliza de emergencia 🚨 */
+.dr-oso-alert-beacon {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.65);
+  animation: drOsoAlertPulse 0.7s infinite alternate ease-in-out;
+  pointer-events: none;
+}
+
+.dr-oso-siren {
+  font-size: 16px;
+  line-height: 1;
+}
+
+@keyframes drOsoAlertPulse {
+  0%   { transform: scale(0.95); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+  100% { transform: scale(1.15); box-shadow: 0 0 20px rgba(239, 68, 68, 0.85); }
+}
+
+/* Contento: corazoncitos flotantes */
+.dr-oso-happy-bubble {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  pointer-events: none;
+}
+
+.dr-oso-heart {
+  position: absolute;
+  font-size: 16px;
+  animation: drOsoHeartRise 1.8s infinite ease-in-out;
+}
+
+.dr-oso-heart.h1 { top: -4px; right: 0; }
+.dr-oso-heart.h2 { top: 6px; right: 18px; font-size: 12px; animation-delay: 0.5s; }
+
+@keyframes drOsoHeartRise {
+  0%, 100% { transform: translateY(0) scale(0.9); opacity: 0.8; }
+  50%      { transform: translateY(-7px) scale(1.15); opacity: 1; }
+}
+
+/* Ajuste específico para el avatar en el encabezado del chat (48px) */
+.pulso-header-avatar-box .dr-oso-stage {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.pulso-header-avatar-box .dr-oso-actual-img {
+  max-height: 44px !important;
+  filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.22));
+}
+
+.pulso-header-avatar-box .dr-oso-floor-shadow {
+  height: 4px;
+  bottom: 0px;
 }
 
 /* Respeto estricto a prefers-reduced-motion */

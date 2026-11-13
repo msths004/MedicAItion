@@ -58,359 +58,80 @@ function _pulsoEsc(str) {
  *   "pensando" (patita en la barbilla y bombilla/chispas), "alerta" (ojitos atentos clínicos),
  *   "contento" (ojitos felices ^_^ y saltito de alegría).
  */
-let _pulsoSvgSeq = 0;
+/**
+ * DR. OSO (El Oso Kawaii Médico) - Avatar con ilustraciones oficiales idénticas
+ * Usa los assets extraídos fielmente de las ilustraciones provistas por el usuario:
+ * - reposo: Dr. Oso cuerpo completo saludando con bata, scrubs, estetoscopio y maletín.
+ * - escuchando: Dr. Oso auscultando con otoscopio y signo de pregunta.
+ * - pensando: Dr. Oso analizando radiografía cardíaca con bombilla de ideas.
+ * - alerta: Dr. Oso llamada de emergencia con radio.
+ * - contento: Dr. Oso con checklist y palomita verde de confirmación.
+ */
+const DR_OSO_ASSETS = {
+  reposo: 'assets/dr_oso/dr_oso_reposo.png',
+  escuchando: 'assets/dr_oso/dr_oso_escuchando.png',
+  pensando: 'assets/dr_oso/dr_oso_pensando.png',
+  alerta: 'assets/dr_oso/dr_oso_alerta.png',
+  contento: 'assets/dr_oso/dr_oso_contento.png',
+};
+
+// Precarga inmediata de assets en segundo plano para cero latencia
+if (typeof window !== 'undefined') {
+  Object.values(DR_OSO_ASSETS).forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
+}
 
 function PulsoAvatar({ state = 'reposo', size = 110 } = {}) {
   const st = ['reposo', 'escuchando', 'pensando', 'alerta', 'contento'].includes(state)
     ? state
     : 'reposo';
-  const uid = `oso${++_pulsoSvgSeq}`;
+  const imgSrc = DR_OSO_ASSETS[st] || DR_OSO_ASSETS.reposo;
 
-  const isAlert = st === 'alerta';
-  const isThinking = st === 'pensando';
-  const isListening = st === 'escuchando';
-  const isHappy = st === 'contento';
-
-  // Ojos según el estado
-  let eyesContent = '';
-  if (isHappy) {
-    // Ojitos felices cerrados en arco ^_^
-    eyesContent = `
-      <path d="M 46 52 Q 53 45 60 52" fill="none" stroke="#3D2114" stroke-width="3.2" stroke-linecap="round" />
-      <path d="M 80 52 Q 87 45 94 52" fill="none" stroke="#3D2114" stroke-width="3.2" stroke-linecap="round" />
-      <circle cx="43" cy="48" r="1.5" fill="#FF859A" />
-      <circle cx="97" cy="48" r="1.5" fill="#FF859A" />
+  let overlayHtml = '';
+  if (st === 'escuchando') {
+    overlayHtml = `
+      <div class="dr-oso-listen-waves" aria-hidden="true">
+        <span class="dr-oso-wave-ring w1"></span>
+        <span class="dr-oso-wave-ring w2"></span>
+        <span class="dr-oso-sparkle s1">✨</span>
+      </div>
     `;
-  } else if (isThinking) {
-    // Ojitos mirando hacia arriba con curiosidad
-    eyesContent = `
-      <g class="pulso-eyes can-blink">
-        <!-- Ojo izquierdo -->
-        <ellipse cx="53" cy="50" rx="8" ry="9.5" fill="url(#${uid}_eye)" stroke="#3D2114" stroke-width="1.6" />
-        <ellipse cx="53" cy="54" rx="6" ry="4" fill="#D946EF" opacity="0.45" />
-        <circle cx="52" cy="46" r="3.6" fill="#FFFFFF" />
-        <circle cx="56.5" cy="50.5" r="1.8" fill="#FFFFFF" />
-        <circle cx="50" cy="52" r="1" fill="#FFFFFF" />
-        <!-- Ojo derecho -->
-        <ellipse cx="87" cy="50" rx="8" ry="9.5" fill="url(#${uid}_eye)" stroke="#3D2114" stroke-width="1.6" />
-        <ellipse cx="87" cy="54" rx="6" ry="4" fill="#D946EF" opacity="0.45" />
-        <circle cx="86" cy="46" r="3.6" fill="#FFFFFF" />
-        <circle cx="90.5" cy="50.5" r="1.8" fill="#FFFFFF" />
-        <circle cx="84" cy="52" r="1" fill="#FFFFFF" />
-      </g>
+  } else if (st === 'pensando') {
+    overlayHtml = `
+      <div class="dr-oso-thought-badge" aria-hidden="true" title="Pensando...">
+        <span class="dr-oso-bulb">💡</span>
+      </div>
     `;
-  } else {
-    // Ojitos kawaii grandes y brillantes habituales
-    eyesContent = `
-      <g class="pulso-eyes ${st === 'reposo' ? 'can-blink' : ''}">
-        <!-- Ojo izquierdo -->
-        <ellipse cx="53" cy="51" rx="8.2" ry="9.8" fill="url(#${uid}_eye)" stroke="#3D2114" stroke-width="1.6" />
-        <ellipse cx="53" cy="56" rx="6.2" ry="4" fill="#E879F9" opacity="0.5" />
-        <circle cx="51" cy="47" r="3.8" fill="#FFFFFF" />
-        <circle cx="56.5" cy="54" r="1.9" fill="#FFFFFF" />
-        <circle cx="50" cy="53.5" r="1.1" fill="#FFFFFF" />
-        <!-- Ojo derecho -->
-        <ellipse cx="87" cy="51" rx="8.2" ry="9.8" fill="url(#${uid}_eye)" stroke="#3D2114" stroke-width="1.6" />
-        <ellipse cx="87" cy="56" rx="6.2" ry="4" fill="#E879F9" opacity="0.5" />
-        <circle cx="85" cy="47" r="3.8" fill="#FFFFFF" />
-        <circle cx="90.5" cy="54" r="1.9" fill="#FFFFFF" />
-        <circle cx="84" cy="53.5" r="1.1" fill="#FFFFFF" />
-      </g>
+  } else if (st === 'alerta') {
+    overlayHtml = `
+      <div class="dr-oso-alert-beacon" aria-hidden="true" title="Alerta clínica">
+        <span class="dr-oso-siren">🚨</span>
+      </div>
     `;
-  }
-
-  // Cejitas tiernas
-  const browsContent = isAlert
-    ? `
-      <path d="M 46 39 Q 52 36 58 40" fill="none" stroke="#5C3E29" stroke-width="2.2" stroke-linecap="round" />
-      <path d="M 82 40 Q 88 36 94 39" fill="none" stroke="#5C3E29" stroke-width="2.2" stroke-linecap="round" />
-    `
-    : `
-      <path d="M 47 41 Q 53 38 58 41" fill="none" stroke="#5C3E29" stroke-width="2" stroke-linecap="round" />
-      <path d="M 82 41 Q 87 38 93 41" fill="none" stroke="#5C3E29" stroke-width="2" stroke-linecap="round" />
-    `;
-
-  // Boca adorable con lengüita
-  let mouthContent = '';
-  if (isThinking) {
-    mouthContent = `
-      <path d="M 68 64 Q 70 66 73 64" fill="none" stroke="#3D2114" stroke-width="2" stroke-linecap="round" />
-    `;
-  } else if (isAlert) {
-    mouthContent = `
-      <ellipse cx="70" cy="65" rx="2.8" ry="3.2" fill="#FF859A" stroke="#3D2114" stroke-width="1.6" />
-    `;
-  } else {
-    mouthContent = `
-      <path d="M 65 62 Q 70 65.5 70 62.5 Q 70 65.5 75 62" fill="none" stroke="#3D2114" stroke-width="2" stroke-linecap="round" />
-      <path d="M 67.5 63 Q 70 68 72.5 63 Z" fill="#FF859A" />
-    `;
-  }
-
-  // Burbuja de ideas o destellos
-  let extraOverlay = '';
-  if (isThinking) {
-    extraOverlay = `
-      <!-- Burbuja de idea con bombilla y corazoncito -->
-      <g class="dr-oso-thought-bubble">
-        <circle cx="108" cy="22" r="12" fill="#FFFFFF" stroke="#FBBF24" stroke-width="2" />
-        <path d="M 104 20 C 104 16, 112 16, 112 20 C 112 23, 108 24, 108 26" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" />
-        <circle cx="108" cy="29" r="1.2" fill="#F59E0B" />
-        <!-- Rayos de luz -->
-        <line x1="108" y1="6" x2="108" y2="3" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" />
-        <line x1="120" y1="12" x2="123" y2="10" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" />
-        <line x1="96" y1="12" x2="93" y2="10" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" />
-        <!-- Burbujitas conectadas -->
-        <circle cx="98" cy="33" r="3.5" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1.4" />
-        <circle cx="93" cy="39" r="2" fill="#FFFFFF" stroke="#FBBF24" stroke-width="1.2" />
-      </g>
-    `;
-  } else if (isListening) {
-    extraOverlay = `
-      <!-- Destellos de atención y ondas amigables -->
-      <g class="dr-oso-listen-sparkles">
-        <path d="M 20 30 Q 23 23 30 20 Q 23 17 20 10 Q 17 17 10 20 Q 17 23 20 30 Z" fill="#FDE047" opacity="0.9" transform="scale(0.6) translate(14, 12)" />
-        <path d="M 120 30 Q 123 23 130 20 Q 123 17 120 10 Q 117 17 110 20 Q 117 23 120 30 Z" fill="#FDE047" opacity="0.9" transform="scale(0.6) translate(80, 12)" />
-        <path d="M 18 48 Q 12 55 18 62" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round" />
-        <path d="M 122 48 Q 128 55 122 62" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round" />
-      </g>
-    `;
-  } else if (isAlert) {
-    extraOverlay = `
-      <!-- Signo de atención médica amigable -->
-      <g class="dr-oso-alert-badge">
-        <circle cx="106" cy="20" r="9" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2" />
-        <text x="106" y="24" text-anchor="middle" font-size="12" font-weight="900" fill="#D97706">!</text>
-      </g>
-    `;
-  } else if (isHappy) {
-    extraOverlay = `
-      <!-- Corazoncitos flotantes de felicidad -->
-      <g class="dr-oso-happy-hearts">
-        <path d="M 22 28 C 22 22, 28 22, 30 25 C 32 22, 38 22, 38 28 C 38 34, 30 38, 30 38 C 30 38, 22 34, 22 28 Z" fill="#F472B6" transform="scale(0.5) translate(12, 10)" />
-        <path d="M 22 28 C 22 22, 28 22, 30 25 C 32 22, 38 22, 38 28 C 38 34, 30 38, 30 38 C 30 38, 22 34, 22 28 Z" fill="#FB7185" transform="scale(0.6) translate(150, 8)" />
-      </g>
+  } else if (st === 'contento') {
+    overlayHtml = `
+      <div class="dr-oso-happy-bubble" aria-hidden="true">
+        <span class="dr-oso-heart h1">💖</span>
+        <span class="dr-oso-heart h2">✨</span>
+      </div>
     `;
   }
 
   return `
-    <div class="pulso-3d-stage dr-oso-stage" style="width:${size}px; height:${size}px;">
-    <svg class="pulso-avatar-svg dr-oso-avatar state-${st}" width="${size}" height="${size}" viewBox="0 0 140 156" role="img" aria-label="Dr. Oso Kawaii en estado ${st}">
-      <defs>
-        <!-- Pelaje suave crema dorado del Dr. Oso -->
-        <linearGradient id="${uid}_fur" x1="40" y1="18" x2="100" y2="135" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#FFF8F0" />
-          <stop offset="30%" stop-color="#FCEFD8" />
-          <stop offset="70%" stop-color="#F7E2C7" />
-          <stop offset="100%" stop-color="#EED3B4" />
-        </linearGradient>
-
-        <!-- Interior rosado de las orejitas y huellitas -->
-        <linearGradient id="${uid}_pinkPad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#FFE0E6" />
-          <stop offset="50%" stop-color="#FFBAC8" />
-          <stop offset="100%" stop-color="#FFA8BA" />
-        </linearGradient>
-
-        <!-- Ojos anime morado/chocolate profundo con brillo cálido -->
-        <linearGradient id="${uid}_eye" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#2D1527" />
-          <stop offset="55%" stop-color="#4E2342" />
-          <stop offset="100%" stop-color="#7C3560" />
-        </linearGradient>
-
-        <!-- Hocico blanco marfil -->
-        <radialGradient id="${uid}_snout" cx="50%" cy="40%" r="65%">
-          <stop offset="0%" stop-color="#FFFFFF" />
-          <stop offset="85%" stop-color="#FFF7EC" />
-          <stop offset="100%" stop-color="#F3E5D0" />
-        </radialGradient>
-
-        <!-- Traje quirúrgico (scrubs) celeste pastel -->
-        <linearGradient id="${uid}_scrubs" x1="50" y1="75" x2="90" y2="140" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#BAE6FD" />
-          <stop offset="50%" stop-color="#7DD3FC" />
-          <stop offset="100%" stop-color="#38BDF8" />
-        </linearGradient>
-
-        <!-- Bata médica blanca con sombreado suave -->
-        <linearGradient id="${uid}_coat" x1="30" y1="80" x2="110" y2="135" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#FFFFFF" />
-          <stop offset="70%" stop-color="#F8FAFC" />
-          <stop offset="100%" stop-color="#E2E8F0" />
-        </linearGradient>
-
-        <!-- Corazón rojo/rosa para el estetoscopio y la tablilla -->
-        <linearGradient id="${uid}_heart" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#FB7185" />
-          <stop offset="100%" stop-color="#E11D48" />
-        </linearGradient>
-
-        <!-- Madera de la tablilla médica (clipboard) -->
-        <linearGradient id="${uid}_clipboard" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#EAD5BC" />
-          <stop offset="100%" stop-color="#D4B490" />
-        </linearGradient>
-      </defs>
-
-      <!-- Sombra suave en el piso -->
-      <ellipse class="pulso-floor-shadow" cx="70" cy="148" rx="34" ry="5.5" fill="#475569" opacity="0.22" />
-
-      <!-- RIG PRINCIPAL DE DR. OSO (Articulado, flota, camina y saluda) -->
-      <g class="pulso-character-rig dr-oso-rig">
-
-        <!-- 1. PATITAS INFERIORES CON CICLO DE CAMINATA / WADDLE -->
-        <g class="pulso-foot-left dr-oso-leg-left">
-          <!-- Pantalón quirúrgico celeste -->
-          <rect x="49" y="125" width="15" height="13" rx="4" fill="url(#${uid}_scrubs)" stroke="#387A8E" stroke-width="2" />
-          <!-- Patita redondeada de osito -->
-          <path d="M 46 138 Q 56 134 66 138 L 66 146 L 46 146 Z" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2.2" stroke-linejoin="round" />
-          <!-- Almohadilla rosa de la patita -->
-          <ellipse cx="56" cy="142" rx="4.5" ry="2.2" fill="url(#${uid}_pinkPad)" />
-        </g>
-        <g class="pulso-foot-right dr-oso-leg-right">
-          <!-- Pantalón quirúrgico celeste -->
-          <rect x="76" y="125" width="15" height="13" rx="4" fill="url(#${uid}_scrubs)" stroke="#387A8E" stroke-width="2" />
-          <!-- Patita redondeada de osito -->
-          <path d="M 74 138 Q 84 134 94 138 L 94 146 L 74 146 Z" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2.2" stroke-linejoin="round" />
-          <!-- Almohadilla rosa de la patita -->
-          <ellipse cx="84" cy="142" rx="4.5" ry="2.2" fill="url(#${uid}_pinkPad)" />
-        </g>
-
-        <!-- 2. CUERPO, TRAJE QUIRÚRGICO Y BATA MÉDICA BLANCA -->
-        <g class="pulso-torso-rig">
-          <!-- Pecho con filipina / scrub V-neck celeste pastel -->
-          <path d="M 52 82 L 88 82 L 86 128 L 54 128 Z" fill="url(#${uid}_scrubs)" stroke="#387A8E" stroke-width="2" />
-          <!-- Cuello V-neck del scrub -->
-          <polygon points="62,82 78,82 70,95" fill="#E0F2FE" stroke="#387A8E" stroke-width="1.8" />
-
-          <!-- BATA MÉDICA BLANCA (Lado izquierdo) -->
-          <path d="M 42 82 L 61 82 L 61 130 L 40 130 Z" fill="url(#${uid}_coat)" stroke="#5C3E29" stroke-width="2.4" stroke-linejoin="round" />
-          <polygon points="50,82 61,82 61,102 51,94" fill="#F1F5F9" stroke="#5C3E29" stroke-width="1.8" stroke-linejoin="round" />
-          <!-- Bolsillo izquierdo con pluma -->
-          <rect x="44" y="112" width="11" height="11" rx="2" fill="#FFFFFF" stroke="#5C3E29" stroke-width="1.6" />
-          <line x1="47" y1="108" x2="47" y2="114" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
-
-          <!-- BATA MÉDICA BLANCA (Lado derecho con gafete DR. OSO) -->
-          <path d="M 79 82 L 98 82 L 100 130 L 79 130 Z" fill="url(#${uid}_coat)" stroke="#5C3E29" stroke-width="2.4" stroke-linejoin="round" />
-          <polygon points="90,82 79,82 79,102 89,94" fill="#F1F5F9" stroke="#5C3E29" stroke-width="1.8" stroke-linejoin="round" />
-          <!-- Gafete / ID Badge "DR. OSO" -->
-          <g transform="translate(81, 105)">
-            <rect x="0" y="0" width="14" height="9" rx="1.5" fill="#FFFFFF" stroke="#5C3E29" stroke-width="1.3" />
-            <rect x="5" y="-3" width="4" height="3" rx="1" fill="#94A3B8" />
-            <circle cx="3" cy="4.5" r="1.8" fill="#F472B6" />
-            <line x1="6.5" y1="3" x2="12" y2="3" stroke="#5C3E29" stroke-width="1" />
-            <line x1="6.5" y1="6" x2="11" y2="6" stroke="#94A3B8" stroke-width="0.8" />
-          </g>
-
-          <!-- ESTETOSCOPIO ROSA CON CORAZÓN LATIENDO -->
-          <path d="M 58 84 Q 56 100 66 103 L 68 107" fill="none" stroke="#F472B6" stroke-width="2.6" stroke-linecap="round" />
-          <path d="M 82 84 Q 84 100 74 103 L 72 107" fill="none" stroke="#F472B6" stroke-width="2.6" stroke-linecap="round" />
-          <!-- Pieza pectoral en forma de corazón -->
-          <g class="pulso-steth-heart" transform="translate(70, 109)">
-            <path d="M 0 -2 C -4 -7, -9 -2, 0 5 C 9 -2, 4 -7, 0 -2 Z" fill="url(#${uid}_heart)" stroke="#BE123C" stroke-width="1.4" />
-            <circle cx="-1.5" cy="-2.5" r="1" fill="#FFFFFF" opacity="0.8" />
-          </g>
-        </g>
-
-        <!-- 3. BRAZO IZQUIERDO SOSTENIENDO LA TABLILLA MÉDICA (CLIPBOARD) -->
-        <g class="pulso-arm-left dr-oso-arm-left">
-          <!-- Manga de la bata blanca -->
-          <path d="M 43 83 L 31 104 L 41 108 L 49 92 Z" fill="url(#${uid}_coat)" stroke="#5C3E29" stroke-width="2.4" stroke-linejoin="round" />
-          <!-- Patita sosteniendo la tablilla -->
-          <circle cx="36" cy="110" r="5.5" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2" />
-          
-          <!-- Tablilla médica con hoja clínica y corazoncito -->
-          <g class="dr-oso-clipboard" transform="rotate(-6 24 100) translate(12, 92)">
-            <!-- Tablilla de madera -->
-            <rect x="0" y="0" width="19" height="26" rx="2.5" fill="url(#${uid}_clipboard)" stroke="#8C532B" stroke-width="1.8" />
-            <!-- Clip plateado superior -->
-            <rect x="5.5" y="-2" width="8" height="4" rx="1.2" fill="#E2E8F0" stroke="#64748B" stroke-width="1.2" />
-            <!-- Hoja de papel blanca -->
-            <rect x="2" y="3" width="15" height="21" rx="1.5" fill="#FFFFFF" />
-            <!-- Corazoncito sonriente en la hoja clínica -->
-            <path d="M 9.5 8 C 7 5, 4 8, 9.5 12.5 C 15 8, 12 5, 9.5 8 Z" fill="#FB7185" />
-            <circle cx="8" cy="8" r="0.6" fill="#3D2114" />
-            <circle cx="11" cy="8" r="0.6" fill="#3D2114" />
-            <path d="M 8.5 9.5 Q 9.5 10.5 10.5 9.5" fill="none" stroke="#3D2114" stroke-width="0.6" stroke-linecap="round" />
-            <!-- Líneas de pulso / chequeos -->
-            <line x1="4" y1="15" x2="15" y2="15" stroke="#38BDF8" stroke-width="1.2" stroke-linecap="round" />
-            <line x1="4" y1="18" x2="13" y2="18" stroke="#34D399" stroke-width="1.2" stroke-linecap="round" />
-            <line x1="4" y1="21" x2="10" y2="21" stroke="#F472B6" stroke-width="1.2" stroke-linecap="round" />
-          </g>
-        </g>
-
-        <!-- 4. BRAZO DERECHO SALUDANDO CON HUELLITA ROSA (WAVING PAW) -->
-        <g class="pulso-arm-right dr-oso-arm-right">
-          <!-- Manga de la bata blanca -->
-          <path d="M 97 83 L 110 102 L 102 107 L 91 92 Z" fill="url(#${uid}_coat)" stroke="#5C3E29" stroke-width="2.4" stroke-linejoin="round" />
-          <!-- Patita gordita de osito saludando -->
-          <g transform="translate(112, 104) rotate(-14)">
-            <ellipse cx="0" cy="0" rx="7.5" ry="7" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2.2" />
-            <!-- Almohadilla rosa central de la patita -->
-            <ellipse cx="0" cy="1" rx="4.2" ry="3.4" fill="url(#${uid}_pinkPad)" />
-            <!-- 3 deditos / toe beans rositas -->
-            <circle cx="-3.6" cy="-4.2" r="1.6" fill="url(#${uid}_pinkPad)" />
-            <circle cx="0" cy="-5.2" r="1.7" fill="url(#${uid}_pinkPad)" />
-            <circle cx="3.6" cy="-4.2" r="1.6" fill="url(#${uid}_pinkPad)" />
-          </g>
-          <!-- Ondas de saludo alegre (wave lines) -->
-          <path class="dr-oso-wave-line w1" d="M 125 96 Q 128 102 125 108" fill="none" stroke="#F472B6" stroke-width="2" stroke-linecap="round" />
-          <path class="dr-oso-wave-line w2" d="M 130 92 Q 134 102 130 112" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
-        </g>
-
-        <!-- 5. CABECITA REDONDA KAWAII CON OREJITAS Y EXPRESIONES -->
-        <g class="pulso-head-rig dr-oso-head-rig">
-          
-          <!-- Orejita izquierda -->
-          <g class="dr-oso-ear-left">
-            <circle cx="42" cy="38" r="13.5" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2.4" />
-            <circle cx="42" cy="39" r="7.5" fill="url(#${uid}_pinkPad)" />
-          </g>
-
-          <!-- Orejita derecha -->
-          <g class="dr-oso-ear-right">
-            <circle cx="98" cy="38" r="13.5" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2.4" />
-            <circle cx="98" cy="39" r="7.5" fill="url(#${uid}_pinkPad)" />
-          </g>
-
-          <!-- Forma principal de la cabeza esponjosa -->
-          <ellipse cx="70" cy="57" rx="33" ry="29" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2.6" />
-
-          <!-- Mechoncito de pelito fluffy en la frente -->
-          <path d="M 64 29 Q 69 22 73 27 Q 76 23 78 28 Q 72 26 64 29 Z" fill="url(#${uid}_fur)" stroke="#5C3E29" stroke-width="2" stroke-linejoin="round" />
-
-          <!-- Cejitas expresivas -->
-          ${browsContent}
-
-          <!-- Ojos anime kawaii grandes con destellos -->
-          ${eyesContent}
-
-          <!-- Chapitas sonrosadas (blush ovals) con rayitas kawaii -->
-          <ellipse cx="44" cy="62" rx="6.5" ry="3.8" fill="#FFA8B6" opacity="0.82" />
-          <line x1="42" y1="61" x2="44" y2="64" stroke="#FF6B8B" stroke-width="1.4" stroke-linecap="round" />
-          <line x1="45" y1="61" x2="47" y2="64" stroke="#FF6B8B" stroke-width="1.4" stroke-linecap="round" />
-
-          <ellipse cx="96" cy="62" rx="6.5" ry="3.8" fill="#FFA8B6" opacity="0.82" />
-          <line x1="94" y1="61" x2="96" y2="64" stroke="#FF6B8B" stroke-width="1.4" stroke-linecap="round" />
-          <line x1="97" y1="61" x2="99" y2="64" stroke="#FF6B8B" stroke-width="1.4" stroke-linecap="round" />
-
-          <!-- Hocico blanco marfil ovalado -->
-          <ellipse cx="70" cy="63" rx="13" ry="9.5" fill="url(#${uid}_snout)" stroke="#5C3E29" stroke-width="1.8" />
-
-          <!-- Nariz de osito chocolate -->
-          <ellipse cx="70" cy="59" rx="3.8" ry="2.8" fill="#3D2114" />
-          <circle cx="68.8" cy="58" r="0.9" fill="#FFFFFF" />
-
-          <!-- Boquita sonriente y lengüita -->
-          ${mouthContent}
-
-          <!-- Chispas, bombilla o corazoncitos según el estado -->
-          ${extraOverlay}
-
-        </g>
-      </g>
-    </svg>
+    <div class="pulso-avatar-stage dr-oso-stage state-${st}" style="width:${size}px; height:${size}px;" role="img" aria-label="Dr. Oso - Estado ${st}">
+      <div class="dr-oso-char-wrap">
+        <img 
+          src="${imgSrc}" 
+          class="dr-oso-actual-img state-${st}" 
+          alt="Dr. Oso - Asistente Clínico" 
+          draggable="false"
+          loading="eager"
+        />
+        <div class="dr-oso-floor-shadow"></div>
+      </div>
+      ${overlayHtml}
     </div>
   `;
 }
