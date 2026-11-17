@@ -170,32 +170,77 @@ function setPulsoAvatarState(newState) {
   });
 }
 
+let _lastPulsoToggleTime = 0;
+
 function togglePulsoPanel(forceOpen) {
+
+  const now = Date.now();
+
+  if (typeof forceOpen !== 'boolean' && (now - _lastPulsoToggleTime < 220)) {
+
+    return;
+
+  }
+
+  _lastPulsoToggleTime = now;
+
+
+
   const next = typeof forceOpen === 'boolean' ? forceOpen : !_PulsoState.isOpen;
+
   _PulsoState.isOpen = next;
+
   const panel = document.getElementById('pulso-chat-panel');
+
   const fab = document.getElementById('pulso-fab-btn');
+
   const bubble = document.getElementById('pulso-greeting-bubble');
 
+
+
   if (panel) {
+
     panel.classList.toggle('open', next);
+
     panel.classList.toggle('is-open', next);
+
     panel.setAttribute('aria-hidden', next ? 'false' : 'true');
+
+    panel.style.display = next ? 'flex' : 'none';
+
   }
+
   if (fab) {
+
     fab.setAttribute('aria-expanded', next ? 'true' : 'false');
+
   }
+
   if (bubble && next) {
+
     bubble.style.display = 'none';
+
   }
+
   if (next) {
+
     checkPulsoLocalAiStatus();
+
     if (!_PulsoState.messages.length) {
+
       _appendPulsoWelcomeMessage();
+
     }
+
     setTimeout(() => document.getElementById('pulso-chat-input')?.focus(), 80);
+
   }
+
 }
+
+window.togglePulsoPanel = togglePulsoPanel;
+
+
 
 function _appendPulsoWelcomeMessage() {
   _PulsoState.messages.push({
@@ -225,56 +270,114 @@ function clearPulsoConversation() {
 }
 
 async function checkPulsoLocalAiStatus() {
+
   const dot = document.getElementById('pulso-conn-dot');
+
   const lbl = document.getElementById('pulso-conn-label');
+
   const cfgBadge = document.getElementById('cfg-pulso-status-badge');
 
-  // 1. Intentar conexión directa al servidor local Ollama (http://localhost:11434/api/tags)
+
+
   let directOllamaOk = false;
+
   let directModels = [];
+
   try {
+
     const ctrl = new AbortController();
+
     const timer = setTimeout(() => ctrl.abort(), 1400);
+
     const r = await fetch(`${_PulsoState.ollamaUrl.replace(/\/$/, '')}/api/tags`, { signal: ctrl.signal });
+
     clearTimeout(timer);
+
     if (r.ok) {
+
       const d = await r.json();
+
       directOllamaOk = true;
+
       directModels = (d.models || []).map(m => m.name).filter(Boolean);
+
     }
+
   } catch (_) {}
 
-  // 2. Consultar también al backend local (/api/pulso/status)
+
+
   try {
-    const res = await fetch(`${API}/api/pulso/status?ollama_url=${encodeURIComponent(_PulsoState.ollamaUrl)}`);
+
+    const apiBase = typeof API !== 'undefined' ? API : '';
+
+    const res = await fetch(`${apiBase}/api/pulso/status?ollama_url=${encodeURIComponent(_PulsoState.ollamaUrl)}`);
+
     if (res.ok) {
+
       const data = await res.json();
+
       _PulsoState.ollamaConnected = directOllamaOk || !!data.ollama_connected;
+
       _PulsoState.availableModels = directModels.length ? directModels : (data.available_models || []);
-      _PulsoState.statusLabel = _PulsoState.ollamaConnected
-        ? `IA local conectada (Ollama · ${_PulsoState.model})`
-        : 'Ollama desconectado · IA Clínica Local integrada activa';
+
+      const activeEng = data.active_engine || (_PulsoState.ollamaConnected ? 'ollama_local' : 'embedded_clinical_local');
+
+      if (activeEng === 'local_gguf_engine') {
+
+        const mod = data.local_gguf?.model_name || 'OpenBioLLM-8B';
+
+        _PulsoState.statusLabel = `🟢 IA Local Médica (GGUF: ${mod})`;
+
+      } else if (activeEng === 'ollama_local' || _PulsoState.ollamaConnected) {
+
+        _PulsoState.statusLabel = `🟢 IA Local Conectada (Ollama: ${_PulsoState.model})`;
+
+      } else {
+
+        _PulsoState.statusLabel = '🟢 Mini ChatGPT Clínico Local (IA Offline)';
+
+      }
+
     }
+
   } catch (_) {
+
     _PulsoState.ollamaConnected = directOllamaOk;
+
     _PulsoState.statusLabel = directOllamaOk
-      ? `IA local conectada (Ollama · ${_PulsoState.model})`
-      : 'IA local desconectada';
+
+      ? `🟢 IA Local Conectada (Ollama: ${_PulsoState.model})`
+
+      : '🟢 Mini ChatGPT Clínico Local (IA Offline)';
+
   }
 
+
+
   if (dot) {
-    dot.className = `pulso-conn-dot ${_PulsoState.ollamaConnected ? 'is-online' : 'is-local-fallback'}`;
+
+    dot.className = 'pulso-conn-dot is-online';
+
   }
+
   if (lbl) {
+
     lbl.textContent = _PulsoState.statusLabel;
+
   }
+
   if (cfgBadge) {
-    cfgBadge.className = `pulso-cfg-badge ${_PulsoState.ollamaConnected ? 'is-online' : 'is-fallback'}`;
-    cfgBadge.textContent = _PulsoState.ollamaConnected
-      ? `🟢 IA local conectada (${_PulsoState.model})`
-      : '🟡 Ollama desconectado (Motor Local Integrado Activo)';
+
+    cfgBadge.className = 'pulso-cfg-badge is-online';
+
+    cfgBadge.textContent = _PulsoState.statusLabel;
+
   }
+
 }
+
+
 
 async function saveAndTestPulsoConfig() {
   const urlInp = document.getElementById('cfg-pulso-url');
@@ -336,9 +439,19 @@ function _renderPulsoMessages() {
   container.innerHTML = _PulsoState.messages.map((m, idx) => {
     const isUser = m.role === 'user';
     const hasSoap = !isUser && m.soapStructured && idx === _PulsoState.messages.length - 1;
+    let contentHtml = '';
+    if (isUser) {
+      contentHtml = _pulsoEsc(m.text);
+    } else {
+      if (!m.text && _PulsoState.isStreaming && idx === _PulsoState.messages.length - 1) {
+        contentHtml = '<span class="pulso-typing-indicator"><span class="dot"></span><span class="dot"></span><span class="dot"></span> <em>Dr. Oso está procesando la consulta...</em></span>';
+      } else {
+        contentHtml = _formatPulsoMarkdown(m.text || '');
+      }
+    }
     return `
       <div class="pulso-msg ${isUser ? 'pulso-msg-user' : 'pulso-msg-assistant'}">
-        <div class="pulso-msg-bubble">${isUser ? _pulsoEsc(m.text) : _formatPulsoMarkdown(m.text)}</div>
+        <div class="pulso-msg-bubble">${contentHtml}</div>
         ${hasSoap ? `
           <button type="button" class="pulso-apply-soap-btn" onclick="applyPulsoSoapToExpediente()">
             📋 Pasar borrador SOAP al Expediente Activo
@@ -370,9 +483,16 @@ function applyPulsoSoapToExpediente() {
 }
 
 async function sendPulsoPrompt(presetText) {
-  if (_PulsoState.isStreaming) return;
   const input = document.getElementById('pulso-chat-input');
+  const sendBtn = document.getElementById('pulso-send-btn');
   const prompt = (presetText != null ? presetText : (input?.value || '')).trim();
+
+  console.log('[PulsoDebug] sendPulsoPrompt iniciado con:', prompt);
+
+  if (_PulsoState.isStreaming) {
+    console.warn('[PulsoDebug] Transmisión activa en curso, ignorando nuevo envío.');
+    return;
+  }
   if (!prompt) return;
 
   if (presetText == null && input) input.value = '';
@@ -384,13 +504,19 @@ async function sendPulsoPrompt(presetText) {
   setPulsoAvatarState('pensando');
   _renderPulsoMessages();
 
+  if (input) input.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
+
   const activeCurp = (typeof _ExpCareState !== 'undefined' && _ExpCareState.curp)
     || (window.AppState && window.AppState.selectedPatientCurp)
     || document.getElementById('curp-input')?.value?.trim()
     || '';
 
+  const apiBase = (typeof API !== 'undefined' && API != null) ? API : (window.API || '');
+
   try {
-    const res = await fetch(`${API}/api/pulso/chat-stream`, {
+    console.log(`[PulsoDebug] Enviando POST a ${apiBase}/api/pulso/chat-stream para CURP: ${activeCurp}`);
+    const res = await fetch(`${apiBase}/api/pulso/chat-stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -409,6 +535,7 @@ async function sendPulsoPrompt(presetText) {
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
     let finalState = 'reposo';
+    let tokensReceived = 0;
 
     while (true) {
       const { value, done } = await reader.read();
@@ -428,21 +555,32 @@ async function sendPulsoPrompt(presetText) {
               _PulsoState.messages[botIdx].soapStructured = evt.soap_structured;
             }
           } else if (evt.type === 'token' && evt.content) {
+            tokensReceived++;
             _PulsoState.messages[botIdx].text += evt.content;
             _renderPulsoMessages();
+          } else if (evt.type === 'done') {
+            console.log('[PulsoDebug] Stream completado. Total tokens:', tokensReceived);
           }
-        } catch (_) {}
+        } catch (eJson) {
+          console.warn('[PulsoDebug] NDJSON parse warning:', line, eJson);
+        }
       }
     }
 
     setPulsoAvatarState(finalState);
   } catch (err) {
+    console.error('[PulsoDebug] Error durante la consulta local:', err);
     _PulsoState.messages[botIdx].text =
-      `⚠️ Error comunicando con el motor local: ${err.message}. Verifica que el servidor local esté activo.`;
+      `⚠️ Error comunicando con el motor local: ${err.message}. Verifica que el backend esté activo en http://127.0.0.1:8000.`;
     setPulsoAvatarState('alerta');
     _renderPulsoMessages();
   } finally {
     _PulsoState.isStreaming = false;
+    if (input) {
+      input.disabled = false;
+      input.focus();
+    }
+    if (sendBtn) sendBtn.disabled = false;
     _renderPulsoMessages();
   }
 }
@@ -461,6 +599,14 @@ function runPulsoQuickAction(kind) {
     }
   } else if (kind === 'search') {
     sendPulsoPrompt('Busca los pacientes registrados y las citas programadas en la agenda.');
+  } else if (kind === 'infarto') {
+    sendPulsoPrompt('¿Cuál es el protocolo de Código Infarto ante sospecha de IAMCEST en urgencias? Detalla tiempos puerta-balón, DAPT y contraindicaciones de nitratos.');
+  } else if (kind === 'dengue') {
+    sendPulsoPrompt('¿Cuáles son los signos de alarma en Dengue según la OMS/OPS y qué plan de reanimación hídrica se indica?');
+  } else if (kind === 'pediatrico') {
+    sendPulsoPrompt('¿Cuál es el cálculo de dosis de paracetamol e ibuprofeno en mg/kg/día para un paciente pediátrico de 12 kg con fiebre?');
+  } else if (kind === 'tfg') {
+    sendPulsoPrompt('¿Cómo calculo la Tasa de Filtrado Glomerular con Cockcroft-Gault y cuándo debo ajustar fármacos nefrotóxicos?');
   }
 }
 
@@ -541,126 +687,273 @@ function resetPulsoToCorner() {
 }
 
 function _initPulsoDraggable() {
+
   const fab = document.getElementById('pulso-fab-btn');
+
   const header = document.querySelector('.pulso-chat-header');
+
   const root = document.getElementById('pulso-floating-root');
+
   if (!fab || !root) return;
 
-  let suppressNextClick = false;
 
-  const startDrag = (e, isFab) => {
+
+  let isDragging = false;
+
+  let didMove = false;
+
+  let startX = 0, startY = 0;
+
+  let origLeft = 0, origTop = 0;
+
+  let justDragged = false;
+
+
+
+  const onPointerDown = (e, isFab) => {
+
     if (e.button !== undefined && e.button !== 0) return;
+
     if (!isFab && e.target.closest('button')) return;
+
+
+
+    isDragging = true;
+
+    didMove = false;
+
+    startX = e.clientX;
+
+    startY = e.clientY;
+
+
+
     const rect = root.getBoundingClientRect();
-    _PulsoState.drag.active = true;
-    _PulsoState.drag.moved = false;
-    _PulsoState.drag.startX = e.clientX;
-    _PulsoState.drag.startY = e.clientY;
-    _PulsoState.drag.origLeft = rect.left;
-    _PulsoState.drag.origTop = rect.top;
-    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch (_) {}
+
+    origLeft = rect.left;
+
+    origTop = rect.top;
+
+
+
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+
+    window.addEventListener('pointerup', onPointerUp, { passive: false });
+
+    window.addEventListener('pointercancel', onPointerUp, { passive: false });
+
   };
 
-  const moveDrag = (e) => {
-    if (!_PulsoState.drag.active) return;
-    const dx = e.clientX - _PulsoState.drag.startX;
-    const dy = e.clientY - _PulsoState.drag.startY;
-    if (Math.hypot(dx, dy) > 6) {
-      _PulsoState.drag.moved = true;
-    }
-    if (!_PulsoState.drag.moved) return;
 
-    const maxLeft = Math.max(12, window.innerWidth - 96);
-    const maxTop = Math.max(12, window.innerHeight - 104);
-    const newLeft = Math.min(maxLeft, Math.max(12, _PulsoState.drag.origLeft + dx));
-    const newTop = Math.min(maxTop, Math.max(12, _PulsoState.drag.origTop + dy));
+
+  const onPointerMove = (e) => {
+
+    if (!isDragging) return;
+
+    const dx = e.clientX - startX;
+
+    const dy = e.clientY - startY;
+
+
+
+    if (!didMove && Math.hypot(dx, dy) > 5) {
+
+      didMove = true;
+
+      document.body.style.userSelect = 'none';
+
+      if (fab) fab.style.cursor = 'grabbing';
+
+    }
+
+
+
+    if (!didMove) return;
+
+    e.preventDefault();
+
+
+
+    const rootRect = root.getBoundingClientRect();
+
+    const maxLeft = Math.max(10, window.innerWidth - (rootRect.width || 120) - 10);
+
+    const maxTop = Math.max(10, window.innerHeight - (rootRect.height || 120) - 10);
+
+
+
+    const newLeft = Math.min(maxLeft, Math.max(10, origLeft + dx));
+
+    const newTop = Math.min(maxTop, Math.max(10, origTop + dy));
+
+
 
     root.style.right = 'auto';
+
     root.style.bottom = 'auto';
-    root.style.left = `${newLeft}px`;
-    root.style.top = `${newTop}px`;
+
+    root.style.left = `${Math.round(newLeft)}px`;
+
+    root.style.top = `${Math.round(newTop)}px`;
+
     root.classList.toggle('pulso-left-side', newLeft < 400);
+
   };
 
-  const endDrag = (e, isFab) => {
-    if (!_PulsoState.drag.active) return;
-    const wasMoved = _PulsoState.drag.moved;
-    _PulsoState.drag.active = false;
-    try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch (_) {}
-    if (isFab && wasMoved) {
-      suppressNextClick = true;
-      setTimeout(() => { suppressNextClick = false; }, 200);
+
+
+  const onPointerUp = (e) => {
+
+    if (!isDragging) return;
+
+    isDragging = false;
+
+    document.body.style.userSelect = '';
+
+    if (fab) fab.style.cursor = 'pointer';
+
+
+
+    window.removeEventListener('pointermove', onPointerMove);
+
+    window.removeEventListener('pointerup', onPointerUp);
+
+    window.removeEventListener('pointercancel', onPointerUp);
+
+
+
+    if (didMove) {
+
+      justDragged = true;
+
+      setTimeout(() => { justDragged = false; }, 250);
+
     }
+
   };
 
-  fab.addEventListener('pointerdown', (e) => startDrag(e, true));
-  fab.addEventListener('pointermove', moveDrag);
-  fab.addEventListener('pointerup', (e) => endDrag(e, true));
-  fab.addEventListener('pointercancel', (e) => endDrag(e, true));
 
-  // Inclinación 3D en tiempo real al pasar el cursor (rotateX + rotateY)
-  fab.addEventListener('pointermove', (e) => {
-    if (_PulsoState.drag.active) return;
-    const stage = fab.querySelector('.pulso-3d-stage');
-    if (!stage) return;
-    const r = fab.getBoundingClientRect();
-    const nx = ((e.clientX - (r.left + r.width / 2)) / (r.width / 2));
-    const ny = ((e.clientY - (r.top + r.height / 2)) / (r.height / 2));
-    const rotY = Math.max(-22, Math.min(22, nx * 20));
-    const rotX = Math.max(-18, Math.min(18, -ny * 16));
-    stage.style.transform = `rotateX(${rotX.toFixed(1)}deg) rotateY(${rotY.toFixed(1)}deg) translateZ(8px)`;
-  });
 
-  fab.addEventListener('pointerleave', () => {
-    const stage = fab.querySelector('.pulso-3d-stage');
-    if (stage) stage.style.transform = '';
-  });
-
-  fab.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (suppressNextClick) {
-      suppressNextClick = false;
-      return;
-    }
-    triggerPulsoClickReaction();
-    togglePulsoPanel();
-  });
+  fab.onpointerdown = (e) => onPointerDown(e, true);
 
   if (header) {
-    header.addEventListener('pointerdown', (e) => startDrag(e, false));
-    header.addEventListener('pointermove', moveDrag);
-    header.addEventListener('pointerup', (e) => endDrag(e, false));
-    header.addEventListener('pointercancel', (e) => endDrag(e, false));
+
+    header.onpointerdown = (e) => onPointerDown(e, false);
+
   }
+
+
+
+  fab.onclick = (e) => {
+
+    e.preventDefault();
+
+    e.stopPropagation();
+
+    if (justDragged || didMove) {
+
+      return;
+
+    }
+
+    triggerPulsoClickReaction();
+
+    togglePulsoPanel();
+
+  };
+
 }
+
+
 
 function initPulsoAssistant() {
+
   const fabAvatar = document.getElementById('pulso-fab-avatar');
-  if (fabAvatar) fabAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 106 });
+
+  if (fabAvatar) {
+
+    fabAvatar.innerHTML = PulsoAvatar({ state: _PulsoState.avatarState || 'reposo', size: 106 });
+
+  }
+
   const headerAvatar = document.getElementById('pulso-header-avatar');
-  if (headerAvatar) headerAvatar.innerHTML = PulsoAvatar({ state: 'reposo', size: 48 });
+
+  if (headerAvatar) {
+
+    headerAvatar.innerHTML = PulsoAvatar({ state: _PulsoState.avatarState || 'reposo', size: 48 });
+
+  }
+
+
 
   const urlInp = document.getElementById('cfg-pulso-url');
+
   if (urlInp) urlInp.value = _PulsoState.ollamaUrl;
+
   const modInp = document.getElementById('cfg-pulso-model');
+
   if (modInp) modInp.value = _PulsoState.model;
 
+
+
   _initPulsoDraggable();
+
   checkPulsoLocalAiStatus();
 
-  // Atajo global Ctrl+J / Cmd+J
-  window.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j') {
-      e.preventDefault();
-      togglePulsoPanel();
-    } else if (e.key === 'Escape' && _PulsoState.isOpen) {
-      togglePulsoPanel(false);
-    }
-  });
+
+
+  window.removeEventListener('keydown', _handlePulsoGlobalKey);
+
+  window.addEventListener('keydown', _handlePulsoGlobalKey);
+
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initPulsoAssistant);
-} else {
-  initPulsoAssistant();
+
+
+function _handlePulsoGlobalKey(e) {
+
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j') {
+
+    e.preventDefault();
+
+    togglePulsoPanel();
+
+  } else if (e.key === 'Escape' && _PulsoState.isOpen) {
+
+    togglePulsoPanel(false);
+
+  }
+
 }
+
+
+
+window.initPulsoAssistant = initPulsoAssistant;
+
+window.togglePulsoPanel = togglePulsoPanel;
+
+window.initPulsoAssistant = initPulsoAssistant;
+window.togglePulsoPanel = togglePulsoPanel;
+window.resetPulsoToCorner = resetPulsoToCorner;
+window.sendPulsoPrompt = sendPulsoPrompt;
+window.runPulsoQuickAction = runPulsoQuickAction;
+window.clearPulsoConversation = clearPulsoConversation;
+window.togglePulsoMicDictation = togglePulsoMicDictation;
+window.setPulsoAvatarState = setPulsoAvatarState;
+window.applyPulsoSoapToExpediente = applyPulsoSoapToExpediente;
+window._PulsoState = _PulsoState;
+
+
+
+if (document.readyState === 'loading') {
+
+  document.addEventListener('DOMContentLoaded', initPulsoAssistant);
+
+} else {
+
+  initPulsoAssistant();
+
+}
+
+window.addEventListener('load', initPulsoAssistant);
+

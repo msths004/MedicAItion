@@ -29,7 +29,13 @@ import httpx
 from fastapi import APIRouter, Body, Request
 from fastapi.responses import StreamingResponse
 
+from app.core.clinical_generative_engine import generate_conversational_response
 from app.core.entity_extractor import _heuristic_extract
+from app.core.local_llm_runner import (
+    find_local_gguf_model,
+    get_local_llm_status,
+    stream_local_llm_chat,
+)
 from app.db.chroma_store import get_collection
 from app.db.local_db import (
     Appointment,
@@ -50,12 +56,12 @@ _PULSO_SETTINGS: Dict[str, Any] = {
     "temperature": 0.2,
 }
 
-PULSO_SYSTEM_PROMPT = """Eres "Pulso", el asistente clínico de IA 100% LOCAL integrado en MedicAItion (Cruz Roja Mérida / Yucatán).
-REGLAS CLÍNICAS Y DE SEGURIDAD OBLIGATORIAS:
-1. NUNCA inventes datos clínicos, signos vitales, antecedentes ni hallazgos de exploración física.
-2. Todo dato clínico que falte o no haya sido dictado DEBE marcarse literalmente como [PENDIENTE] (ej. [PENDIENTE: exploración física], [PENDIENTE: signos vitales]).
-3. Toda sugerencia diagnóstica, código CIE-10 o propuesta de tratamiento DEBE incluir el aviso explícito: "⚠️ Revisar por el médico".
-4. Responde en español médico claro, estructurado y conciso.
+PULSO_SYSTEM_PROMPT = """Eres "Pulso" (Dr. Oso), asistente médico y clínico de IA 100% LOCAL integrado en MedicAItion (Cruz Roja Mérida / Yucatán).
+REGLAS CLÍNICAS Y MULTILINGÜES OBLIGATORIAS:
+1. CAPACIDAD MULTILINGÜE UNIVERSAL: Acepta y comprende prompts y consultas en CUALQUIER IDIOMA (español, inglés, francés, portugués, alemán, maya, etc.). Responde SIEMPRE en el MISMO IDIOMA en el que el usuario o médico redactó su pregunta o prompt.
+2. NUNCA inventes datos clínicos, signos vitales, antecedentes ni hallazgos de exploración física de pacientes reales no documentados.
+3. Todo dato clínico que falte o no haya sido dictado en una nota clínica DEBE marcarse literalmente como [PENDIENTE] (ej. [PENDIENTE: exploración física], [PENDIENTE: signos vitales]).
+4. Toda sugerencia diagnóstica, código CIE-10 o propuesta de tratamiento DEBE incluir el aviso explícito: "⚠️ Revisar por el médico tratante / Review by attending physician".
 5. Si el usuario pide un borrador SOAP, estructura siempre en:
    - S (Subjetivo)
    - O (Objetivo)
@@ -106,6 +112,8 @@ def _record_pulso_audit(action: str, operator: str, engine_used: str) -> None:
 
 async def _probe_ollama(base_url: Optional[str] = None) -> Dict[str, Any]:
     url = (base_url or _PULSO_SETTINGS["ollama_url"]).rstrip("/")
+    gguf_info = get_local_llm_status()
+
     try:
         async with httpx.AsyncClient(timeout=1.8) as client:
             res = await client.get(f"{url}/api/tags")
@@ -119,11 +127,24 @@ async def _probe_ollama(base_url: Optional[str] = None) -> Dict[str, Any]:
                     "available_models": models,
                     "active_engine": "ollama_local",
                     "status_label": "IA local conectada (Ollama)",
+                    "local_gguf": gguf_info,
                 }
     except Exception as exc:
         err_msg = str(exc)
     else:
         err_msg = f"HTTP {res.status_code}"
+
+    if gguf_info.get("has_local_gguf"):
+        return {
+            "ollama_connected": False,
+            "ollama_url": url,
+            "configured_model": gguf_info["model_name"],
+            "available_models": [gguf_info["model_name"]],
+            "active_engine": "local_gguf_engine",
+            "status_label": f"IA local activa (GGUF: {gguf_info['model_name']})",
+            "local_gguf": gguf_info,
+            "ollama_hint": "Ejecutando modelo neuronal GGUF 100% offline con llama-cpp-python.",
+        }
 
     return {
         "ollama_connected": False,
@@ -131,10 +152,11 @@ async def _probe_ollama(base_url: Optional[str] = None) -> Dict[str, Any]:
         "configured_model": _PULSO_SETTINGS["model"],
         "available_models": [],
         "active_engine": "embedded_clinical_local",
-        "status_label": "Ollama desconectado · Motor Clínico Local Activo",
+        "status_label": "IA local activa · Mini ChatGPT Clínico Offline",
+        "local_gguf": gguf_info,
         "ollama_hint": (
             f"No se detectó servidor Ollama en {url} ({err_msg}). "
-            "Pulso opera con el Motor Clínico Local integrado (ChromaDB CIE-10 + Extractor SOAP Offline)."
+            "Pulso opera con el Motor Clínico Local integrado (Mini ChatGPT Offline + ChromaDB CIE-10)."
         ),
     }
 
@@ -163,6 +185,28 @@ async def update_pulso_config(data: dict = Body(...), request: Request = None):
 
     status = await _probe_ollama(_PULSO_SETTINGS["ollama_url"])
     return {"status": "updated", "settings": _PULSO_SETTINGS, "connection": status}
+
+
+@router.get("/model-download")
+def check_model_download_status():
+    """Devuelve el estado de descarga y disponibilidad del modelo GGUF local."""
+    return get_local_llm_status()
+
+
+@router.post("/model-download")
+def trigger_model_download():
+    """Inicia la descarga en segundo plano del modelo Qwen2.5-0.5B GGUF si no existe."""
+    st = get_local_llm_status()
+    if st["has_local_gguf"]:
+        return {"status": "already_installed", "model": st["model_name"]}
+    if st["is_downloading"]:
+        return {"status": "in_progress", "downloaded_mb": st["downloaded_part_mb"]}
+
+    import subprocess
+    import sys
+    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "download_local_llm.py"))
+    subprocess.Popen([sys.executable, script_path])
+    return {"status": "started", "target": "qwen2.5-0.5b-instruct-q4_k_m.gguf"}
 
 
 @router.post("/audit")
@@ -489,41 +533,39 @@ def _classify_and_execute_local(prompt: str, active_curp: Optional[str] = None) 
     q = _norm(prompt)
     bundle = _find_patient_from_query(prompt, active_curp)
 
-    if any(k in q for k in ("soap", "dictado", "redacta", "nota clinica", "borrador", "subjetivo", "motivo:")):
+    # 1. Petición explícita de nota o borrador SOAP
+    if any(k in q for k in ("borrador soap", "nota soap", "formato soap", "haz un soap", "crea un soap", "redacta soap", "dictado soap", "genera soap", "generar soap")):
         return _build_soap_draft_response(prompt, bundle)
 
-    if any(k in q for k in ("busca", "buscar", "citas", "cita", "agenda", "directorio", "quienes", "lista de pacientes")):
+    # 2. Búsqueda de pacientes y agenda
+    if any(k in q for k in ("busca paciente", "buscar paciente", "citas de hoy", "agenda de hoy", "programadas hoy", "directorio de pacientes")):
         return _build_natural_search_response(prompt)
 
-    if any(k in q for k in ("resumen", "antecedentes", "alergias", "historial", "signos", "vitales", "paciente actual", "quien es")):
+    # 3. Resumen previo del paciente
+    if any(k in q for k in ("resumen del paciente", "antecedentes del paciente", "alergias del paciente", "historial del paciente", "quien es el paciente")):
         return _build_patient_summary_response(bundle)
 
-    # Si parece un relato clínico con síntomas/fármacos, estructurar como SOAP seguro
-    if any(k in q for k in ("fiebre", "dolor", "cefalea", "tos", "mg", "cada ", "presion", "glucosa", "paciente de")):
+    # 4. Caso clínico dictado específicamente para ingreso (no pregunta)
+    if (q.startswith("paciente ") or q.startswith("caso ")) and any(k in q for k in ("acude a consulta", "refiere que", "ingresa con", "motivo de ingreso")):
         return _build_soap_draft_response(prompt, bundle)
 
-    # Respuesta general asistida combinando resumen del paciente activo + guía
-    summary = _build_patient_summary_response(bundle)
+    # 5. Mini ChatGPT Clínico Local: responde a CUALQUIER pregunta médica o general en español
+    gen = generate_conversational_response(prompt, bundle)
     return {
-        "avatar_state": summary["avatar_state"],
+        "avatar_state": gen["avatar_state"],
         "action_audit": "PULSO_CONSULTA_IA",
-        "text": (
-            f"Soy **Pulso**, tu copiloto clínico de IA 100% local. Puedo ayudarte con:\n"
-            f"1. **Resumen previo del paciente** (*\"Dame el resumen previo del paciente\"*)\n"
-            f"2. **Borrador SOAP desde dictado** (*\"Borrador SOAP: paciente masculino refiere dolor...\"*)\n"
-            f"3. **Búsqueda natural de pacientes y citas** (*\"Busca citas de hoy\"* o *\"Busca paciente Kevin\"*)\n\n"
-            f"---\n{summary['text']}"
-        ),
+        "text": gen["text"],
     }
 
 
 @router.post("/chat-stream")
 async def pulso_chat_stream(data: dict = Body(...), request: Request = None):
     """
-    Endpoint de chat en streaming (NDJSON) para el asistente Pulso.
-    - Si Ollama (`http://localhost:11434`) está disponible, transmite tokens reales desde Ollama
-      enriquecidos con el contexto local en memoria (sin salir del equipo).
-    - Si Ollama está desconectado, transmite en streaming desde el Motor Clínico Local integrado.
+    Endpoint de chat en streaming (NDJSON) para el asistente Pulso / Dr. Oso.
+    - Mini ChatGPT Clínico 100% LOCAL:
+      1) Si Ollama (`http://localhost:11434`) está disponible, transmite tokens reales desde Ollama.
+      2) Si hay un modelo GGUF local (Qwen2.5 / Llama) en `models/`, ejecuta la red neuronal con llama-cpp.
+      3) Si no, transmite desde el Motor Clínico Generativo Local integrado con razonamiento clínico profundo.
     - Registra la acción en la bitácora NOM-024 sin almacenar datos sensibles.
     """
     prompt = str(data.get("prompt") or data.get("message") or "").strip()
@@ -535,25 +577,28 @@ async def pulso_chat_stream(data: dict = Body(...), request: Request = None):
     local_result = _classify_and_execute_local(prompt, active_curp)
     probe = await _probe_ollama(ollama_url)
 
-    engine_used = f"ollama:{model_name}" if probe["ollama_connected"] else "embedded_clinical_local"
+    engine_used = probe.get("active_engine") or "embedded_clinical_local"
+    if probe.get("ollama_connected"):
+        engine_used = f"ollama:{model_name}"
     _record_pulso_audit(local_result["action_audit"], operator, engine_used)
 
     async def event_generator() -> AsyncGenerator[bytes, None]:
         meta_chunk = {
             "type": "meta",
             "engine": engine_used,
-            "ollama_connected": probe["ollama_connected"],
+            "ollama_connected": probe.get("ollama_connected", False),
+            "local_gguf_ready": probe.get("local_gguf", {}).get("has_local_gguf", False),
             "avatar_state": local_result.get("avatar_state", "reposo"),
             "soap_structured": local_result.get("soap_structured"),
             "audit_logged": True,
         }
         yield (json.dumps(meta_chunk, ensure_ascii=False) + "\n").encode("utf-8")
 
-        if probe["ollama_connected"]:
+        # 1. Modo Ollama Local (si está conectado)
+        if probe.get("ollama_connected"):
             try:
                 context_msg = (
-                    f"CONTEXTO LOCAL EN MEMORIA (NO INVENTAR NADA FUERA DE ESTO):\n"
-                    f"{local_result['text']}\n\n"
+                    f"CONTEXTO LOCAL EN MEMORIA:\n{local_result['text']}\n\n"
                     f"SOLICITUD DEL MÉDICO:\n{prompt}"
                 )
                 payload = {
@@ -583,15 +628,40 @@ async def pulso_chat_stream(data: dict = Body(...), request: Request = None):
             except Exception:
                 pass
 
-        # Streaming local token a token desde el motor clínico integrado
+        # 2. Modo GGUF Local (llama-cpp-python) si el modelo está descargado
+        # Para consultas abiertas y mini ChatGPT clínico multilingüe
+        gguf_model = find_local_gguf_model()
+        if gguf_model and local_result.get("action_audit") == "PULSO_CONSULTA_IA":
+            try:
+                messages = [
+                    {"role": "system", "content": PULSO_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ]
+                has_tokens = False
+                token_count = 0
+                for token in stream_local_llm_chat(messages, temperature=0.25):
+                    # Protección ante tokens degenerados
+                    if token.strip() == "G" and token_count == 0:
+                        continue
+                    has_tokens = True
+                    token_count += 1
+                    yield (json.dumps({"type": "token", "content": token}, ensure_ascii=False) + "\n").encode("utf-8")
+                    await asyncio.sleep(0.003)
+                if has_tokens and token_count > 3:
+                    yield (json.dumps({"type": "done"}, ensure_ascii=False) + "\n").encode("utf-8")
+                    return
+            except Exception as e:
+                print(f"[PulsoStream] Aviso en inferencia GGUF local: {e}")
+
+        # 3. Modo Motor Clínico Generativo Local Integrado (Streaming inmediato palabra a palabra)
         words = re.split(r"(\s+)", local_result["text"])
         chunk_buf = ""
         for idx, w in enumerate(words):
             chunk_buf += w
-            if idx % 4 == 3 or idx == len(words) - 1:
+            if idx % 3 == 2 or idx == len(words) - 1:
                 yield (json.dumps({"type": "token", "content": chunk_buf}, ensure_ascii=False) + "\n").encode("utf-8")
                 chunk_buf = ""
-                await asyncio.sleep(0.012)
+                await asyncio.sleep(0.015)
 
         yield (json.dumps({"type": "done"}, ensure_ascii=False) + "\n").encode("utf-8")
 

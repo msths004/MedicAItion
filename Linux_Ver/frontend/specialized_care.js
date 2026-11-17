@@ -70,6 +70,9 @@ async function _populateExpPatientSelector() {
           return `<option value="${_expEsc(p.curp)}">${_expEsc(name)} (${_expEsc(p.curp)})</option>`;
         }).join('')
       : '<option value="">Sin pacientes registrados</option>';
+    if (window.OmniSearch && typeof window.OmniSearch.refreshAll === 'function') {
+      window.OmniSearch.refreshAll();
+    }
     if (prev && [...sel.options].some(o => o.value === prev)) {
       sel.value = prev;
     } else if (list.length) {

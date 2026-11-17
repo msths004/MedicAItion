@@ -19,7 +19,7 @@ class TestPulsoLocalAI(unittest.TestCase):
         self.assertIn("ollama_url", data)
         self.assertIn("http://localhost:11434", data["ollama_url"])
         self.assertIn("active_engine", data)
-        self.assertIn(data["active_engine"], ("ollama_local", "embedded_clinical_local"))
+        self.assertIn(data["active_engine"], ("ollama_local", "embedded_clinical_local", "local_gguf_engine"))
 
         # Actualizar configuración del modelo local
         cfg_res = self.client.post(

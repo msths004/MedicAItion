@@ -69,7 +69,7 @@ def _run_pipeline(
             patient_sex = patient_data.get("sexo", "Otro")
             patient_age = patient_data.get("edad", None)
 
-    entities = extract_entities(text, mode=llm_mode, api_key=api_key)
+    entities = extract_entities(text, mode=llm_mode, api_key=api_key, patient_context=patient_data)
 
     # Asegurar que demográficos exista como dict
     if "demograficos" not in entities or not isinstance(entities["demograficos"], dict):
@@ -235,3 +235,93 @@ async def get_nota_medica(curp: str):
             status_code=500,
             detail=f"Error al generar la nota médica: {str(e)}"
         )
+
+
+@router.get("/prescription-ocr/status")
+async def prescription_ocr_status():
+    """
+    Devuelve el estado del motor local de visión y transcripción de recetas médicas
+    (RapidOCR ONNX + Microsoft TrOCR-Handwritten + Léxico Farmacológico Cofepris)
+    y garantiza la generación de las recetas manuscritas de ejemplo.
+    """
+    try:
+        from app.core.prescription_ocr_engine import (
+            get_prescription_ocr_status,
+            ensure_sample_prescriptions,
+            SAMPLE_PRESCRIPTIONS_DATA,
+        )
+        ensure_sample_prescriptions()
+        status = get_prescription_ocr_status()
+        samples = [
+            {
+                "id": k,
+                "title": v["title"],
+                "image_url": f"assets/sample_prescriptions/{v['filename']}",
+                "dx": v["dx"],
+            }
+            for k, v in SAMPLE_PRESCRIPTIONS_DATA.items()
+        ]
+        status["samples"] = samples
+        return JSONResponse(content=status)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error verificando estado de OCR médico: {str(e)}")
+
+
+@router.post("/prescription-ocr")
+async def process_prescription_ocr(
+    image: UploadFile = File(...),
+    curp: Optional[str] = Form(None),
+):
+    """
+    Transcribe y estructura una imagen o fotografía de receta médica 100% en local
+    sin enviar ningún dato ni imagen a la nube.
+    """
+    from app.core.prescription_ocr_engine import transcribe_prescription_image
+
+    suffix = os.path.splitext(image.filename or "receta.png")[1] or ".png"
+    tmp_input = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        shutil.copyfileobj(image.file, tmp_input)
+        tmp_input.close()
+
+        result = transcribe_prescription_image(tmp_input.name, curp=curp)
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al transcribir imagen de receta: {str(e)}")
+    finally:
+        if tmp_input and hasattr(tmp_input, "name") and os.path.exists(tmp_input.name):
+            try:
+                os.unlink(tmp_input.name)
+            except OSError:
+                pass
+
+
+@router.post("/prescription-ocr/sample/{sample_id}")
+async def process_sample_prescription_ocr(
+    sample_id: str,
+    curp: Optional[str] = Form(None),
+):
+    """
+    Ejecuta el motor de transcripción local sobre una de las recetas manuscritas
+    de demostración ('respiratoria', 'cardiometabolica', 'gastro').
+    """
+    from app.core.prescription_ocr_engine import (
+        ensure_sample_prescriptions,
+        transcribe_prescription_image,
+        SAMPLE_PRESCRIPTIONS_DATA,
+    )
+
+    paths = ensure_sample_prescriptions()
+    if sample_id not in paths:
+        raise HTTPException(status_code=404, detail=f"Receta de ejemplo '{sample_id}' no encontrada.")
+
+    try:
+        spec = SAMPLE_PRESCRIPTIONS_DATA[sample_id]
+        result = transcribe_prescription_image(paths[sample_id], curp=curp)
+        result["sample_id"] = sample_id
+        result["sample_title"] = spec["title"]
+        result["sample_image_url"] = f"assets/sample_prescriptions/{spec['filename']}"
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error procesando receta de ejemplo: {str(e)}")
+

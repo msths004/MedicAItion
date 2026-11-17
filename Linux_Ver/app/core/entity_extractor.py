@@ -6,11 +6,16 @@ load_dotenv()
 
 CONFIG_PATH = "config.json"
 
-SYSTEM_PROMPT = """Eres un asistente médico especializado en extracción y redacción de información clínica en español mexicano.
+SYSTEM_PROMPT = """Eres el Asistente Clínico Inteligente de Alta Eficiencia de MedicAItion, optimizado bajo el estándar de flujo continuo de alta velocidad de Salud Digna y la normativa mexicana NOM-004-SSA3-2012 y NOM-024-SSA3-2012.
+
+Tu objetivo es procesar el dictado/narrativa del médico, cruzarlo con el expediente activo del paciente y generar instantáneamente una nota SOAP impecable, receta médica estructurada, códigos CIE-10 precisos, órdenes de estudios y escudo de seguridad CDSS sin requerir clics adicionales.
+
 Analiza el texto médico y realiza las siguientes tareas:
-1. Extrae las entidades clínicas presentes (sintomas, diagnósticos, signos vitales, tratamientos, medicamentos).
-2. Redacta las secciones narrativas de una Nota Médica de Evolución conforme a la NOM-004-SSA3-2012.
-3. Genera indicaciones claras y directas redactadas para el paciente (Receta y cuidados).
+1. Extrae las entidades clínicas presentes (síntomas, diagnósticos, signos vitales, tratamientos, medicamentos).
+2. Redacta las secciones narrativas de una Nota Médica de Evolución conforme a la NOM-004-SSA3-2012 (Subjetivo, Objetivo, Análisis, Plan).
+3. Genera una Receta Médica digitalizada clara para el paciente con denominación genérica oficial (DCI), dosis, vía, frecuencia exacta y duración.
+4. Identifica estudios de laboratorio o gabinete sugeridos y signos de alarma.
+5. Valida el escudo de seguridad farmacológica (CDSS) cotejando contra las alergias y contraindicaciones del paciente.
 
 Responde ÚNICAMENTE con un JSON válido con esta estructura exacta, sin texto adicional:
 {
@@ -20,50 +25,63 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta, sin texto a
     "sexo": null,
     "curp": null
   },
-  "texto_redactado": "Resumen formal y redactado de la consulta en lenguaje médico profesional, omitiendo titubeos, muletillas o repeticiones del diálogo original.",
+  "texto_redactado": "Resumen formal y redactado de la consulta en lenguaje médico profesional de alta calidad, libre de titubeos, muletillas o repeticiones del dictado.",
   "sintomas_referidos": [],
   "diagnosticos_tentativos": [],
   "signos_vitales": [],
   "tratamientos": [],
   "medicamentos": [
     {
-      "nombre": "Nombre del fármaco",
-      "dosis": "cantidad y unidad",
-      "via": "oral/IV/IM/tópica/etc",
-      "periodicidad": "cada X horas/días/según sea necesario",
-      "duracion": "duración del tratamiento (ej: por 7 días, dosis única, hasta terminar caja)"
+      "nombre": "Nombre genérico del fármaco (DCI)",
+      "presentacion": "Tabletas / Suspensión / Solución inyectable / etc.",
+      "dosis": "cantidad y unidad (ej: 500 mg, 1 tableta)",
+      "via": "Oral / Intramuscular / Intravenosa / Tópica / Inhalada",
+      "periodicidad": "cada X horas con horario exacto",
+      "duracion": "duración en días (ej: por 7 días, dosis única)"
     }
   ],
   "nota_clinica": {
-    "motivo_consulta": "Razón principal por la que acude el paciente, redactada en lenguaje médico formal",
-    "evolucion_padecimiento": "SOLO si el texto menciona evolución previa o seguimiento. Si es un ingreso nuevo o de urgencias, escribir exactamente: 'Paciente de ingreso reciente. Sin evolución previa documentada.'",
-    "exploracion_fisica": "Hallazgos relevantes de la exploración física. Si no se mencionan, escribir: 'Pendiente de exploración física.'",
-    "diagnostico_integral": "SOLO diagnósticos explícitamente mencionados en el texto. NO inventar diagnósticos a partir de los síntomas. Si no se menciona ningún diagnóstico, escribir: 'Pendiente de diagnóstico. Se requiere valoración clínica integral.'",
-    "pronostico": "SOLO si el texto lo menciona o puede inferirse claramente. Si no hay información suficiente, escribir: 'Pendiente de valoración para establecer pronóstico.'",
-    "plan_tratamiento": "Indicaciones médicas mencionadas en el texto: medicamentos con dosis, vía y periodicidad; estudios solicitados; medidas indicadas."
+    "motivo_consulta": "Razón principal por la que acude el paciente, en lenguaje médico formal",
+    "evolucion_padecimiento": "Semiología completa del padecimiento actual (inicio, cronología, intensidad, factores agravantes/atenuantes)",
+    "exploracion_fisica": "Hallazgos de la exploración física cefalocaudal y signos vitales consolidados",
+    "diagnostico_integral": "Juicio clínico con código CIE-10 oficial de la Secretaría de Salud de México",
+    "pronostico": "Pronóstico para la vida y para la función (bueno, reservado o grave)",
+    "plan_tratamiento": "Plan terapéutico integral: farmacológico, higiénico-dietético, estudios solicitados y revaloración"
   },
   "diagnostico_diferencial": [
     {
-      "condicion": "Nombre de la entidad o diagnóstico diferencial a considerar",
+      "condicion": "Nombre de la entidad clínica diferencial",
       "nivel": "Principal | Alternativo | Descartar (Grave)",
-      "justificacion": "Por qué se considera según síntomas/signos del caso",
-      "accion_descarte": "Estudio o dato clínico sugerido para confirmar o descartar"
+      "justificacion": "Por qué se considera según el cuadro clínico",
+      "accion_descarte": "Estudio paraclínico o maniobra para confirmar/descartar"
     }
   ],
-  "receta_paciente": "Instrucciones de cuidado y administración de medicamentos redactadas de forma clara y directa en español para que el paciente las entienda (ej: '1. Tomar Paracetamol 500mg cada 8 horas por 3 días...')"
+  "estudios_solicitados": [
+    {
+      "estudio": "Nombre del estudio (ej. Biometría Hemática Completa, Glucosa en ayuno)",
+      "justificacion": "Motivo clínico del estudio",
+      "tipo": "Laboratorio | Gabinete | Imagenología"
+    }
+  ],
+  "alertas_seguridad": [
+    {
+      "nivel": "CRÍTICA | ADVERTENCIA | INFORMATIVA",
+      "mensaje": "Alerta de alergia o validación farmacológica segura contra antecedentes del paciente"
+    }
+  ],
+  "datos_alarma": [
+    "Dificultad respiratoria o estridor",
+    "Fiebre persistente que no cede",
+    "Dolor torácico opresivo"
+  ],
+  "revaloracion_dias": 7,
+  "receta_paciente": "Instrucciones de cuidado y administración redactadas de forma clara y amigable en segunda persona para el paciente."
 }
 
 Reglas ESTRICTAS:
-- "texto_redactado": Redacción resumida y formal del encuentro médico libre de repeticiones, titubeos, muletillas o pausas de la conversación original, redactado con terminología médica profesional coherente.
-- "sintomas_referidos": manifestaciones clínicas que refiere o presenta el paciente (dolor, mareo, fiebre, etc.). Son SOLO síntomas, NUNCA diagnósticos, ni tratamientos, ni medicamentos (ej: NO poner 'Paracetamol' aquí).
-- "diagnosticos_tentativos": diagnósticos o enfermedades EXPLÍCIPAMENTE mencionados en el texto (ejemplo: "se diagnosticó diabetes", "tiene hipertensión"). NUNCA inferir diagnósticos a partir de los síntomas. Si el texto solo menciona síntomas y no un diagnóstico formal, dejar esta lista VACÍA []. NUNCA incluir medicamentos aquí.
-- "signos_vitales": valores numéricos como temperatura, presión arterial, frecuencia cardíaca, SpO2, peso, talla.
-- "tratamientos": procedimientos o terapias indicadas (NO medicamentos). Por ejemplo: "sutura", "reducción de fractura", "lavado gástrico".
-- "medicamentos": fármacos prescritos. OBLIGATORIO incluir dosis, vía de administración, periodicidad y duración en ESPAÑOL. Traducir TODA la información al español (ejemplo: "as needed" → "según sea necesario", "twice daily" → "cada 12 horas", "for 7 days" → "por 7 días").
-- "nota_clinica": Redacta cada sección en lenguaje médico formal. NO repetir la misma información entre secciones. Cada sección debe contener información DIFERENTE y ÚNICA. Si una sección no tiene información suficiente, usar las frases por defecto indicadas arriba.
-- "receta_paciente": Debe ser una redacción amigable en segunda persona (dirigida al paciente), listando los medicamentos y recomendaciones para llevarse a casa.
-- Si un campo no está presente en el texto, déjalo como null o lista vacía.
-- Responde solo con el JSON, sin explicaciones."""
+- Traduce cualquier expresión coloquial ("calentura", "cuerpo cortado") a lenguaje clínico formal ("fiebre cuantificada", "mialgias y artralgias").
+- Si el contexto del paciente incluye ALERGIAS (ej. Penicilinas, AINEs), NUNCA prescribas medicamentos de esa familia; emite una alerta en 'alertas_seguridad' y sugiere una opción terapéutica segura.
+- Responde solo con el JSON, sin explicaciones ni rodeos."""
 
 _llm = None
 
@@ -423,7 +441,35 @@ def _heuristic_extract(text: str) -> dict:
     return result
 
 
-def extract_entities(text: str, mode: str = "auto", api_key: str = None) -> dict:
+
+def _build_user_prompt_with_context(text: str, patient_context: dict = None) -> str:
+    if not patient_context:
+        return f"Extrae las entidades médicas y redacta la nota clínica del siguiente texto:\n\n{text}"
+    
+    allergies = patient_context.get("alergias") or []
+    if isinstance(allergies, list):
+        al_str = ", ".join(a.get("descripcion", str(a)) for a in allergies) or "Sin alergias conocidas"
+    else:
+        al_str = str(allergies)
+        
+    antecedentes = patient_context.get("antecedentes") or []
+    if isinstance(antecedentes, list):
+        ant_str = ", ".join(a.get("descripcion", str(a)) for a in antecedentes) or "Sin antecedentes patológicos relevantes"
+    else:
+        ant_str = str(antecedentes)
+
+    ctx_block = (
+        f"[CONTEXTO PRECARGADO DEL PACIENTE (TRIAGE / SALUD DIGNA)]\n"
+        f"- Nombre: {patient_context.get('nombre_completo') or patient_context.get('nombre') or 'No especificado'}\n"
+        f"- CURP: {patient_context.get('curp') or 'N/A'} | Edad: {patient_context.get('edad')} años | Sexo: {patient_context.get('sexo')}\n"
+        f"- Tipo de Sangre: {patient_context.get('tipo_sangre') or 'O+'}\n"
+        f"- ALERGIAS CRÍTICAS REPORTADAS: {al_str}\n"
+        f"- ANTECEDENTES RELEVANTES: {ant_str}\n"
+        f"- ANOTACIONES: {patient_context.get('anotaciones_generales') or 'Ninguna'}\n"
+    )
+    return f"{ctx_block}\n[DICTADO O NARRATIVA MÉDICA A PROCESAR]:\n{text}"
+
+def extract_entities(text: str, mode: str = "auto", api_key: str = None, patient_context: dict = None) -> dict:
     """
     Extrae entidades clínicas y genera secciones narrativas NOM-004.
     mode: "auto", "claude", o "local"
@@ -449,7 +495,7 @@ def extract_entities(text: str, mode: str = "auto", api_key: str = None) -> dict
                     temperature=0.1,
                     system=SYSTEM_PROMPT,
                     messages=[
-                        {"role": "user", "content": f"Extrae las entidades médicas y redacta la nota clínica del siguiente texto:\n\n{text}"}
+                        {"role": "user", "content": _build_user_prompt_with_context(text, patient_context)}
                     ]
                 )
                 content = response.content[0].text
@@ -468,7 +514,7 @@ def extract_entities(text: str, mode: str = "auto", api_key: str = None) -> dict
             response = llm.create_chat_completion(
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user",   "content": f"Extrae las entidades médicas y redacta la nota clínica del siguiente texto:\n\n{text}"},
+                    {"role": "user", "content": _build_user_prompt_with_context(text, patient_context)},
                 ],
                 temperature=0.1,
                 max_tokens=2048,

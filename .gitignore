@@ -27,3 +27,8 @@ desktop.ini
 
 data/.medicaition_master.key
 data/*.key
+
+# Large local models
+models/
+*.gguf
+*.safetensors
