@@ -348,7 +348,7 @@ function renderResults(data) {
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('results-tabs').style.display = 'flex';
 
-  setResultTab('original');
+  setResultTab('nota');
 
   const iframe = document.getElementById('nota-iframe');
   if (data.nota_medica_html) {
