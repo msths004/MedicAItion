@@ -708,15 +708,26 @@ async function initHerramientasView() {
 async function _populateToolsPatients(selectedCurp) {
   const sel = document.getElementById('ask-patient-select');
   if (!sel) return;
-  const prev = selectedCurp || sel.value;
+  const prev = selectedCurp || sel.value || (window.AppState && (window.AppState.activeCurp || window.AppState.selectedPatientCurp)) || '';
   try {
     const patients = await _getJson(`${API}/api/patients/`);
     sel.innerHTML = patients.map(p => {
-      const name = p.nombre || p.nombre_completo || p.curp;
+      const name = p.nombre || p.nombre_completo || `${p.nombres || ''} ${p.primer_apellido || ''}`.trim() || p.curp;
       return `<option value="${_opsEsc(p.curp)}">${_opsEsc(name)} (${_opsEsc(p.curp)})</option>`;
     }).join('') || '<option value="">Sin pacientes registrados</option>';
-    if (prev && patients.some(p => p.curp === prev)) sel.value = prev;
+    if (prev && patients.some(p => p.curp === prev)) {
+      sel.value = prev;
+    } else if (patients.length > 0 && !sel.value) {
+      sel.value = patients[0].curp;
+    }
   } catch { /* ignore */ }
+
+  if (window.OmniSearch && typeof window.OmniSearch.upgradeSelect === 'function') {
+    window.OmniSearch.upgradeSelect('ask-patient-select');
+  }
+  if (window.OmniSearch && typeof window.OmniSearch.syncAllTriggers === 'function' && sel.value) {
+    window.OmniSearch.syncAllTriggers(sel.value);
+  }
 }
 
 function _selectedToolCurp() {

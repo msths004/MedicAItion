@@ -583,6 +583,7 @@
       _upgradeNativeSelectToCombobox('dashboard-patient-select');
       _upgradeNativeSelectToCombobox('consulta-patient-dropdown');
       _upgradeNativeSelectToCombobox('lab-patient-select');
+      _upgradeNativeSelectToCombobox('ask-patient-select');
 
       console.log('✅ OmniSearch Premium Engine v3.0 listo para miles de pacientes.');
     },
@@ -790,9 +791,12 @@
       }
 
       // Sincronizar todos los comboboxes y selects nativos
-      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select'].forEach(id => {
+      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select', 'ask-patient-select'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.value = upperCurp;
+        if (el) {
+          el.value = upperCurp;
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         if (patient) _updateComboboxTrigger(id, patient);
       });
 
@@ -806,6 +810,9 @@
           window.onConsultaPatientSelect(upperCurp);
         } else if (selectId === 'lab-patient-select' && typeof window.onLabPatientChange === 'function') {
           window.onLabPatientChange(upperCurp);
+        } else if (selectId === 'ask-patient-select') {
+          const askBox = document.getElementById('ask-response-box');
+          if (askBox) askBox.textContent = 'Paciente seleccionado. Escribe una pregunta o pulsa un botón rápido arriba para consultar su historial.';
         }
       } catch (err) {
         console.error('[OmniSearch] Error en chooseComboboxOption:', err);
@@ -817,11 +824,15 @@
       }
     },
 
+    upgradeSelect(selectId, onSelectCallback) {
+      _upgradeNativeSelectToCombobox(selectId, onSelectCallback);
+    },
+
     syncAllTriggers(curp) {
       if (!curp) return;
       const upperCurp = String(curp).trim().toUpperCase();
       const patient = OmniSearchState.patientsCache.find(p => (p.curp || '').toUpperCase() === upperCurp);
-      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select'].forEach(id => {
+      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select', 'ask-patient-select'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = upperCurp;
         if (patient) _updateComboboxTrigger(id, patient);
@@ -832,7 +843,7 @@
     refreshAll() {
       OmniSearchState.patientsCache = [];
       _ensurePatientsCache().then(() => {
-        ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select'].forEach(id => {
+        ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select', 'ask-patient-select'].forEach(id => {
           _refreshComboboxData(id);
         });
       });
