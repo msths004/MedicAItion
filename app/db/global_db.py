@@ -281,10 +281,12 @@ def search_patient_network(
     db = SessionLocal()
     try:
         q = (query or "").strip().upper()
-        # Buscar por coincidencia en CURP o Nombre
+        # Buscar por coincidencia en CURP, Nombre, Diagnóstico o Alergias
         entries = db.query(PatientIndex).filter(
             (PatientIndex.curp.ilike(f"%{q}%")) |
-            (PatientIndex.nombre.ilike(f"%{q}%"))
+            (PatientIndex.nombre.ilike(f"%{q}%")) |
+            (PatientIndex.diagnosticos_clave.ilike(f"%{q}%")) |
+            (PatientIndex.alergias_criticas.ilike(f"%{q}%"))
         ).all()
 
         if not entries:
