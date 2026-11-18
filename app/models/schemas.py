@@ -67,6 +67,8 @@ class InstitutionCreate(BaseModel):
     clues: str
     nombre: str
     ubicacion: Optional[str] = None
+    nivel: Optional[str] = "Segundo Nivel"
+    red: Optional[str] = "Red Sureste / SSY"
 
 
 class PatientSearchResult(BaseModel):
@@ -74,4 +76,34 @@ class PatientSearchResult(BaseModel):
     nombre: Optional[str]
     clues_institucion: str
     timestamp: str
+
+
+class NetworkSearchRequest(BaseModel):
+    query: str
+    access_mode: str = "urgencias_rojo"  # "urgencias_rojo" | "interconsulta_consentida"
+    doctor_nombre: Optional[str] = "Dr. Roberto Morales"
+    doctor_cedula: Optional[str] = "CED-9482710"
+    clues_solicitante: Optional[str] = "YUC-CR-001"
+    hospital_solicitante: Optional[str] = "Cruz Roja Mexicana Delegación Mérida"
+    justificacion: Optional[str] = "Atención médica hospitalaria"
+
+
+class ReferralCreateRequest(BaseModel):
+    patient_curp: str
+    patient_nombre: str
+    clues_origen: str = "YUC-CR-001"
+    hospital_origen_nombre: str = "Cruz Roja Mexicana Delegación Mérida"
+    clues_destino: str
+    hospital_destino_nombre: str
+    motivo_envio: str
+    diagnostico_cie10: str
+    prioridad: str = "Ordinaria"  # "Urgencia", "Prioritaria", "Ordinaria"
+    medico_solicitante: str = "Dr. Roberto Morales"
+    cedula_solicitante: str = "CED-9482710"
+    detalles_clinicos: Optional[str] = None
+
+
+class ReferralStatusUpdateRequest(BaseModel):
+    estado: str  # "Pendiente", "Aceptada", "En_Transito", "Completada", "Cancelada"
+
 

@@ -24,6 +24,7 @@ function switchMainTab(tab) {
   const btnIa   = document.getElementById('nav-btn-ia-tools');
   const btnCfg  = document.getElementById('nav-btn-config');
   const btnLegal = document.getElementById('nav-btn-legal');
+  const btnRedHosp = document.getElementById('nav-btn-red-hospitalaria');
 
   if (btnDash) btnDash.classList.toggle('active', tab === 'dashboard');
   if (btnCons) btnCons.classList.toggle('active', tab === 'consulta');
@@ -34,6 +35,7 @@ function switchMainTab(tab) {
   if (btnIa)   btnIa.classList.toggle('active', tab === 'herramientas');
   if (btnCfg)  btnCfg.classList.toggle('active', tab === 'config');
   if (btnLegal) btnLegal.classList.toggle('active', tab === 'legal');
+  if (btnRedHosp) btnRedHosp.classList.toggle('active', tab === 'red-hospitalaria');
 
   // Actualizar modo en el body para CSS
   document.body.className = `mode-${tab}`;
@@ -48,7 +50,8 @@ function switchMainTab(tab) {
     'reportes': { id: 'panel-reports-section', display: 'block', init: () => typeof renderReportsView === 'function' && renderReportsView() },
     'herramientas': { id: 'panel-herramientas-section', display: 'block', init: () => typeof initHerramientasView === 'function' && initHerramientasView() },
     'config': { id: 'panel-config-section', display: 'block', init: () => typeof loadSecurityConfigView === 'function' && loadSecurityConfigView() },
-    'legal': { id: 'panel-legal-section', display: 'block', init: () => typeof loadLegalView === 'function' && loadLegalView() }
+    'legal': { id: 'panel-legal-section', display: 'block', init: () => typeof loadLegalView === 'function' && loadLegalView() },
+    'red-hospitalaria': { id: 'panel-red-hospitalaria-section', display: 'block', init: () => typeof initRedHospitalariaView === 'function' && initRedHospitalariaView() }
   };
 
   // Ocultar estrictamente todas las vistas excepto la activa
