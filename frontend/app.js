@@ -322,7 +322,7 @@ async function submitData() {
     AppState.lastProcessedCurp = data.curp || curp;
     AppState.lastProcessedRecord = data; // Guardar borrador en memoria
     renderResults(data);
-    loadPatients();
+    setTimeout(() => { if (typeof loadPatients === 'function') loadPatients(); }, 150);
 
     // Mostrar el botón de asociar nota después de generar exitosamente
     document.getElementById('btn-associate-note').style.display = 'flex';

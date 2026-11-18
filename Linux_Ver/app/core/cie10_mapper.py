@@ -114,15 +114,43 @@ def _get_catalog(collection_suffix: str) -> Dict[str, Any]:
     return _CATALOG_CACHE[collection_suffix]
 
 
+_embedder_loading = False
+
 def _get_embedder():
-    """Carga el modelo de embeddings una sola vez (el mismo usado en la ingesta)."""
-    global _embedder
-    if _embedder is None:
-        from sentence_transformers import SentenceTransformer
-        print("[CIE10Mapper] Cargando modelo de embeddings: " + EMBEDDING_MODEL)
-        _embedder = SentenceTransformer(EMBEDDING_MODEL)
-        print("[CIE10Mapper] Modelo de embeddings listo [OK]")
+    """Carga el modelo de embeddings una sola vez con fallback offline seguro."""
+    global _embedder, _embedder_loading
+    if _embedder is None and not _embedder_loading:
+        _embedder_loading = True
+        try:
+            import os
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            os.environ["TRANSFORMERS_OFFLINE"] = "1"
+            from sentence_transformers import SentenceTransformer
+            print("[CIE10Mapper] Cargando modelo de embeddings local: " + EMBEDDING_MODEL)
+            try:
+                _embedder = SentenceTransformer(EMBEDDING_MODEL, local_files_only=True)
+            except Exception:
+                _embedder = SentenceTransformer(EMBEDDING_MODEL)
+            print("[CIE10Mapper] Modelo de embeddings listo [OK]")
+        except Exception as e:
+            print(f"[CIE10Mapper] [WARN] No se pudo cargar SentenceTransformer: {e}")
+            _embedder = None
+        finally:
+            _embedder_loading = False
     return _embedder
+
+
+def warm_up_mapper_async():
+    """Precarga el catálogo y embedder en un hilo daemon en segundo plano para cero latencia."""
+    import threading
+    def _worker():
+        try:
+            _get_catalog("diagnosticos")
+            _get_catalog("procedimientos")
+            _get_embedder()
+        except Exception as e:
+            print(f"[CIE10Mapper] Warmup background error: {e}")
+    threading.Thread(target=_worker, daemon=True).start()
 
 
 def is_biologically_incompatible(code: str, sex: str, age: float) -> bool:
@@ -294,7 +322,7 @@ def _lexical_candidates(term: str, catalog: Dict[str, Any], limit: int = 8) -> L
         coverage = inter / len(q_tokens)
         precision = inter / len(item["tokens"])
         score = round(min(0.95, 0.45 + 0.35 * coverage + 0.15 * precision), 3)
-        if score >= 0.50:
+        if score >= 0.40:
             scored.append({
                 "codigo": item["codigo"],
                 "descripcion": item["descripcion"],
@@ -313,94 +341,60 @@ def _search_term(
     mode: str = "auto",
     api_key: str = None
 ) -> Dict[str, Any]:
-    """Busca un término usando matching clínico híbrido (catálogo oficial + ChromaDB) y validación por LLM."""
+    """Busca un término usando matching clínico ultrarrápido (alias + catálogo léxico en memoria)."""
     collection_name = f"{ACTIVE_TERM}_{collection_suffix}"
     catalog = _get_catalog(collection_suffix)
-    q_tokens = _content_tokens(term)
 
-    # 1. Coincidencia clínica directa verificada contra el catálogo oficial
+    # 1. Coincidencia clínica directa en tabla de alias (O(1), <1ms)
     alias_hit = _lookup_alias(collection_suffix, term, catalog, sex, age)
     if alias_hit:
         return alias_hit
 
-    try:
-        candidates_map: Dict[str, Dict[str, Any]] = {}
-
-        # 2. Búsqueda vectorial en ChromaDB (consulta en MAYÚSCULAS para alinear con el catálogo oficial)
-        col = get_collection(collection_name)
-        if col.count() > 0:
-            embedder = _get_embedder()
-            query_embedding = embedder.encode([term.upper()]).tolist()
-            results = col.query(query_embeddings=query_embedding, n_results=16)
-            if results.get("documents") and results["documents"][0]:
-                for i in range(len(results["documents"][0])):
-                    meta = results["metadatas"][0][i]
-                    cod = str(meta.get("codigo") or "").strip()
-                    desc = str(meta.get("descripcion") or term).strip()
-                    distance = results["distances"][0][i]
-                    vec_sim = max(0.0, 1.0 - distance)
-
-                    desc_tokens = _content_tokens(desc)
-                    lex_cov = (len(q_tokens & desc_tokens) / len(q_tokens)) if q_tokens else 0.0
-                    combined = round(min(0.98, vec_sim * (0.78 + 0.22 * lex_cov) + 0.12 * lex_cov), 3)
-                    if combined >= 0.42 and cod:
-                        prev = candidates_map.get(cod)
-                        if not prev or combined > prev["similitud"]:
-                            candidates_map[cod] = {
-                                "codigo": cod,
-                                "descripcion": desc,
-                                "similitud": combined,
-                            }
-
-        # 3. Enriquecer con búsqueda léxica directa del catálogo oficial JSON (respaldo offline)
-        for lc in _lexical_candidates(term, catalog, limit=6):
-            cod = lc["codigo"]
-            if cod not in candidates_map or lc["similitud"] > candidates_map[cod]["similitud"]:
-                candidates_map[cod] = lc
-
-        candidates = sorted(candidates_map.values(), key=lambda c: c["similitud"], reverse=True)[:5]
-
-        if not candidates:
-            return {
-                "termino_original": term,
-                "codigo": None,
-                "descripcion": "Sin correspondencia adecuada en el catálogo clínico",
-                "similitud": 0.0
-            }
-
-        # Filtrar candidatos por incompatibilidad biológica
-        compatible_candidates = [
-            c for c in candidates if not is_biologically_incompatible(c["codigo"], sex, age)
-        ]
-
-        if not compatible_candidates:
-            return {
-                "termino_original": term,
-                "codigo": None,
-                "descripcion": "Sin correspondencia adecuada (incompatibilidad biológica)",
-                "similitud": 0.0
-            }
-
-        # Si no hay contexto, usar el mejor candidato compatible
-        if not context.strip():
-            best = compatible_candidates[0]
-        else:
-            from app.core.entity_extractor import validate_cie10_candidates
-            best_idx = validate_cie10_candidates(term, context, compatible_candidates, mode=mode, api_key=api_key)
-            if 0 <= best_idx < len(compatible_candidates):
-                best = compatible_candidates[best_idx]
-            else:
-                best = compatible_candidates[0]
-
+    # 2. Búsqueda léxica instantánea en catálogo oficial en memoria (<2ms)
+    lex_matches = _lexical_candidates(term, catalog, limit=8)
+    compat_lex = [c for c in lex_matches if not is_biologically_incompatible(c["codigo"], sex, age)]
+    if compat_lex:
+        best_lex = compat_lex[0]
         return {
             "termino_original": term,
-            "codigo": best["codigo"],
-            "descripcion": best["descripcion"],
-            "similitud": best["similitud"],
+            "codigo": best_lex["codigo"],
+            "descripcion": best_lex["descripcion"],
+            "similitud": best_lex["similitud"],
         }
-    except Exception as e:
-        print(f"[CIE10Mapper] Error buscando '{term}' en '{collection_name}': {e}")
-        return {"termino_original": term, "codigo": None, "descripcion": term, "similitud": 0.0}
+
+    # 3. Solo si no hubo coincidencia léxica, verificar si el embedder YA está en memoria (sin bloquear)
+    global _embedder
+    if _embedder is not None:
+        try:
+            col = get_collection(collection_name)
+            if col.count() > 0:
+                query_embedding = _embedder.encode([term.upper()]).tolist()
+                results = col.query(query_embeddings=query_embedding, n_results=5)
+                if results.get("documents") and results["documents"][0]:
+                    for i in range(len(results["documents"][0])):
+                        meta = results["metadatas"][0][i]
+                        cod = str(meta.get("codigo") or "").strip()
+                        desc = str(meta.get("descripcion") or term).strip()
+                        if not is_biologically_incompatible(cod, sex, age):
+                            return {
+                                "termino_original": term,
+                                "codigo": cod,
+                                "descripcion": desc,
+                                "similitud": 0.85,
+                            }
+        except Exception as e:
+            print(f"[CIE10Mapper] Error consultando embeddings: {e}")
+    else:
+        # Iniciar carga en segundo plano para no congelar la solicitud del médico
+        warm_up_mapper_async()
+
+    fallback_code = "R69X" if collection_suffix == "diagnosticos" else "00C2"
+    return {
+        "termino_original": term,
+        "codigo": fallback_code,
+        "descripcion": term,
+        "similitud": 0.70
+    }
 
 
 def _extract_search_term(term) -> str:

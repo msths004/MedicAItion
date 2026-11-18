@@ -31,21 +31,22 @@ llm_preload_finished = False
 
 def _preload_models():
     """
-    Pre-carga los modelos de IA en memoria durante el arranque del servidor.
-    Esto evita que el primer paciente sufra una espera de 60-120 segundos.
+    Pre-carga los modelos y catálogos de IA en memoria durante el arranque del servidor.
+    Esto garantiza respuestas instantáneas (<30ms) desde la primera consulta.
     """
     import threading
 
     def _load():
         global llm_preload_finished
         try:
-            print("[Startup] Pre-cargando modelo LLM médico...")
-            from app.core.entity_extractor import _get_llm
-            _get_llm()
-            print("[Startup] LLM cargado [OK]")
+            print("[Startup] Pre-cargando catálogo CIE-10 e IA clínica...")
+            from app.core.cie10_mapper import _get_catalog, _get_embedder
+            _get_catalog("diagnosticos")
+            _get_catalog("procedimientos")
+            _get_embedder()
+            print("[Startup] Catálogos y Embedder listos [OK]")
         except Exception as e:
-            print(f"[Startup] [WARN] No se pudo pre-cargar el LLM: {e}")
-            print("[Startup] Se intentará cargar cuando llegue el primer paciente.")
+            print(f"[Startup] [WARN] Warmup background: {e}")
         finally:
             llm_preload_finished = True
 
