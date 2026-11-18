@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,10 +14,35 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css?v=7.2.0-receta-resumen" />
+  <link rel="stylesheet" href="nacar_theme.css?v=8.0.0-nacar" />
 </head>
 <body class="mode-dashboard">
+
+  <!-- PRELOADER BIO-CLÍNICO NÁCAR -->
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader-orb" aria-hidden="true"></div>
+    <div class="preloader-title-blend">MEDICAITION</div>
+    <span class="pre-lbl" id="pre-lbl">INICIALIZANDO SISTEMA CLÍNICO NOM-004 · 00%</span>
+    <div class="pre-track"><div class="pre-bar" id="pre-bar"></div></div>
+  </div>
+
+  <!-- ATMÓSFERA DE FONDO MULTICAPA (.bg-stage) -->
+  <div class="bg-stage" aria-hidden="true">
+    <div class="bg-aurora"></div>
+    <div class="bg-grid"></div>
+    <canvas id="bg-particles"></canvas>
+    <div class="bg-noise"></div>
+  </div>
+
+  <!-- CURSOR MAGNÉTICO, SCROLLBAR FLOTANTE & TELEMETRÍA HUD -->
+  <div class="aww-cursor" id="aww-cursor" aria-hidden="true"><span id="aww-lbl"></span></div>
+  <div class="c-scroll" id="c-scroll" aria-hidden="true"><div class="c-thumb" id="c-thumb" title="Arrastra para desplazarte"></div></div>
+  <div class="aww-hud" id="aww-hud" aria-hidden="true">
+    <span><i class="aww-hud-dot"></i>20°58'N 89°37'W · CRUZ ROJA MÉRIDA · YUC-CR-001</span>
+    <span id="hud-view-state">RESUMEN EJECUTIVO · RED YUCATÁN (7 NODOS)</span>
+  </div>
 
   <!-- LOADING SCREEN -->
   <div id="loading-screen" class="loading-screen">
@@ -215,7 +240,7 @@
           </div>
 
           <!-- Sede y Red Hospitalaria Conectada -->
-          <div class="hospital-network-pill" onclick="switchMainTab('red-hospitalaria')" title="Red Interhospitalaria Federada: Cruz Roja Mérida · 7 Hospitales Conectados">
+          <div class="hospital-network-pill" onclick="if(typeof triggerClinicalNodePreloader==='function') triggerClinicalNodePreloader('SINCRONIZANDO RED YUCATÁN · 7 NODOS'); switchMainTab('red-hospitalaria')" title="Red Interhospitalaria Federada: Cruz Roja Mérida · 7 Hospitales Conectados">
             <span class="hosp-net-icon">🏥</span>
             <div class="hosp-net-info">
               <span class="hosp-net-title">Cruz Roja Mérida</span>
@@ -426,7 +451,7 @@
                     <span class="kpi-delta-pill delta-up">Óptimo</span>
                   </div>
                   <div class="kpi-progress-track">
-                    <div class="kpi-progress-bar bar-blue" style="width: 90%"></div>
+                    <div class="kpi-progress-bar bar-blue bf" data-w="90" style="width: 90%"></div>
                   </div>
                   <div class="kpi-sub-text">Sin descompensación aguda</div>
                 </div>
@@ -438,11 +463,11 @@
                     <span class="kpi-dots">💊</span>
                   </div>
                   <div class="kpi-metric-val-row">
-                    <strong class="kpi-metric-number">88%</strong>
+                    <strong class="kpi-metric-number" data-n="88" data-s="%">88%</strong>
                     <span class="kpi-delta-pill delta-up">+5.0%</span>
                   </div>
                   <div class="kpi-progress-track">
-                    <div class="kpi-progress-bar bar-amber" style="width: 88%"></div>
+                    <div class="kpi-progress-bar bar-amber bf" data-w="88" style="width: 88%"></div>
                   </div>
                   <div class="kpi-sub-text">Prescripción regular en curso</div>
                 </div>
@@ -454,11 +479,11 @@
                     <span class="kpi-dots">🧪</span>
                   </div>
                   <div class="kpi-metric-val-row">
-                    <strong class="kpi-metric-number">3 Recientes</strong>
+                    <strong class="kpi-metric-number" data-n="3" data-s=" Recientes">3 Recientes</strong>
                     <span class="kpi-delta-pill delta-up">Al día</span>
                   </div>
                   <div class="kpi-progress-track">
-                    <div class="kpi-progress-bar bar-lime" style="width: 75%"></div>
+                    <div class="kpi-progress-bar bar-lime bf" data-w="75" style="width: 75%"></div>
                   </div>
                   <div class="kpi-sub-text">Química, Biometría e Imagen</div>
                 </div>
@@ -470,11 +495,11 @@
                     <span class="kpi-dots">🌐</span>
                   </div>
                   <div class="kpi-metric-val-row">
-                    <strong class="kpi-metric-number">7 Nodos</strong>
+                    <strong class="kpi-metric-number" data-n="7" data-s=" Nodos">7 Nodos</strong>
                     <span class="kpi-metric-total">Sincronizados</span>
                   </div>
                   <div class="kpi-progress-track">
-                    <div class="kpi-progress-bar bar-purple" style="width: 100%"></div>
+                    <div class="kpi-progress-bar bar-purple bf" data-w="100" style="width: 100%"></div>
                   </div>
                   <div class="kpi-sub-text">Expediente federado Yucatán</div>
                 </div>
@@ -637,11 +662,11 @@
             <div class="bento-card red-search-card">
               <div class="bento-card-header">
                 <div>
-                  <h3 style="margin:0; font-size:16px; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <h3 style="margin:0; font-size:16px; display:flex; align-items:center; gap:8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     Buscador de Red Interhospitalaria (Búsqueda Federada)
                   </h3>
-                  <p style="margin:3px 0 0 0; font-size:13px; color:#64748b;">Localiza antecedentes y resguardos vitales del paciente en cualquier hospital conectado usando su CURP o Nombre.</p>
+                  <p style="margin:3px 0 0 0; font-size:13px; color:var(--muted);">Localiza antecedentes y resguardos vitales del paciente en cualquier hospital conectado usando su CURP o Nombre.</p>
                 </div>
                 <!-- Mode Switcher -->
                 <div class="access-mode-toggle" role="group" aria-label="Nivel de Acceso y Privacidad">
@@ -689,44 +714,44 @@
             <!-- =================================================================
                  CENSO Y DISPONIBILIDAD HOSPITALARIA EN TIEMPO REAL (CAMAS & MÉDICOS)
                  ================================================================= -->
-            <div class="bento-card" style="margin-bottom:20px; background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+            <div class="bento-card red-cap-outer-card" style="margin-bottom:20px; border-radius:18px; padding:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:12px;">
                 <div>
-                  <h3 style="margin:0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                  <h3 style="margin:0; font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
                     <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
                     Censo y Disponibilidad en Tiempo Real (Camas & Médicos en Turno)
                   </h3>
-                  <p style="margin:3px 0 0 0; font-size:12.5px; color:#64748b;">
+                  <p style="margin:3px 0 0 0; font-size:12.5px; color:var(--muted);">
                     Telemetría interhospitalaria de capacidad activa para traslados y asignación inmediata de urgencias en Yucatán.
                   </p>
                 </div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                  <span id="hospital-capacity-timestamp" style="font-size:11.5px; color:#64748b; font-weight:600;">Actualizado en vivo</span>
+                  <span id="hospital-capacity-timestamp" style="font-size:11.5px; color:var(--muted); font-weight:600;">Actualizado en vivo</span>
                   <button type="button" class="btn-outline-pill" onclick="refreshHospitalLiveCapacity()" title="Actualizar censo hospitalario">🔄 Actualizar Censo</button>
                 </div>
               </div>
 
               <!-- KPIs de Red de Camas y Médicos -->
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:20px;">
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px;">
-                  <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Camas Totales en Red</div>
-                  <div id="kpi-cap-total-beds" style="font-size:22px; font-weight:800; color:#0f172a;">815</div>
-                  <div style="font-size:11.5px; color:#10b981; font-weight:600;">7 Hospitales conectados</div>
+                <div class="red-cap-metric-tile" style="border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase;">Camas Totales en Red</div>
+                  <div id="kpi-cap-total-beds" style="font-size:22px; font-weight:800;">815</div>
+                  <div style="font-size:11.5px; color:#34d399; font-weight:600;">7 Hospitales conectados</div>
                 </div>
-                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px;">
-                  <div style="font-size:11px; font-weight:700; color:#166534; text-transform:uppercase;">Camas Disponibles</div>
-                  <div id="kpi-cap-avail-beds" style="font-size:22px; font-weight:800; color:#15803d;">180</div>
-                  <div style="font-size:11.5px; color:#166534;">Para hospitalización</div>
+                <div class="red-cap-metric-tile" style="border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:#34d399; text-transform:uppercase;">Camas Disponibles</div>
+                  <div id="kpi-cap-avail-beds" style="font-size:22px; font-weight:800; color:#34d399;">180</div>
+                  <div style="font-size:11.5px; color:var(--muted);">Para hospitalización</div>
                 </div>
-                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px;">
-                  <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase;">Camas UCI Disponibles</div>
-                  <div id="kpi-cap-uci-beds" style="font-size:22px; font-weight:800; color:#b91c1c;">21</div>
-                  <div style="font-size:11.5px; color:#991b1b;">Cuidados Críticos</div>
+                <div class="red-cap-metric-tile" style="border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:#f87171; text-transform:uppercase;">Camas UCI Disponibles</div>
+                  <div id="kpi-cap-uci-beds" style="font-size:22px; font-weight:800; color:#f87171;">21</div>
+                  <div style="font-size:11.5px; color:var(--muted);">Cuidados Críticos</div>
                 </div>
-                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px;">
-                  <div style="font-size:11px; font-weight:700; color:#1e40af; text-transform:uppercase;">Médicos en Turno</div>
-                  <div id="kpi-cap-active-docs" style="font-size:22px; font-weight:800; color:#1d4ed8;">198</div>
-                  <div id="kpi-cap-avail-docs" style="font-size:11.5px; color:#1e40af; font-weight:600;">51 disponibles ahora</div>
+                <div class="red-cap-metric-tile" style="border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase;">Médicos en Turno</div>
+                  <div id="kpi-cap-active-docs" style="font-size:22px; font-weight:800; color:var(--accent);">198</div>
+                  <div id="kpi-cap-avail-docs" style="font-size:11.5px; color:var(--muted); font-weight:600;">51 disponibles ahora</div>
                 </div>
               </div>
 
@@ -740,13 +765,13 @@
             <div class="red-two-col">
               <!-- COLUMNA IZQUIERDA: GESTIÓN DE REFERENCIA Y CONTRARREFERENCIA (NOM-004) -->
               <div class="bento-card">
-                <div class="bento-card-header" style="border-bottom:1px solid #f1f5f9; padding-bottom:12px; margin-bottom:16px;">
+                <div class="bento-card-header" style="border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:16px;">
                   <div>
-                    <h3 style="margin:0; font-size:15px; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                    <h3 style="margin:0; font-size:15px; display:flex; align-items:center; gap:8px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                       Referencias y Traslados Interhospitalarios (NOM-004-SSA3-2012)
                     </h3>
-                    <p style="margin:2px 0 0 0; font-size:12.5px; color:#64748b;">Órdenes activas de traslado y recepción de pacientes entre instituciones del estado.</p>
+                    <p style="margin:2px 0 0 0; font-size:12.5px; color:var(--muted);">Órdenes activas de traslado y recepción de pacientes entre instituciones del estado.</p>
                   </div>
                 </div>
 
@@ -772,13 +797,13 @@
 
               <!-- COLUMNA DERECHA: DIRECTORIO Y TOPOLOGÍA DE NODOS HOSPITALARIOS -->
               <div class="bento-card">
-                <div class="bento-card-header" style="border-bottom:1px solid #f1f5f9; padding-bottom:12px; margin-bottom:16px;">
+                <div class="bento-card-header" style="border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:16px;">
                   <div>
-                    <h3 style="margin:0; font-size:15px; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+                    <h3 style="margin:0; font-size:15px; display:flex; align-items:center; gap:8px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 9 6 6m0-6-6 6"/></svg>
                       Nodos Federados en Yucatán (Directorio CLUES)
                     </h3>
-                    <p style="margin:2px 0 0 0; font-size:12.5px; color:#64748b;">Centros médicos interconectados con protocolo de interoperabilidad.</p>
+                    <p style="margin:2px 0 0 0; font-size:12.5px; color:var(--muted);">Centros médicos interconectados con protocolo de interoperabilidad.</p>
                   </div>
                 </div>
 
@@ -790,13 +815,13 @@
 
             <!-- BITÁCORA INMUTABLE DE AUDITORÍA NOM-024 / LFPDPPP -->
             <div class="bento-card" style="margin-top:20px;">
-              <div class="bento-card-header" style="border-bottom:1px solid #f1f5f9; padding-bottom:12px; margin-bottom:16px;">
+              <div class="bento-card-header" style="border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:16px;">
                 <div>
-                  <h3 style="margin:0; font-size:15px; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                  <h3 style="margin:0; font-size:15px; display:flex; align-items:center; gap:8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
                     Auditoría Interhospitalaria Inmutable (Trazabilidad NOM-024)
                   </h3>
-                  <p style="margin:2px 0 0 0; font-size:12.5px; color:#64748b;">Cada consulta interhospitalaria queda sellada con HMAC-SHA256 y la Cédula Profesional del médico.</p>
+                  <p style="margin:2px 0 0 0; font-size:12.5px; color:var(--muted);">Cada consulta interhospitalaria queda sellada con HMAC-SHA256 y la Cédula Profesional del médico.</p>
                 </div>
               </div>
 
@@ -825,13 +850,13 @@
 
         <!-- MODAL: EMITIR NUEVA REFERENCIA INTERHOSPITALARIA -->
         <div id="modal-new-referral" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeNewReferralModal();">
-          <div class="modal-dialog-large" style="max-width:680px; background:#fff; border-radius:16px; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.18);">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">
+          <div class="modal-dialog-large" style="max-width:680px; border-radius:16px; padding:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:16px;">
               <div>
-                <h3 style="margin:0; font-size:17px; color:#0f172a;">Emitir Orden de Referencia Interhospitalaria (NOM-004)</h3>
-                <span style="font-size:12.5px; color:#64748b;">Hospital Emisor: <strong>Cruz Roja Mexicana Delegación Mérida (YUC-CR-001)</strong></span>
+                <h3 style="margin:0; font-size:17px;">Emitir Orden de Referencia Interhospitalaria (NOM-004)</h3>
+                <span style="font-size:12.5px; color:var(--muted);">Hospital Emisor: <strong>Cruz Roja Mexicana Delegación Mérida (YUC-CR-001)</strong></span>
               </div>
-              <button type="button" class="btn-icon" onclick="closeNewReferralModal()" style="font-size:20px; border:none; background:none; cursor:pointer;">✕</button>
+              <button type="button" class="btn-icon" onclick="closeNewReferralModal()" style="font-size:20px; border:none; background:none; color:var(--ink); cursor:pointer;">✕</button>
             </div>
 
             <form onsubmit="submitNewReferralForm(event)">
@@ -1040,6 +1065,39 @@
                     <div id="tool-ped-out" class="calc-output">Ingresa datos</div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- MÓDULO VISOR INTERACTIVO 3D / DIGITAL TWIN BIO-CLÍNICO (.tankbox) -->
+            <div class="bento-card tankbox-wrapper-card">
+              <div class="bento-card-header">
+                <div>
+                  <h3>🧊 Visor Volumétrico Bio-Clínico 3D · Digital Twin de Signos y Farmacocinética</h3>
+                  <p class="tools-card-hint" style="margin:2px 0 0;">Inspección tridimensional de perfusión, barrera terapéutica y simulación clínica por fases (NOM-024).</p>
+                </div>
+                <span class="epi-live-badge">WEBGL / CANVAS 3D</span>
+              </div>
+              <div class="tankbox" id="tankbox">
+                <canvas id="tank-3d" role="img" aria-label="Visor 3D interactivo de simulación bio-clínica y signos"></canvas>
+                <div class="tank-ui">
+                  <span>Arrastra para rotar 360° · Rueda para zoom</span>
+                  <div class="tank-ctrls">
+                    <button type="button" id="z-in" title="Acercar zoom" aria-label="Acercar zoom">+</button>
+                    <button type="button" id="z-out" title="Alejar zoom" aria-label="Alejar zoom">−</button>
+                    <button type="button" id="z-rst" title="Restablecer vista">Reiniciar</button>
+                  </div>
+                </div>
+              </div>
+              <div class="dots" id="tank-dots" role="tablist" aria-label="Fases de simulación bio-clínica">
+                <span class="on" data-st="0" title="Fase 1 · Perfil Basal"></span>
+                <span data-st="1" title="Fase 2 · Barrera CDSS"></span>
+                <span data-st="2" title="Fase 3 · Bio-Sinergia"></span>
+                <span data-st="3" title="Fase 4 · Digital Twin IoT"></span>
+                <span data-st="4" title="Fase 5 · Estabilización"></span>
+              </div>
+              <div class="tank-stage-caption">
+                <span id="tank-stage-label">Fase 1 · Perfil Hematológico &amp; Constantes Basales (Triaje)</span>
+                <strong>MODO OFFLINE GPU-FIRST · INTERACCIÓN CONTINUA</strong>
               </div>
             </div>
           </div>
@@ -2147,20 +2205,20 @@
        MODAL DE ETIQUETAS PERSONALIZADAS DE PACIENTES
        ================================================================= -->
   <div class="llm-modal-overlay" id="patient-tag-modal-overlay" style="display:none; z-index:9999;">
-    <div class="llm-modal" style="max-width:480px; padding:24px; border-radius:18px; background:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
+    <div class="llm-modal" style="max-width:480px; padding:24px; border-radius:18px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+        <h3 style="margin:0; font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px;">
           🏷️ Asignar Etiqueta al Paciente
         </h3>
-        <button type="button" class="llm-modal-close-btn" onclick="closeAddPatientTagModal()" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
+        <button type="button" class="llm-modal-close-btn" onclick="closeAddPatientTagModal()" style="background:none; border:none; color:var(--ink); font-size:18px; cursor:pointer;">✕</button>
       </div>
 
-      <p style="font-size:12.5px; color:#64748b; margin-top:0;">
+      <p style="font-size:12.5px; color:var(--muted); margin-top:0;">
         Crea o asigna distintivos clínicos y administrativos (ej. dialectos, protocolos especiales, riesgo o prioridades).
       </p>
 
       <div style="margin-bottom:14px;">
-        <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Sugerencias Rápidas:</label>
+        <label style="font-size:11.5px; font-weight:700; color:var(--muted); display:block; margin-bottom:6px;">Sugerencias Rápidas:</label>
         <div style="display:flex; flex-wrap:wrap; gap:6px;">
           <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Prioridad Alta', 'red')">🚨 Prioridad Alta</button>
           <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Hablante Maya', 'teal')">🗣️ Hablante Maya</button>
@@ -2172,12 +2230,12 @@
       </div>
 
       <div style="margin-bottom:14px;">
-        <label for="new-tag-name-input" style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Nombre de la Etiqueta Personalizada:</label>
+        <label for="new-tag-name-input" style="font-size:12px; font-weight:700; color:var(--ink); display:block; margin-bottom:4px;">Nombre de la Etiqueta Personalizada:</label>
         <input type="text" id="new-tag-name-input" class="input-field" placeholder="Ej: Protocolo Oncológico Fase 2..." style="width:100%; box-sizing:border-box;" />
       </div>
 
       <div style="margin-bottom:18px;">
-        <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Color del Distintivo:</label>
+        <label style="font-size:12px; font-weight:700; color:var(--ink); display:block; margin-bottom:6px;">Color del Distintivo:</label>
         <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
           <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="radio" name="tag-color" value="blue" checked /> 🔵 Celeste</label>
           <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="radio" name="tag-color" value="teal" /> 🟢 Verde / Teal</label>
@@ -2937,15 +2995,19 @@
     </button>
   </div>
 
-  <script src="state.js?v=7.1.0-perf"></script>
-  <script src="overlays.js?v=7.1.0-perf"></script>
-  <script src="modals.js?v=7.1.0-perf"></script>
-  <script src="calendar.js?v=7.1.0-perf"></script>
-  <script src="clinical_ops.js?v=7.1.0-perf"></script>
-  <script src="specialized_care.js?v=7.1.0-perf"></script>
-  <script src="pulso_assistant.js?v=7.1.0-perf"></script>
-  <script src="premium_search.js?v=7.1.0-perf"></script>
-  <script src="app.js?v=7.2.0-receta-resumen"></script>
+  <script src="state.js?v=8.0.0-nacar"></script>
+  <script src="overlays.js?v=8.0.0-nacar"></script>
+  <script src="modals.js?v=8.0.0-nacar"></script>
+  <script src="calendar.js?v=8.0.0-nacar"></script>
+  <script src="clinical_ops.js?v=8.0.0-nacar"></script>
+  <script src="specialized_care.js?v=8.0.0-nacar"></script>
+  <script src="pulso_assistant.js?v=8.0.0-nacar"></script>
+  <script src="premium_search.js?v=8.0.0-nacar"></script>
+  <script src="app.js?v=8.0.0-nacar"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" async onload="window.NacarEngine&&window.NacarEngine.onVendorLoaded&&window.NacarEngine.onVendorLoaded()"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" async onload="window.NacarEngine&&window.NacarEngine.onVendorLoaded&&window.NacarEngine.onVendorLoaded()"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" async onload="window.NacarEngine&&window.NacarEngine.onVendorLoaded&&window.NacarEngine.onVendorLoaded()"></script>
+  <script src="nacar_engine.js?v=8.0.0-nacar"></script>
 
   <!-- =========================================================================
        MODAL DE GOBERNANZA, ÉTICA Y SEGURIDAD CLÍNICA (7 PILARES)

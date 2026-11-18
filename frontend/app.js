@@ -78,6 +78,10 @@ function switchMainTab(tab) {
     if (titleEl) titleEl.textContent = 'Previsualización de Notas';
     if (descEl)  descEl.textContent  = 'Sincronización en tiempo real con motor CIE-10';
   }
+
+  if (window.NacarEngine && typeof window.NacarEngine.onTabChange === 'function') {
+    window.NacarEngine.onTabChange(tab);
+  }
 }
 
 /* ── MODE TOGGLE (Audio / Text / Transcripción input) ── */
@@ -1223,18 +1227,11 @@ function showToast(msg, type = 'info') {
   setTimeout(() => t.remove(), 3500);
 }
 
-/* ── THEME TOGGLE ── */
-function toggleTheme() {
-  const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'light';
-  const next = current === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('medicaition-theme-v5', next);
-}
-
+/* ── THEME TOGGLE (Modo Oscuro Abisal Nácar por defecto) ── */
 function _applyStoredTheme() {
-  const saved = localStorage.getItem('medicaition-theme-v5') || 'light';
+  const saved = localStorage.getItem('medicaition-theme-nacar') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
+  if (typeof _updateThemeUi === 'function') _updateThemeUi(saved);
 }
 
 /* ── DASHBOARD BENTO INTERACTIONS (Agenda, Wearables, Boceto Rápido) ── */
@@ -1742,31 +1739,30 @@ function _updateThemeUi(theme) {
   const labelEl = document.getElementById('theme-label');
   const iconEl = document.getElementById('theme-icon');
   if (theme === 'dark') {
-    if (labelEl) labelEl.textContent = 'Modo Guardia (Nocturno)';
+    if (labelEl) labelEl.textContent = 'Modo Oscuro Abisal';
     if (iconEl) iconEl.textContent = '🌙';
   } else {
-    if (labelEl) labelEl.textContent = 'Modo Clínico Diurno';
+    if (labelEl) labelEl.textContent = 'Modo Claro Clínico';
     if (iconEl) iconEl.textContent = '☀️';
   }
 }
 
-// Override toggleTheme with instant label update
-const _originalToggleTheme = typeof toggleTheme === 'function' ? toggleTheme : null;
 function toggleTheme() {
   const html = document.documentElement;
-  const current = html.getAttribute('data-theme') || 'light';
+  const current = html.getAttribute('data-theme') || 'dark';
   const next = current === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', next);
-  localStorage.setItem('medicaition-theme-v5', next);
+  localStorage.setItem('medicaition-theme-nacar', next);
   _updateThemeUi(next);
   if (typeof showToast === 'function') {
-    showToast(next === 'dark' ? '🌙 Modo Guardia Nocturna Activado' : '☀️ Modo Clínico Diurno Activado', 'info');
+    showToast(next === 'dark' ? '🌙 Modo Oscuro Abisal Nácar Activado' : '☀️ Modo Claro Clínico Activado', 'info');
   }
 }
 
 // Call on startup
 document.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('medicaition-theme-v5') || 'light';
+  const saved = localStorage.getItem('medicaition-theme-nacar') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
   _updateThemeUi(saved);
   loadConsultaPatientContext('MOBK070228HYNRTVA3');
 });
@@ -2568,50 +2564,50 @@ async function loadHospitalLiveCapacity() {
       const statusText = h.estado === 'ROJO' ? 'Saturación Crítica' : (h.estado === 'AMARILLO' ? 'Alta Ocupación' : 'Capacidad Óptima');
 
       return `
-        <div class="hospital-capacity-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.02); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.15s ease;">
+        <div class="hospital-capacity-card" style="border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.2s ease;">
           <div>
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
               <div>
-                <span style="font-size:10.5px; font-weight:800; color:#0284c7; background:#e0f2fe; padding:2px 6px; border-radius:4px;">${esc(h.clues)}</span>
-                <h4 style="margin:4px 0 2px; font-size:14px; font-weight:800; color:#0f172a;">${esc(h.nombre)}</h4>
-                <div style="font-size:11.5px; color:#64748b;">${esc(h.tipo)} · ${esc(h.ubicacion)}</div>
+                <span style="font-size:10.5px; font-weight:800; color:var(--accent); background:var(--bar-bg); padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace;">${esc(h.clues)}</span>
+                <h4 style="margin:4px 0 2px; font-size:14px; font-weight:800; color:var(--ink);">${esc(h.nombre)}</h4>
+                <div class="cap-sub-muted" style="font-size:11.5px;">${esc(h.tipo)} · ${esc(h.ubicacion)}</div>
               </div>
-              <span style="font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; background:${statusBg}; color:${statusColor}; border:1px solid ${statusColor};">
+              <span style="font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; background:rgba(124,224,244,0.12); color:${statusColor}; border:1px solid ${statusColor};">
                 ${statusText} (${pct}%)
               </span>
             </div>
 
             <!-- Barra de Ocupación -->
             <div style="margin:10px 0 14px;">
-              <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#475569; margin-bottom:4px;">
+              <div class="cap-sub-muted" style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:4px;">
                 <span>Ocupación de Camas</span>
                 <span>${h.camas_ocupadas} / ${h.camas_totales} camas</span>
               </div>
-              <div style="width:100%; height:7px; background:#f1f5f9; border-radius:999px; overflow:hidden;">
+              <div style="width:100%; height:7px; background:var(--bar-bg); border-radius:999px; overflow:hidden;">
                 <div style="width:${pct}%; height:100%; background:${statusColor}; border-radius:999px; transition:width 0.4s ease;"></div>
               </div>
             </div>
 
             <!-- Métricas de Camas -->
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:12px; text-align:center;">
-              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 4px;">
-                <div style="font-size:10px; color:#64748b; font-weight:700;">HOSPITALIZACIÓN</div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a;">${h.camas_disponibles} disp</div>
+              <div class="cap-tile-box" style="border:1px solid var(--line); border-radius:8px; padding:6px 4px;">
+                <div class="cap-sub-muted" style="font-size:10px; font-weight:700;">HOSPITALIZACIÓN</div>
+                <div class="cap-num-dark" style="font-size:13px; font-weight:800;">${h.camas_disponibles} disp</div>
               </div>
-              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 4px;">
-                <div style="font-size:10px; color:#64748b; font-weight:700;">UCI / SHOCK</div>
-                <div style="font-size:13px; font-weight:800; color:${h.camas_uci_disp <= 2 ? '#ef4444' : '#0f172a'};">${h.camas_uci_disp} disp</div>
+              <div class="cap-tile-box" style="border:1px solid var(--line); border-radius:8px; padding:6px 4px;">
+                <div class="cap-sub-muted" style="font-size:10px; font-weight:700;">UCI / SHOCK</div>
+                <div class="cap-num-dark" style="font-size:13px; font-weight:800; ${h.camas_uci_disp <= 2 ? 'color:#f87171 !important;' : ''}">${h.camas_uci_disp} disp</div>
               </div>
-              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:6px 4px;">
-                <div style="font-size:10px; color:#64748b; font-weight:700;">URGENCIAS</div>
-                <div style="font-size:13px; font-weight:800; color:#0f172a;">${h.camas_urgencias_disp} disp</div>
+              <div class="cap-tile-box" style="border:1px solid var(--line); border-radius:8px; padding:6px 4px;">
+                <div class="cap-sub-muted" style="font-size:10px; font-weight:700;">URGENCIAS</div>
+                <div class="cap-num-dark" style="font-size:13px; font-weight:800;">${h.camas_urgencias_disp} disp</div>
               </div>
             </div>
 
             <!-- Médicos en Turno -->
-            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:8px 10px; font-size:11.5px; color:#0369a1; margin-bottom:12px;">
-              <strong>👨‍⚕️ Personal Médico:</strong> ${h.medicos_turno} médicos en turno (<strong style="color:#0284c7;">${h.medicos_disponibles} disponibles</strong>, ${h.medicos_en_atencion} en quirófano/consulta).
-              <div style="margin-top:4px; font-size:11px; color:#0284c7;">
+            <div class="cap-docs-box" style="border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:11.5px; margin-bottom:12px;">
+              <strong>👨‍⚕️ Personal Médico:</strong> ${h.medicos_turno} médicos en turno (<strong style="color:var(--accent);">${h.medicos_disponibles} disponibles</strong>, ${h.medicos_en_atencion} en quirófano/consulta).
+              <div style="margin-top:4px; font-size:11px; color:var(--accent);">
                 <strong>Guardia:</strong> ${(h.especialidades_guardia || []).join(', ')}
               </div>
             </div>
