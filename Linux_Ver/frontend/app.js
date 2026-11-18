@@ -2002,6 +2002,9 @@ function openLaboratorioModal(tab) {
   document.getElementById('laboratorio-modal-overlay')?.classList.add('open');
   setLabTab(tab || 'quimica');
   _populateLabPatients();
+  if (window.OmniSearch && typeof window.OmniSearch.upgradeSelect === 'function') {
+    window.OmniSearch.upgradeSelect('lab-patient-select');
+  }
 }
 
 function closeLaboratorioModal() {
@@ -2045,6 +2048,7 @@ function onLabPatientChange(curp) {
   if (window.AppState) {
     AppState.activeCurp = curp;
   }
+  _updateLabPatientData(curp);
   if (typeof showToast === 'function') {
     showToast('Estudios de laboratorio actualizados para el paciente seleccionado', 'info');
   }
@@ -2093,4 +2097,227 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+
+// Actualiza los resultados de laboratorio (química, biometría y gabinete) según el paciente activo
+function _updateLabPatientData(curp) {
+  if (!curp) return;
+  const tbody = document.getElementById('lab-table-body');
+  const ecgNote = document.getElementById('gabinete-ecg-summary');
+  const rxNote = document.getElementById('gabinete-rx-summary');
+  
+  const patients = (window.AppState && AppState.allPatients) || [];
+  const p = patients.find(item => item.curp === curp) || {};
+  const name = (p.nombres || p.nombre || '').toLowerCase();
+  const curpLower = curp.toLowerCase();
+
+  // Caso 1: Teresa Alvarado (Diabética / Descontrol metabólico)
+  if (name.includes('teresa') || curpLower.includes('aavt')) {
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td><strong>Glucosa en ayunas</strong></td>
+          <td><strong class="lab-val-highlight" style="color:#dc2626;">134.0</strong></td>
+          <td>mg/dL</td>
+          <td>70.0 - 99.0</td>
+          <td><span class="lab-chip warn" style="background:#fee2e2; color:#b91c1c;">Elevada (DM2)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Hemoglobina Glucosilada (HbA1c)</strong></td>
+          <td><strong class="lab-val-highlight" style="color:#dc2626;">7.8</strong></td>
+          <td>%</td>
+          <td>4.0 - 5.6</td>
+          <td><span class="lab-chip warn" style="background:#fee2e2; color:#b91c1c;">Descontrol Glucémico</span></td>
+        </tr>
+        <tr>
+          <td><strong>Creatinina sérica</strong></td>
+          <td><strong>1.05</strong></td>
+          <td>mg/dL</td>
+          <td>0.70 - 1.20</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+        <tr>
+          <td><strong>Urea sérica</strong></td>
+          <td><strong>34.2</strong></td>
+          <td>mg/dL</td>
+          <td>15.0 - 45.0</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+        <tr>
+          <td><strong>Colesterol Total</strong></td>
+          <td><strong>218.0</strong></td>
+          <td>mg/dL</td>
+          <td>&lt; 200.0</td>
+          <td><span class="lab-chip warn">Ligeramente Alto</span></td>
+        </tr>
+        <tr>
+          <td><strong>Triglicéridos</strong></td>
+          <td><strong class="lab-val-highlight" style="color:#d97706;">210.0</strong></td>
+          <td>mg/dL</td>
+          <td>&lt; 150.0</td>
+          <td><span class="lab-chip warn">Hipertrigliceridemia</span></td>
+        </tr>
+      `;
+    }
+    if (ecgNote) ecgNote.textContent = 'Ritmo sinusal regular a 76 lpm. Eje eléctrico normal a +45°. Sin datos de isquemia o sobrecarga ventricular izquierda.';
+    if (rxNote) rxNote.textContent = 'Tele de Tórax PA: Índice cardiotorácico 0.48 dentro de límites normales. Trama broncovascular bilateral conservada sin consolidaciones.';
+    return;
+  }
+
+  // Caso 2: Rosaura Macías (Dengue con signos de alarma / Trombocitopenia)
+  if (name.includes('rosaura') || curpLower.includes('matr')) {
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td><strong>Plaquetas (Recuento total)</strong></td>
+          <td><strong class="lab-val-highlight" style="color:#dc2626; font-size:15px;">65,000</strong></td>
+          <td>/µL</td>
+          <td>150,000 - 450,000</td>
+          <td><span class="lab-chip warn" style="background:#fee2e2; color:#b91c1c; font-weight:800;">🚨 Trombocitopenia Severa</span></td>
+        </tr>
+        <tr>
+          <td><strong>Hematocrito (Hto)</strong></td>
+          <td><strong class="lab-val-highlight" style="color:#dc2626;">44.2</strong></td>
+          <td>%</td>
+          <td>36.0 - 42.0</td>
+          <td><span class="lab-chip warn" style="background:#fee2e2; color:#b91c1c;">Hemoconcentración (+20%)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Leucocitos Totales</strong></td>
+          <td><strong class="lab-val-highlight">3,100</strong></td>
+          <td>/µL</td>
+          <td>4,500 - 10,000</td>
+          <td><span class="lab-chip warn">Leucopenia</span></td>
+        </tr>
+        <tr>
+          <td><strong>Glucosa en ayunas</strong></td>
+          <td><strong>94.0</strong></td>
+          <td>mg/dL</td>
+          <td>70.0 - 99.0</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+        <tr>
+          <td><strong>TGO / AST (Transaminasas)</strong></td>
+          <td><strong class="lab-val-highlight" style="color:#d97706;">84.0</strong></td>
+          <td>U/L</td>
+          <td>10.0 - 40.0</td>
+          <td><span class="lab-chip warn">Elevación Transitoria</span></td>
+        </tr>
+        <tr>
+          <td><strong>Creatinina sérica</strong></td>
+          <td><strong>0.82</strong></td>
+          <td>mg/dL</td>
+          <td>0.70 - 1.20</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+      `;
+    }
+    if (ecgNote) ecgNote.textContent = 'Ritmo sinusal regular a 88 lpm. Intervalos PR y QTc normales. Sin alteraciones de la repolarización.';
+    if (rxNote) rxNote.textContent = 'Ultrasonido Abdominal Focalizado: Engrosamiento leve de pared vesicular por extravasación plasmática incipiente (Dengue). Sin derrame pleural activo.';
+    return;
+  }
+
+  // Caso 3: Kevin Enrique Morales (Post-Trauma / Conmoción leve)
+  if (name.includes('kevin') || curpLower.includes('mobk')) {
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td><strong>Glucosa en ayunas</strong></td>
+          <td><strong>104.0</strong></td>
+          <td>mg/dL</td>
+          <td>70.0 - 99.0</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+        <tr>
+          <td><strong>Hemoglobina Glucosilada (HbA1c)</strong></td>
+          <td><strong>5.2</strong></td>
+          <td>%</td>
+          <td>4.0 - 5.6</td>
+          <td><span class="lab-chip ok">Normal Óptimo</span></td>
+        </tr>
+        <tr>
+          <td><strong>Creatinina sérica</strong></td>
+          <td><strong>0.88</strong></td>
+          <td>mg/dL</td>
+          <td>0.70 - 1.20</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+        <tr>
+          <td><strong>CPK (Creatina Fosfocinasa)</strong></td>
+          <td><strong class="lab-val-highlight" style="color:#d97706;">220.0</strong></td>
+          <td>U/L</td>
+          <td>30.0 - 200.0</td>
+          <td><span class="lab-chip warn">Trauma Muscular Leve</span></td>
+        </tr>
+        <tr>
+          <td><strong>Plaquetas</strong></td>
+          <td><strong>248,000</strong></td>
+          <td>/µL</td>
+          <td>150,000 - 450,000</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+        <tr>
+          <td><strong>Leucocitos Totales</strong></td>
+          <td><strong>7,400</strong></td>
+          <td>/µL</td>
+          <td>4,500 - 10,000</td>
+          <td><span class="lab-chip ok">Normal</span></td>
+        </tr>
+      `;
+    }
+    if (ecgNote) ecgNote.textContent = 'Ritmo sinusal regular a 82 lpm. Eje eléctrico normal. Trazo electrocardiográfico sin alteraciones patológicas.';
+    if (rxNote) rxNote.textContent = 'Tomografía Axial Computarizada / Rx Cráneo AP y Lateral: Bóveda craneal y base de cráneo sin trazos de fractura. Sin evidencia de hematomas subdurales o epidurales.';
+    return;
+  }
+
+  // Caso por defecto para cualquier otro paciente
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td><strong>Glucosa en ayunas</strong></td>
+        <td><strong>96.0</strong></td>
+        <td>mg/dL</td>
+        <td>70.0 - 99.0</td>
+        <td><span class="lab-chip ok">Normal</span></td>
+      </tr>
+      <tr>
+        <td><strong>Hemoglobina Glucosilada (HbA1c)</strong></td>
+        <td><strong>5.4</strong></td>
+        <td>%</td>
+        <td>4.0 - 5.6</td>
+        <td><span class="lab-chip ok">Normal</span></td>
+      </tr>
+      <tr>
+        <td><strong>Creatinina sérica</strong></td>
+        <td><strong>0.90</strong></td>
+        <td>mg/dL</td>
+        <td>0.70 - 1.20</td>
+        <td><span class="lab-chip ok">Normal</span></td>
+      </tr>
+      <tr>
+        <td><strong>Urea sérica</strong></td>
+        <td><strong>26.0</strong></td>
+        <td>mg/dL</td>
+        <td>15.0 - 45.0</td>
+        <td><span class="lab-chip ok">Normal</span></td>
+      </tr>
+      <tr>
+        <td><strong>Colesterol Total</strong></td>
+        <td><strong>174.0</strong></td>
+        <td>mg/dL</td>
+        <td>&lt; 200.0</td>
+        <td><span class="lab-chip ok">Deseable</span></td>
+      </tr>
+      <tr>
+        <td><strong>Plaquetas</strong></td>
+        <td><strong>230,000</strong></td>
+        <td>/µL</td>
+        <td>150,000 - 450,000</td>
+        <td><span class="lab-chip ok">Normal</span></td>
+      </tr>
+    `;
+  }
+  if (ecgNote) ecgNote.textContent = 'Ritmo sinusal normal 78 lpm, sin datos de arritmia o alteraciones en la conducción.';
+  if (rxNote) rxNote.textContent = 'Estudios de imagenología en archivo dentro de parámetros clínicos normales.';
 }

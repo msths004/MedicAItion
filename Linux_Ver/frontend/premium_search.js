@@ -540,6 +540,9 @@
   // API PÚBLICA DEL MOTOR DE BÚSQUEDA
   // ==========================================================================
   window.OmniSearch = {
+    upgradeSelect(selectId, onSelectCallback) {
+      _upgradeNativeSelectToCombobox(selectId, onSelectCallback);
+    },
     async init() {
       _injectSpotlightModal();
       await _ensurePatientsCache();
@@ -579,6 +582,7 @@
       _upgradeNativeSelectToCombobox('exp-patient-select');
       _upgradeNativeSelectToCombobox('dashboard-patient-select');
       _upgradeNativeSelectToCombobox('consulta-patient-dropdown');
+      _upgradeNativeSelectToCombobox('lab-patient-select');
 
       console.log('✅ OmniSearch Premium Engine v3.0 listo para miles de pacientes.');
     },
@@ -703,6 +707,8 @@
       } else if (targetView === 'consulta') {
         if (typeof window.switchMainTab === 'function') window.switchMainTab('nueva-consulta');
         if (typeof window.onConsultaPatientSelect === 'function') window.onConsultaPatientSelect(curp);
+      } else if (selectId === 'lab-patient-select' && typeof window.onLabPatientChange === 'function') {
+        window.onLabPatientChange(curp);
       } else {
         if (typeof window.switchMainTab === 'function') window.switchMainTab('expediente');
         if (typeof window.loadSpecializedPatient === 'function') {

@@ -2705,7 +2705,18 @@
       <p class="modal-sub">Consulta de química sanguínea, biometría hemática, EGO y estudios de imagenología (Rayos X, ECG, Ultrasonido) vinculados al expediente.</p>
 
       <div class="lab-patient-row">
-        <label for="lab-patient-select">Paciente Titular</label>
+        <div class="lab-patient-header-line">
+          <label for="lab-patient-select" class="lab-patient-label">
+            <span class="lab-label-icon">👤</span> PACIENTE TITULAR EN ESTUDIO
+          </label>
+          <div class="lab-search-quick-actions">
+            <span class="lab-search-hint">Búsqueda semántica instantánea:</span>
+            <button type="button" class="btn-outline-pill lab-search-omni-btn" onclick="OmniSearch.open()" title="Abrir Buscador Inteligente Avanzado con filtros clínicos (Ctrl+K)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <span>Buscar Paciente (Ctrl+K)</span>
+            </button>
+          </div>
+        </div>
         <select id="lab-patient-select" class="input-field" onchange="onLabPatientChange(this.value)">
           <option value="">Cargando pacientes...</option>
         </select>

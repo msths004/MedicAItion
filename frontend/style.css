@@ -15254,3 +15254,107 @@ textarea:focus {
   border-radius: 4px;
   border: 1px solid #a7f3d0;
 }
+
+
+/* =========================================================================
+   BUSCADOR PREMIUM & COMBOBOX EN CENTRO DE LABORATORIO
+   ========================================================================= */
+
+.lab-patient-header-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lab-patient-label {
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  color: #1e293b !important;
+  letter-spacing: 0.5px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  text-transform: uppercase !important;
+  margin-bottom: 0 !important;
+}
+
+.lab-label-icon {
+  font-size: 14px;
+}
+
+.lab-search-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lab-search-hint {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.lab-search-omni-btn {
+  font-size: 11.5px !important;
+  padding: 4px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #0369a1 !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.lab-search-omni-btn:hover {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Combobox estilizado dentro de modal de laboratorio */
+.lab-patient-row .premium-combobox-wrapper {
+  width: 100% !important;
+  min-width: 100% !important;
+  display: block !important;
+  position: relative !important;
+}
+
+.lab-patient-row .combobox-trigger-btn {
+  width: 100% !important;
+  background: #ffffff !important;
+  border: 1.5px solid #bae6fd !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.06) !important;
+  transition: all 0.2s ease !important;
+}
+
+.lab-patient-row .combobox-trigger-btn:hover,
+.lab-patient-row .combobox-trigger-btn[aria-expanded="true"] {
+  border-color: #0284c7 !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.16) !important;
+  background: #f0f9ff !important;
+}
+
+.lab-patient-row .combobox-dropdown {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-radius: 14px !important;
+  border: 1.5px solid #7dd3fc !important;
+  box-shadow: 0 18px 45px rgba(2, 132, 199, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  z-index: 10005 !important;
+  max-height: 380px !important;
+}
+
+.laboratorio-modal,
+.lab-modal-box {
+  overflow: visible !important;
+}
