@@ -15844,3 +15844,188 @@ body.dark-theme .topbar-right .ethical-governance-badge-btn {
   color: #86efac !important;
 }
 
+
+
+/* =====================================================================
+   NUEVA CONSULTA MINIMALISTA (CLARA, HOMOGÉNEA Y SIN SOBRECARGA)
+   ===================================================================== */
+#consulta-layout {
+  grid-template-columns: 290px minmax(360px, 1fr) minmax(400px, 1.2fr) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+  max-width: 1800px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 1280px) {
+  #consulta-layout {
+    grid-template-columns: 270px 1fr 1fr !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 1060px) {
+  #consulta-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Fila de Signos Vitales Compacta */
+.vitals-compact-strip {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+
+body.dark-theme .vitals-compact-strip {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.vitals-strip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+body.dark-theme .vitals-strip-header {
+  color: #94a3b8;
+}
+
+.vitals-compact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.vital-mini-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+body.dark-theme .vital-mini-box {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.vital-mini-box .mini-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+body.dark-theme .vital-mini-box .mini-label {
+  color: #94a3b8;
+}
+
+.vital-mini-box .mini-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0284c7;
+  line-height: 1.2;
+}
+
+.vital-mini-box .mini-unit {
+  font-size: 9.5px;
+  color: #94a3b8;
+}
+
+/* Antecedentes limpios */
+.comorbidities-card-clean {
+  padding: 8px 0;
+}
+
+.clean-section-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+body.dark-theme .clean-section-label {
+  color: #94a3b8;
+}
+
+/* Inputs limpios */
+.form-grid-2-clean {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.clean-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+body.dark-theme .clean-input {
+  background: #1e293b;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+.clean-input:focus {
+  outline: none;
+  border-color: #0284c7;
+  background: #ffffff;
+}
+
+/* Grabadora de audio limpia */
+.recorder-card-clean {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
+  border: 1.5px dashed #bae6fd;
+  border-radius: 18px;
+  margin: 12px 0;
+}
+
+body.dark-theme .recorder-card-clean {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  border-color: #334155;
+}
+
+/* Panel de Resultados amplio que llena el panel derecho */
+#panel-consulta-col3 .panel-results {
+  height: 100% !important;
+  min-height: 580px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#panel-consulta-col3 .tab-content {
+  flex: 1 !important;
+}
+
+#panel-consulta-col3 .nota-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 520px !important;
+  border: none !important;
+  border-radius: 12px !important;
+}
+
