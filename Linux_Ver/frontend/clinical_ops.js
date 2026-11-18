@@ -1600,6 +1600,8 @@ function _persistSession(sess) {
 function openAuthLoginModal() {
   document.getElementById('main-app-shell')?.style.setProperty('display', 'none');
   document.getElementById('patient-standalone-view')?.style.setProperty('display', 'none');
+  const pulsoEl = document.getElementById('pulso-floating-root');
+  if (pulsoEl) pulsoEl.style.setProperty('display', 'none', 'important');
   const errEl = document.getElementById('auth-login-error');
   if (errEl) errEl.style.display = 'none';
   document.getElementById('auth-login-overlay')?.classList.add('open');
@@ -1607,6 +1609,8 @@ function openAuthLoginModal() {
 
 function closeAuthLoginModal() {
   document.getElementById('auth-login-overlay')?.classList.remove('open');
+  const pulsoEl = document.getElementById('pulso-floating-root');
+  if (pulsoEl) pulsoEl.style.removeProperty('display');
 }
 
 function switchAuthLoginTab(mode) {

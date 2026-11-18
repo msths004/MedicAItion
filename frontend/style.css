@@ -7385,26 +7385,98 @@ body.dark-theme .legal-disclaimer-box p {
 /* =====================================================================
    LOGIN POR ROLES Y PORTAL EXCLUSIVO DEL PACIENTE (SEPARACIÓN ESTRICTA)
    ===================================================================== */
+/* =====================================================================
+   FONDO LUMINOSO CELESTE INSTITUCIONAL (MEDICAITION)
+   ===================================================================== */
 .auth-login-backdrop {
   position: fixed;
   inset: 0;
   z-index: 9500;
-  background: linear-gradient(135deg, rgba(8, 20, 37, 0.82) 0%, rgba(15, 118, 110, 0.70) 50%, rgba(2, 6, 23, 0.90) 100%),
-              url('assets/clinical_login_bg.jpg') center center / cover no-repeat,
-              #0f172a;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: 
+    radial-gradient(circle at 10% 18%, rgba(56, 189, 248, 0.42) 0%, transparent 45%),
+    radial-gradient(circle at 90% 15%, rgba(14, 165, 233, 0.32) 0%, transparent 42%),
+    radial-gradient(circle at 82% 84%, rgba(20, 184, 166, 0.25) 0%, transparent 45%),
+    radial-gradient(circle at 15% 85%, rgba(125, 211, 252, 0.38) 0%, transparent 40%),
+    radial-gradient(rgba(2, 132, 199, 0.09) 1.2px, transparent 1.2px),
+    linear-gradient(135deg, #e0f2fe 0%, #d4ecfc 35%, #def2fe 70%, #ecfdf5 100%);
+  background-size: auto, auto, auto, auto, 28px 28px, auto;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: none;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  overflow-y: auto;
+  overflow: hidden;
 }
-.auth-login-backdrop.open { display: flex; }
+
+.auth-login-backdrop.open { 
+  display: flex; 
+}
+
+/* Esferas ambientales luminosas celestes */
+.auth-login-backdrop::before {
+  content: '';
+  position: absolute;
+  width: 620px;
+  height: 620px;
+  top: -120px;
+  left: -100px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, rgba(14, 165, 233, 0.16) 50%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: orbFloat1 20s ease-in-out infinite alternate;
+}
+
+.auth-login-backdrop::after {
+  content: '';
+  position: absolute;
+  width: 560px;
+  height: 560px;
+  bottom: -90px;
+  right: -90px;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.30) 0%, rgba(56, 189, 248, 0.22) 50%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: orbFloat2 24s ease-in-out infinite alternate;
+}
+
+@keyframes orbFloat1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50px, 35px) scale(1.08); }
+  100% { transform: translate(-25px, 60px) scale(0.95); }
+}
+
+@keyframes orbFloat2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-45px, -35px) scale(1.06); }
+  100% { transform: translate(35px, -50px) scale(0.96); }
+}
 
 /* Ocultar Pulso mientras el login institucional esté abierto */
-#auth-login-overlay.open ~ #pulso-floating-root {
+body:has(#auth-login-overlay.open) #pulso-floating-root,
+#auth-login-overlay.open ~ #pulso-floating-root,
+.auth-login-backdrop.open ~ #pulso-floating-root {
   display: none !important;
+}
+
+body.dark-theme .auth-login-backdrop {
+  background: 
+    radial-gradient(circle at 15% 20%, rgba(14, 165, 233, 0.28) 0%, transparent 45%),
+    radial-gradient(circle at 85% 25%, rgba(2, 132, 199, 0.22) 0%, transparent 40%),
+    radial-gradient(circle at 75% 80%, rgba(20, 184, 166, 0.18) 0%, transparent 45%),
+    radial-gradient(rgba(56, 189, 248, 0.12) 1.2px, transparent 1.2px),
+    linear-gradient(135deg, #071927 0%, #0c2b42 45%, #081d2e 100%);
+  background-size: auto, auto, auto, 28px 28px, auto;
+}
+
+body.dark-theme .auth-login-backdrop::before {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.24) 0%, rgba(2, 132, 199, 0.08) 50%, transparent 70%);
+}
+
+body.dark-theme .auth-login-backdrop::after {
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.20) 0%, rgba(14, 165, 233, 0.10) 50%, transparent 70%);
 }
 
 /* TARJETA TABULADA INSTITUCIONAL (2 COLUMNAS) */
@@ -15486,5 +15558,111 @@ body.dark-theme .auth-micro-hint code {
 body.dark-theme .auth-minimal-footer {
   border-top-color: #1e293b;
   color: #64748b;
+}
+
+
+
+/* =====================================================================
+   ESTILOS DE LA TARJETA MINIMALISTA EN TONOS CELESTES LUMINOSOS
+   ===================================================================== */
+.auth-login-card.auth-card-minimal {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  width: 100% !important;
+  max-width: 420px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-radius: 26px !important;
+  padding: 34px 32px 24px !important;
+  border: 1px solid rgba(186, 230, 253, 0.85) !important;
+  box-shadow: 0 25px 65px rgba(2, 132, 199, 0.16), 0 8px 24px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.8) !important;
+  animation: authCardPop 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  margin: auto;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+body.dark-theme .auth-login-card.auth-card-minimal {
+  background: rgba(15, 23, 42, 0.94) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Tabs minimalistas con acento celeste */
+.auth-tabs-minimal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 5px;
+  border-radius: 14px;
+  background: #f0f9ff !important;
+  border: 1.5px solid #e0f2fe !important;
+  margin-bottom: 20px !important;
+}
+
+body.dark-theme .auth-tabs-minimal {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.auth-tabs-minimal .auth-mode-tab {
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px !important;
+  cursor: pointer;
+  background: transparent;
+  color: #0369a1;
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.auth-tabs-minimal .auth-mode-tab.active {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.32) !important;
+}
+
+/* Botón principal con degradado celeste-turquesa */
+.auth-card-minimal .auth-submit-btn {
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #0d9488 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35) !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  height: 46px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.auth-card-minimal .auth-submit-btn:hover {
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 10px 28px rgba(2, 132, 199, 0.45) !important;
+}
+
+.auth-card-minimal .auth-input,
+.auth-card-minimal .auth-select {
+  border-color: #bae6fd !important;
+  background: #f8fafc !important;
+}
+
+.auth-card-minimal .auth-input:focus,
+.auth-card-minimal .auth-select:focus {
+  border-color: #0284c7 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.18) !important;
 }
 
