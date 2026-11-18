@@ -58,7 +58,7 @@ function _buildDefaultAppointments() {
       curp: 'GOPC790814HYNCLN04',
       reason: 'Consulta de seguimiento',
       wearable: true,
-      wearableText: 'Garmin Active • ❤️ 72 lpm',
+      wearableText: 'Laboratorio disponible • ❤️ 72 lpm',
       status: 'confirmada'
     },
     {
@@ -69,7 +69,7 @@ function _buildDefaultAppointments() {
       curp: 'MOBK070228HYNRTVA3',
       reason: 'Dolor abdominal',
       wearable: true,
-      wearableText: 'Apple Watch S9 • Wearable conectado',
+      wearableText: 'Triaje de Enfermería verificado',
       status: 'confirmada'
     },
     {
@@ -91,7 +91,7 @@ function _buildDefaultAppointments() {
       curp: 'GOPC790814HYNCLN04',
       reason: 'Revisión de laboratorios (HbA1c y Lípidos)',
       wearable: true,
-      wearableText: 'Garmin Active conectado',
+      wearableText: 'Gabinete y Química listos',
       status: 'programada'
     },
     {
@@ -113,7 +113,7 @@ function _buildDefaultAppointments() {
       curp: 'MOBK070228HYNRTVA3',
       reason: 'Valoración preventiva semestral',
       wearable: true,
-      wearableText: 'Wearable conectado',
+      wearableText: 'Laboratorio central adjunto',
       status: 'programada'
     },
     {
@@ -124,7 +124,7 @@ function _buildDefaultAppointments() {
       curp: 'GOPC790814HYNCLN04',
       reason: 'Cierre anual y actualización expediente NOM-004',
       wearable: true,
-      wearableText: 'Garmin Active conectado',
+      wearableText: 'Triaje clínico al día',
       status: 'programada'
     }
   ];

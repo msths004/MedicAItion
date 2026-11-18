@@ -735,6 +735,57 @@
               </div>
             </div>
 
+            
+            <!-- =================================================================
+                 CENSO Y DISPONIBILIDAD HOSPITALARIA EN TIEMPO REAL (CAMAS & MÉDICOS)
+                 ================================================================= -->
+            <div class="bento-card" style="margin-bottom:20px; background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:20px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+                <div>
+                  <h3 style="margin:0; font-size:16px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
+                    Censo y Disponibilidad en Tiempo Real (Camas & Médicos en Turno)
+                  </h3>
+                  <p style="margin:3px 0 0 0; font-size:12.5px; color:#64748b;">
+                    Telemetría interhospitalaria de capacidad activa para traslados y asignación inmediata de urgencias en Yucatán.
+                  </p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <span id="hospital-capacity-timestamp" style="font-size:11.5px; color:#64748b; font-weight:600;">Actualizado en vivo</span>
+                  <button type="button" class="btn-outline-pill" onclick="refreshHospitalLiveCapacity()" title="Actualizar censo hospitalario">🔄 Actualizar Censo</button>
+                </div>
+              </div>
+
+              <!-- KPIs de Red de Camas y Médicos -->
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:20px;">
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase;">Camas Totales en Red</div>
+                  <div id="kpi-cap-total-beds" style="font-size:22px; font-weight:800; color:#0f172a;">815</div>
+                  <div style="font-size:11.5px; color:#10b981; font-weight:600;">7 Hospitales conectados</div>
+                </div>
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:#166534; text-transform:uppercase;">Camas Disponibles</div>
+                  <div id="kpi-cap-avail-beds" style="font-size:22px; font-weight:800; color:#15803d;">180</div>
+                  <div style="font-size:11.5px; color:#166534;">Para hospitalización</div>
+                </div>
+                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:#991b1b; text-transform:uppercase;">Camas UCI Disponibles</div>
+                  <div id="kpi-cap-uci-beds" style="font-size:22px; font-weight:800; color:#b91c1c;">21</div>
+                  <div style="font-size:11.5px; color:#991b1b;">Cuidados Críticos</div>
+                </div>
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px;">
+                  <div style="font-size:11px; font-weight:700; color:#1e40af; text-transform:uppercase;">Médicos en Turno</div>
+                  <div id="kpi-cap-active-docs" style="font-size:22px; font-weight:800; color:#1d4ed8;">198</div>
+                  <div id="kpi-cap-avail-docs" style="font-size:11.5px; color:#1e40af; font-weight:600;">51 disponibles ahora</div>
+                </div>
+              </div>
+
+              <!-- Grid de Hospitales con Telemetría de Capacidad -->
+              <div id="hospital-live-capacity-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(310px, 1fr)); gap:14px;">
+                <!-- Cargado dinámicamente con JS -->
+              </div>
+            </div>
+
             <!-- DOS COLUMNAS: REFERENCIAS ACTIVAS + TOPOLOGÍA DE HOSPITALES -->
             <div class="red-two-col">
               <!-- COLUMNA IZQUIERDA: GESTIÓN DE REFERENCIA Y CONTRARREFERENCIA (NOM-004) -->
@@ -953,7 +1004,7 @@
                 <div class="ask-chips-row">
                   <button type="button" class="ask-chip" onclick="setAskQuickQuestion('Resumen clínico integral, alergias y medicamentos actuales')">Resumen + Alergias + Meds</button>
                   <button type="button" class="ask-chip" onclick="setAskQuickQuestion('¿Qué diagnósticos CIE-10 y banderas rojas ha tenido?')">Diagnósticos y Riesgos</button>
-                  <button type="button" class="ask-chip" onclick="setAskQuickQuestion('Últimos signos vitales de wearable y bitácora en casa')">Signos y Bitácora</button>
+                  <button type="button" class="ask-chip" onclick="setAskQuickQuestion('Últimos signos vitales de triaje clínico y bitácora de adherencia')">Signos de Triaje y Adherencia</button>
                 </div>
 
                 <div class="ask-input-row">
@@ -1257,8 +1308,8 @@
                 <label class="legal-check-item">
                   <input type="checkbox" id="legal-chk-wearables" checked />
                   <div>
-                    <strong>Bitácora de Signos Vitales, Adherencia y Telemonitoreo</strong>
-                    <small>Autoriza el registro cifrado de mediciones diarias para seguimiento médico y alertas clínicas.</small>
+                    <strong>Bitácora de Adherencia y Telemonitoreo Clínico Institucional</strong>
+                    <small>Autoriza el registro de adherencia a tratamiento y seguimiento médico con resguardo NOM-004.</small>
                   </div>
                 </label>
               </div>
@@ -1326,10 +1377,12 @@
                     <h2 id="exp-patient-name">Selecciona un paciente</h2>
                     <span class="exp-header-meta" id="exp-patient-meta">—</span>
                   </div>
-                  <div class="exp-pills-row">
+                  <div class="exp-pills-row" id="exp-pills-container" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                     <span class="exp-pill exp-pill-warn" id="exp-triage-badge">Atención especializada</span>
                     <span class="exp-pill exp-pill-safe" id="exp-allergy-badge">Sin alergias registradas</span>
                     <span class="exp-pill exp-pill-safe" id="exp-consent-badge">Verificando consentimiento</span>
+                    <div id="exp-custom-tags-container" style="display:inline-flex; gap:6px; flex-wrap:wrap; align-items:center;"></div>
+                    <button type="button" class="btn-outline-pill" onclick="openAddPatientTagModal()" style="font-size:11px; padding:3px 9px; cursor:pointer; background:#fff;" title="Crear o asignar etiqueta personalizada">+ Etiqueta</button>
                   </div>
                 </div>
               </div>
@@ -2339,6 +2392,59 @@
     </div>
   </div>
 
+  
+  <!-- =================================================================
+       MODAL DE ETIQUETAS PERSONALIZADAS DE PACIENTES
+       ================================================================= -->
+  <div class="llm-modal-overlay" id="patient-tag-modal-overlay" style="display:none; z-index:9999;">
+    <div class="llm-modal" style="max-width:480px; padding:24px; border-radius:18px; background:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0; font-size:17px; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          🏷️ Asignar Etiqueta al Paciente
+        </h3>
+        <button type="button" class="llm-modal-close-btn" onclick="closeAddPatientTagModal()" style="background:none; border:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+
+      <p style="font-size:12.5px; color:#64748b; margin-top:0;">
+        Crea o asigna distintivos clínicos y administrativos (ej. dialectos, protocolos especiales, riesgo o prioridades).
+      </p>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11.5px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Sugerencias Rápidas:</label>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Prioridad Alta', 'red')">🚨 Prioridad Alta</button>
+          <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Hablante Maya', 'teal')">🗣️ Hablante Maya</button>
+          <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Riesgo de Caídas', 'amber')">⚠️ Riesgo Caídas</button>
+          <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Vigilancia Renal', 'blue')">🧪 Vigilancia Renal</button>
+          <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Reposo Absoluto', 'purple')">🛌 Reposo Absoluto</button>
+          <button type="button" class="btn-outline-pill" style="font-size:11px; padding:3px 8px;" onclick="selectQuickTagPreset('Aislamiento Contacto', 'red')">🧫 Aislamiento</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label for="new-tag-name-input" style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Nombre de la Etiqueta Personalizada:</label>
+        <input type="text" id="new-tag-name-input" class="input-field" placeholder="Ej: Protocolo Oncológico Fase 2..." style="width:100%; box-sizing:border-box;" />
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="font-size:12px; font-weight:700; color:#334155; display:block; margin-bottom:6px;">Color del Distintivo:</label>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="radio" name="tag-color" value="blue" checked /> 🔵 Celeste</label>
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="radio" name="tag-color" value="teal" /> 🟢 Verde / Teal</label>
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="radio" name="tag-color" value="amber" /> 🟡 Ámbar</label>
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="radio" name="tag-color" value="purple" /> 🟣 Púrpura</label>
+          <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="radio" name="tag-color" value="red" /> 🔴 Rojo Alerta</label>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn-secondary-outline" onclick="closeAddPatientTagModal()">Cancelar</button>
+        <button type="button" class="btn-primary-gradient" onclick="submitSavePatientTag()">Guardar Etiqueta</button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- =================================================================
        PORTAL EXCLUSIVO DEL PACIENTE ("MI SALUD HOY" - SIN INTERFAZ CLÍNICA)
        ================================================================= -->
@@ -2381,21 +2487,39 @@
       </section>
 
       <section class="pat-card">
-        <h3>📝 Mi Chequeo en Casa</h3>
-        <p style="font-size:12px; color:#64748b; margin-top:0;">Registra cómo te sientes hoy para ayudar a tu seguimiento médico.</p>
-        <div class="manual-vitals-grid">
-          <label>Presión alta (Sistólica)<input type="number" id="pat-chk-bp-s" class="input-field" placeholder="120" /></label>
-          <label>Presión baja (Diastólica)<input type="number" id="pat-chk-bp-d" class="input-field" placeholder="80" /></label>
-          <label>Glucosa (mg/dL)<input type="number" id="pat-chk-gluc" class="input-field" placeholder="105" /></label>
-          <label>Temperatura (°C)<input type="number" step="0.1" id="pat-chk-temp" class="input-field" placeholder="36.5" /></label>
-          <label>¿Tomaste tus medicinas?<select id="pat-chk-med-ok" class="input-field"><option value="true">Sí, todas</option><option value="false">Aún no / Olvidé</option></select></label>
-          <label>¿Cómo te sientes hoy?<select id="pat-chk-mood" class="input-field"><option value="Bien">Bien</option><option value="Molestia leve">Molestia leve</option><option value="Síntomas importantes">Con molestias importantes</option></select></label>
+        <h3>📝 Mi Bitácora de Bienestar y Medicinas</h3>
+        <p style="font-size:12px; color:#64748b; margin-top:0;">Registra tu adherencia al tratamiento y cómo te sientes para ayudar a tu médico tratante.</p>
+        
+        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:12px; color:#0369a1; display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:18px;">🩺</span>
+          <div>
+            <strong>Registro Clínico Certificado (NOM-004-SSA3-2012):</strong>
+            Los signos vitales oficiales (presión arterial, frecuencia cardíaca, temperatura, glucosa capilar y saturación O2) son valorados y registrados de forma exclusiva por el médico tratante y personal de enfermería en clínica para garantizar la máxima fiabilidad de tu expediente.
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <label style="font-size:12px; font-weight:700; color:#334155;">
+            ¿Tomaste tus medicinas hoy?
+            <select id="pat-chk-med-ok" class="input-field" style="margin-top:4px; width:100%;">
+              <option value="true">✅ Sí, tomé todas mis dosis programadas</option>
+              <option value="false">❌ No / Olvidé tomar alguna dosis</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:700; color:#334155;">
+            ¿Cómo te sientes en este momento?
+            <select id="pat-chk-mood" class="input-field" style="margin-top:4px; width:100%;">
+              <option value="Bien">😊 Bien / Estable sin molestias</option>
+              <option value="Molestia leve">😐 Molestia leve o cansancio</option>
+              <option value="Síntomas importantes">⚠️ Con malestar o dolor importante</option>
+            </select>
+          </label>
         </div>
         <div style="display:flex; gap:8px; margin-top:10px;">
-          <input type="text" id="pat-chk-note" class="input-field" placeholder="Escribe algún síntoma o comentario..." style="flex:1;" />
-          <button type="button" class="btn-primary-gradient" onclick="submitStandaloneDailyLog()">Guardar</button>
+          <input type="text" id="pat-chk-note" class="input-field" placeholder="Escribe algún síntoma o comentario para tu médico..." style="flex:1;" />
+          <button type="button" class="btn-primary-gradient" onclick="submitStandaloneDailyLog()">Guardar Reporte</button>
         </div>
-        <h4 style="margin:14px 0 6px; font-size:13px;">Mis últimos chequeos</h4>
+        <h4 style="margin:14px 0 6px; font-size:13px;">Mis últimos reportes</h4>
         <div id="pat-portal-logs" style="font-size:12px;"></div>
       </section>
 
@@ -2419,7 +2543,7 @@
           </label>
           <label class="legal-check-item">
             <input type="checkbox" id="pat-priv-wearables" checked />
-            <div><strong>Seguimiento de Chequeos en Casa y Signos Vitales</strong><small>Guarda tus mediciones diarias para que tu médico revise tu evolución.</small></div>
+            <div><strong>Bitácora de Bienestar y Adherencia Terapéutica</strong><small>Autoriza el registro de reporte de bienestar y adherencia a medicamentos.</small></div>
           </label>
           <label class="legal-check-item warning">
             <input type="checkbox" id="pat-priv-cloud" />

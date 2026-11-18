@@ -1,6 +1,9 @@
 from typing import Optional
-from fastapi import APIRouter, Query
+from datetime import datetime
+from fastapi import APIRouter, Query, Body, HTTPException
 from app.db.global_db import (
+    get_network_hospital_capacities,
+    update_hospital_live_capacity,
     get_all_institutions,
     register_institution,
     get_network_health,
@@ -99,3 +102,38 @@ def update_status(ref_id: str, data: ReferralStatusUpdateRequest):
 def list_audits(limit: int = Query(50)):
     """Bitácora inmutable de accesos interhospitalarios para cumplimiento NOM-024."""
     return get_network_audits(limit=limit)
+
+
+@router.get("/capacity")
+def get_live_hospital_capacity():
+    """Monitoreo en tiempo real del censo de camas y personal médico activo por hospital."""
+    capacities = get_network_hospital_capacities()
+    tot_camas = sum(c["camas_totales"] for c in capacities)
+    disp_camas = sum(c["camas_disponibles"] for c in capacities)
+    disp_uci = sum(c["camas_uci_disp"] for c in capacities)
+    med_activos = sum(c["medicos_turno"] for c in capacities)
+    med_disp = sum(c["medicos_disponibles"] for c in capacities)
+    
+    return {
+        "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "total_hospitales": len(capacities),
+        "resumen_red": {
+            "camas_totales": tot_camas,
+            "camas_disponibles": disp_camas,
+            "camas_ocupadas": tot_camas - disp_camas,
+            "camas_uci_disponibles": disp_uci,
+            "medicos_en_turno": med_activos,
+            "medicos_disponibles": med_disp,
+            "tasa_ocupacion_promedio": round(((tot_camas - disp_camas) / tot_camas) * 100, 1) if tot_camas else 0
+        },
+        "hospitales": capacities
+    }
+
+
+@router.post("/capacity/{clues}")
+def update_live_capacity_endpoint(clues: str, data: dict = Body(...)):
+    """Actualiza el conteo de camas o médicos en tiempo real para un hospital."""
+    res = update_hospital_live_capacity(clues, data)
+    if not res:
+        raise HTTPException(status_code=404, detail="Hospital CLUES no encontrado")
+    return {"success": True, "hospital": res}

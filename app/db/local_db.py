@@ -99,6 +99,7 @@ class Patient(Base):
     # ── Seguros / Anotaciones ─────────────────────────────────────
     aseguradoras         = Column(Text, nullable=True)   # JSON array de strings
     anotaciones_generales = Column(Text, nullable=True)
+    etiquetas             = Column(Text, nullable=True)   # JSON array de tags personalizadas
 
     # ── Métricas físicas (editables post-registro) ────────────────
     altura_cm   = Column(Float, nullable=True)
@@ -528,6 +529,11 @@ def create_tables():
             conn.execute(text("ALTER TABLE consultas ADD COLUMN integrity_seal TEXT;"))
 
     p_columns = [col["name"] for col in inspector.get_columns("patients")]
+    if "etiquetas" not in p_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE patients ADD COLUMN etiquetas TEXT;"))
+        print("[DB] Migración: Columna 'etiquetas' agregada a tabla patients ✅")
+
     if "tipo_sangre" not in p_columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE patients ADD COLUMN tipo_sangre TEXT;"))
@@ -2456,5 +2462,100 @@ def get_patient_upcoming_appointments(curp: str) -> list:
             }
             for a in rows
         ]
+    finally:
+        db.close()
+
+
+# ─────────────────────────────────────────────────────────────────
+# ETIQUETAS PERSONALIZADAS Y PREDEFINIDAS DEL PACIENTE
+# ─────────────────────────────────────────────────────────────────
+
+def get_patient_tags(curp: str) -> list:
+    """Retorna las etiquetas del paciente (predeterminadas + personalizadas)."""
+    db = SessionLocal()
+    try:
+        p = db.query(Patient).filter(Patient.curp == curp.upper()).first()
+        if not p:
+            return []
+        
+        tags = []
+        # Predeterminadas clínicas basadas en el perfil
+        if p.tipo_paciente:
+            tags.append({"name": p.tipo_paciente, "color": "blue", "is_preset": True})
+        if p.programa_medico:
+            tags.append({"name": p.programa_medico, "color": "teal", "is_preset": True})
+        
+        if p.alergias and len(p.alergias) > 0:
+            al_names = ", ".join(a.descripcion for a in p.alergias[:2])
+            tags.append({"name": f"Alergia: {al_names}", "color": "red", "is_preset": True})
+
+        if p.tipo_sangre:
+            tags.append({"name": f"Sangre: {p.tipo_sangre}", "color": "amber", "is_preset": True})
+
+        # Etiquetas personalizadas creadas por el médico
+        if p.etiquetas:
+            try:
+                custom = json.loads(p.etiquetas)
+                if isinstance(custom, list):
+                    for ct in custom:
+                        ct["is_preset"] = False
+                        tags.append(ct)
+            except Exception:
+                pass
+        return tags
+    finally:
+        db.close()
+
+
+def add_patient_custom_tag(curp: str, tag_name: str, color: str = "blue", created_by: str = "Médico") -> list:
+    """Agrega una nueva etiqueta personalizada a un paciente."""
+    db = SessionLocal()
+    try:
+        p = db.query(Patient).filter(Patient.curp == curp.upper()).first()
+        if not p:
+            return []
+        custom_tags = []
+        if p.etiquetas:
+            try:
+                custom_tags = json.loads(p.etiquetas) or []
+            except Exception:
+                custom_tags = []
+        
+        clean_name = tag_name.strip()
+        # Evitar duplicados por nombre
+        custom_tags = [t for t in custom_tags if t.get("name", "").strip().lower() != clean_name.lower()]
+        
+        new_tag = {
+            "name": clean_name,
+            "color": color,
+            "created_by": created_by,
+            "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+        }
+        custom_tags.append(new_tag)
+        p.etiquetas = json.dumps(custom_tags, ensure_ascii=False)
+        db.commit()
+        return get_patient_tags(curp)
+    finally:
+        db.close()
+
+
+def remove_patient_custom_tag(curp: str, tag_name: str) -> list:
+    """Elimina una etiqueta personalizada de un paciente."""
+    db = SessionLocal()
+    try:
+        p = db.query(Patient).filter(Patient.curp == curp.upper()).first()
+        if not p:
+            return []
+        custom_tags = []
+        if p.etiquetas:
+            try:
+                custom_tags = json.loads(p.etiquetas) or []
+            except Exception:
+                custom_tags = []
+        clean_name = tag_name.strip().lower()
+        custom_tags = [t for t in custom_tags if t.get("name", "").strip().lower() != clean_name]
+        p.etiquetas = json.dumps(custom_tags, ensure_ascii=False)
+        db.commit()
+        return get_patient_tags(curp)
     finally:
         db.close()

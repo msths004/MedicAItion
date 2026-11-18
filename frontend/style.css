@@ -15358,3 +15358,22 @@ textarea:focus {
 .lab-modal-box {
   overflow: visible !important;
 }
+
+
+/* ── ETIQUETAS PERSONALIZADAS Y CAPACIDAD HOSPITALARIA EN TIEMPO REAL ── */
+.exp-custom-pill {
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.exp-custom-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.hospital-capacity-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.hospital-capacity-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.08) !important;
+  border-color: #bae6fd !important;
+}

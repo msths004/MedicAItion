@@ -176,6 +176,8 @@ function _renderExpHeader(p, consentData) {
     conEl.className = ok ? 'exp-pill exp-pill-safe' : 'exp-pill exp-pill-warn';
     conEl.textContent = ok ? 'Consentimiento firmado' : 'Consentimiento pendiente';
   }
+
+  _renderExpCustomTags(p.curp, p);
 }
 
 function _computeNews2(v) {
@@ -673,3 +675,114 @@ function toggleExpTimer() {
   const btn = document.getElementById('exp-timer-toggle');
   if (btn) btn.textContent = _ExpCareState.timerPaused ? 'Reanudar' : 'Pausar';
 }
+
+
+// ==========================================================================
+// ETIQUETAS PERSONALIZADAS Y PREDEFINIDAS DEL EXPEDIENTE
+// ==========================================================================
+
+async function _renderExpCustomTags(curp, patient) {
+  const container = document.getElementById('exp-custom-tags-container');
+  if (!container) return;
+
+  try {
+    const res = await fetch(`${API}/api/patients/${encodeURIComponent(curp)}/tags`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const tags = data.tags || [];
+
+    // Colores disponibles: blue, teal, amber, purple, red
+    const colorClasses = {
+      blue: 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;',
+      teal: 'background:#f0fdf4; color:#047857; border:1px solid #a7f3d0;',
+      amber: 'background:#fffbeb; color:#b45309; border:1px solid #fde68a;',
+      purple: 'background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff;',
+      red: 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;'
+    };
+
+    container.innerHTML = tags.map(t => {
+      const style = colorClasses[t.color] || colorClasses.blue;
+      const deleteBtn = !t.is_preset
+        ? `<button type="button" onclick="deletePatientTag('${_expEsc(curp)}', '${_expEsc(t.name)}')" style="background:none; border:none; color:inherit; font-weight:800; cursor:pointer; padding:0 0 0 4px; font-size:11px;" title="Eliminar etiqueta">✕</button>`
+        : '';
+      return `
+        <span class="exp-custom-pill" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; ${style}">
+          ${_expEsc(t.name)} ${deleteBtn}
+        </span>
+      `;
+    }).join('');
+  } catch (e) {
+    console.warn('[Tags] Error cargando etiquetas del paciente:', e);
+  }
+}
+
+window.openAddPatientTagModal = function() {
+  const modal = document.getElementById('patient-tag-modal-overlay');
+  const inp = document.getElementById('new-tag-name-input');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  if (inp) {
+    inp.value = '';
+    setTimeout(() => inp.focus(), 50);
+  }
+};
+
+window.closeAddPatientTagModal = function() {
+  const modal = document.getElementById('patient-tag-modal-overlay');
+  if (modal) modal.style.display = 'none';
+};
+
+window.selectQuickTagPreset = function(name, color) {
+  const inp = document.getElementById('new-tag-name-input');
+  if (inp) inp.value = name;
+  const radios = document.getElementsByName('tag-color');
+  for (const r of radios) {
+    if (r.value === color) r.checked = true;
+  }
+};
+
+window.submitSavePatientTag = async function() {
+  const curp = _ExpCareState.curp || (window.AppState && AppState.selectedPatientCurp);
+  if (!curp) {
+    showToast('Selecciona un paciente antes de asignar una etiqueta', 'warn');
+    return;
+  }
+  const inp = document.getElementById('new-tag-name-input');
+  const name = inp?.value?.trim();
+  if (!name) {
+    showToast('Ingresa un nombre para la etiqueta', 'error');
+    return;
+  }
+  const radios = document.getElementsByName('tag-color');
+  let selectedColor = 'blue';
+  for (const r of radios) {
+    if (r.checked) { selectedColor = r.value; break; }
+  }
+
+  try {
+    const res = await fetch(`${API}/api/patients/${encodeURIComponent(curp)}/tags`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, color: selectedColor, author: 'Médico' })
+    });
+    if (!res.ok) throw new Error('No se pudo guardar la etiqueta');
+    showToast(`✅ Etiqueta "${name}" asignada al paciente`, 'success');
+    closeAddPatientTagModal();
+    _renderExpCustomTags(curp, _ExpCareState.patient);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+window.deletePatientTag = async function(curp, tagName) {
+  try {
+    const res = await fetch(`${API}/api/patients/${encodeURIComponent(curp)}/tags/${encodeURIComponent(tagName)}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('No se pudo eliminar la etiqueta');
+    showToast(`Etiqueta "${tagName}" eliminada`, 'info');
+    _renderExpCustomTags(curp, _ExpCareState.patient);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};

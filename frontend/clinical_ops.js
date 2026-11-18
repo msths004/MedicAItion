@@ -1874,11 +1874,12 @@ async function loadStandalonePatientPortal(curpOverride) {
       const logs = (data.daily_logs || []).slice(0, 5);
       logsEl.innerHTML = logs.length
         ? logs.map(l => `
-            <div class="portal-log-row ${l.alert_flag ? 'is-alert' : ''}" style="margin-bottom:6px;">
+            <div class="portal-log-row ${l.alert_flag ? 'is-alert' : ''}" style="margin-bottom:6px; background:#fff; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0;">
               <strong>${_opsEsc((l.recorded_at || '').slice(0, 16).replace('T', ' '))}</strong> —
-              Presión ${l.systolic_bp ?? '--'}/${l.diastolic_bp ?? '--'} · Glucosa ${l.glucose_mg_dl ?? '--'} ·
-              Temp ${l.temperature_c ?? '--'} °C · Medicinas: ${l.medication_taken ? '✅' : '❌'}
-              ${l.alert_flag && l.alert_message ? `<br/>⚠️ ${_opsEsc(l.alert_message)}` : ''}
+              <span>${l.medication_taken ? '✅ Dosis al día' : '❌ Omisión de dosis'}</span> ·
+              <span>Estado: <strong>${_opsEsc(l.mood_or_pain || 'Estable')}</strong></span>
+              ${l.symptoms_note ? `<br/><span style="color:#64748b; font-size:11.5px;">Nota al médico: ${_opsEsc(l.symptoms_note)}</span>` : ''}
+              ${l.alert_flag && l.alert_message ? `<br/>⚠️ <span style="color:#dc2626; font-weight:700;">${_opsEsc(l.alert_message)}</span>` : ''}
             </div>`).join('')
         : '<p style="color:#64748b;">Aún no has guardado chequeos en casa.</p>';
     }
@@ -1910,10 +1911,10 @@ async function submitStandaloneDailyLog() {
   const curp = AppState.session?.patientCurp;
   if (!curp) return;
   const payload = {
-    systolic_bp: parseFloat(document.getElementById('pat-chk-bp-s')?.value) || null,
-    diastolic_bp: parseFloat(document.getElementById('pat-chk-bp-d')?.value) || null,
-    glucose_mg_dl: parseFloat(document.getElementById('pat-chk-gluc')?.value) || null,
-    temperature_c: parseFloat(document.getElementById('pat-chk-temp')?.value) || null,
+    systolic_bp: null,
+    diastolic_bp: null,
+    glucose_mg_dl: null,
+    temperature_c: null,
     medication_taken: document.getElementById('pat-chk-med-ok')?.value === 'true',
     mood_or_pain: document.getElementById('pat-chk-mood')?.value || 'Bien',
     symptoms_note: document.getElementById('pat-chk-note')?.value?.trim() || null,
@@ -1925,9 +1926,9 @@ async function submitStandaloneDailyLog() {
       body: JSON.stringify(payload),
     });
     const out = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(out.detail || 'Error al guardar chequeo');
-    document.getElementById('pat-chk-note').value = '';
-    showToast(out.alert_flag ? `⚠️ Guardado con alerta: ${out.alert_message}` : '✅ Tu chequeo de hoy fue guardado', out.alert_flag ? 'error' : 'success');
+    if (!res.ok) throw new Error(out.detail || 'Error al guardar reporte de bienestar');
+    if (document.getElementById('pat-chk-note')) document.getElementById('pat-chk-note').value = '';
+    showToast('✅ Tu reporte de adherencia y bienestar fue guardado correctamente para tu médico', 'success');
     await loadStandalonePatientPortal(curp);
   } catch (err) {
     showToast(err.message, 'error');

@@ -586,7 +586,9 @@ async function sendPulsoPrompt(presetText) {
 }
 
 function runPulsoQuickAction(kind) {
-  if (kind === 'summary') {
+    if (kind === 'transfer') {
+    sendPulsoPrompt('Genera el resumen de transferencia interhospitalaria y el análisis de divergencia de protocolos para el paciente actual.');
+  } else if (kind === 'summary') {
     sendPulsoPrompt('Dame el resumen previo del paciente actual con sus alergias, signos vitales y últimas consultas.');
   } else if (kind === 'soap') {
     const input = document.getElementById('pulso-chat-input');

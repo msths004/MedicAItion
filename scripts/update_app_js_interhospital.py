@@ -18,6 +18,10 @@ let cachedInstitutions = [];
 async function initRedHospitalariaView() {
   console.log('[Red Hospitalaria] Inicializando vista de interoperabilidad...');
   try {
+    // 0. Cargar telemetría y censo de camas en tiempo real
+    if (typeof loadHospitalLiveCapacity === 'function') {
+      loadHospitalLiveCapacity();
+    }
     // 1. Obtener estado de la red
     const rStat = await fetch('/api/institutions/status');
     if (rStat.ok) {
@@ -518,7 +522,7 @@ if "nav-btn-red-hospitalaria" not in js:
     print("switchMainTab actualizado para red-hospitalaria.")
 
 # 2. Agregar la lógica al final de app.js si no está presente
-if "initRedHospitalariaView" not in js:
+if "function initRedHospitalariaView" not in js:
     js += "\n" + JS_LOGIC
     print("Lógica JS de Red Hospitalaria agregada.")
 

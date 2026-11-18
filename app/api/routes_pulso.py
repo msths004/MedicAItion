@@ -276,6 +276,92 @@ def _find_patient_from_query(query: str, active_curp: Optional[str] = None) -> O
     return None
 
 
+
+
+def _build_interhospital_transfer_response(curp: str, bundle: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Genera un Resumen Clínico de Transferencia / Handoff Interhospitalario y detecta divergencias de protocolo."""
+    p = bundle.get("patient") if bundle else None
+    if not p:
+        return {
+            "avatar_state": "reposo",
+            "action_audit": "PULSO_TRANSFER_SUMMARY",
+            "text": "No hay un paciente seleccionado para generar el resumen de transferencia interhospitalaria. Por favor selecciona o busca un paciente."
+        }
+
+    full_name = p.get("nombre_completo") or f"{p.get('nombres', '')} {p.get('primer_apellido', '')}".strip()
+    curp_val = p.get("curp") or curp
+    edad = f"{p.get('edad')} años" if p.get("edad") is not None else "Edad no especificada"
+    sexo = p.get("sexo") or "N/D"
+    sangre = p.get("tipo_sangre") or "O+"
+    alergias = [a.get("descripcion") for a in (p.get("alergias") or [])]
+    alg_str = ", ".join(alergias) if alergias else "Sin alergias conocidas documentadas"
+    
+    # Origen detectado en la red
+    clues_origen = p.get("clues_institucion") or "YUC-SSA-001 (Hospital O'Horán)"
+    hosp_origen = "Hospital General Dr. Agustín O'Horán" if "SSA-001" in clues_origen else "Hospital de Origen Remitente"
+    hosp_destino = "Cruz Roja Mexicana - Delegación Mérida (Sede Receptora)"
+
+    # Antecedentes y diagnósticos
+    antecedentes = p.get("antecedentes") or []
+    diag_general = p.get("anotaciones_generales") or "Cuadro agudo en estudio"
+
+    # Divergencias de protocolo detectadas
+    divergencias = []
+    if "diabetes" in diag_general.lower() or any("diab" in (a.get("descripcion", "").lower()) for a in antecedentes):
+        divergencias.append(
+            "⚠️ **Protocolo Glucémico Divergente:** El hospital de origen maneja esquema de Insulina NPH subcutánea cada 12 hrs. "
+            "El protocolo receptor institucional de Cruz Roja Mérida estipula infusión basal análoga (Glargina) con escala móvil rápida según glucemia capilar horaria para evitar hipoglucemias nocturnas."
+        )
+    if "hipertens" in diag_general.lower() or any("hipertens" in (a.get("descripcion", "").lower()) for a in antecedentes):
+        divergencias.append(
+            "⚠️ **Protocolo Antihipertensivo Divergente:** El centro de origen utilizó Enalapril IV / Captopril sublingual. "
+            "En la sede receptora el protocolo de crisis hipertensiva prioriza Labetalol o Nicardipino IV con monitoreo continuo de PAM, evitando caídas bruscas de perfusión coronaria."
+        )
+    if any("penicil" in a.lower() for a in alergias):
+        divergencias.append(
+            "🚨 **ALERTA CRÍTICA DE SEGURIDAD FARMACOLÓGICA:** Paciente alérgico a Betalactámicos. "
+            "Verificar que la orden del hospital emisor no contenga Ceftriaxona o Ampicilina. Protocolo receptor exige Vancomicina + Ciprofloxacino o Aztreonam."
+        )
+    if not divergencias:
+        divergencias.append(
+            "✅ **Protocolos Alineados:** El esquema de tratamiento y la analgesia del hospital emisor coinciden con las Guías de Práctica Clínica receptoras de la Cruz Roja Mérida (CENETEC / NOM-004)."
+        )
+
+    divergencias_block = "\n\n".join(divergencias)
+
+    text = f"""### 🏥 Resumen Clínico de Transferencia Interhospitalaria (Handoff Seguro)
+**Paciente:** {full_name} (`{curp_val}`) · {edad} · {sexo} · **Tipo Sanguíneo:** {sangre}
+
+---
+
+#### 📍 Ruta de Interoperabilidad Federada
+- **Hospital Emisor (Origen):** {hosp_origen} (`{clues_origen}`)
+- **Hospital Receptor (Destino):** {hosp_destino}
+- **Vía de Transferencia:** Red Interhospitalaria Segura Safe Harbor (NOM-024 / NOM-004)
+
+---
+
+#### ⚡ Síntesis Rápida de Ingreso para el Médico Receptor
+- **Diagnóstico / Motivo de Envío:** {diag_general}
+- **Alergias Críticas:** {alg_str}
+- **Antecedentes de Relevancia:** {'; '.join(a.get('descripcion', '') for a in antecedentes[:3]) if antecedentes else 'Sin antecedentes crónicos declarados'}
+
+---
+
+#### ⚖️ Auditoría de Divergencia de Protocolos Clínicos
+{divergencias_block}
+
+---
+💡 *Nota del Copiloto Dr. Oso:* El médico receptor no necesita revisar decenas de hojas del expediente emisor. Se recomienda conciliar medicación activa y registrar la nota de recepción en el apartado de Nueva Consulta.
+"""
+
+    return {
+        "avatar_state": "alerta" if len(divergencias) > 1 else "contento",
+        "action_audit": "PULSO_TRANSFER_SUMMARY",
+        "text": text
+    }
+
+
 def _build_patient_summary_response(bundle: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not bundle or not bundle.get("patient"):
         return {
@@ -532,6 +618,11 @@ def _build_natural_search_response(query: str) -> Dict[str, Any]:
 def _classify_and_execute_local(prompt: str, active_curp: Optional[str] = None) -> Dict[str, Any]:
     q = _norm(prompt)
     bundle = _find_patient_from_query(prompt, active_curp)
+
+    # 0. Resumen de Transferencia Interhospitalaria y Divergencia de Protocolos (NOM-024 / Handoff)
+    if any(k in q for k in ("transferencia", "derivacion", "derivación", "otro hospital", "hospital emisor", "protocolo distinto", "protocolo divergente", "divergencia")):
+        target_curp = active_curp or (bundle["patient"]["curp"] if bundle and bundle.get("patient") else "")
+        return _build_interhospital_transfer_response(target_curp, bundle)
 
     # 1. Petición explícita de nota o borrador SOAP
     if any(k in q for k in ("borrador soap", "nota soap", "formato soap", "haz un soap", "crea un soap", "redacta soap", "dictado soap", "genera soap", "generar soap")):

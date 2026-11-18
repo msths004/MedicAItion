@@ -33,6 +33,9 @@ from typing import Optional
 from app.core.fhir_exporter import build_fhir_bundle
 from app.core.ask_expediente import answer_patient_question
 from app.db.local_db import (
+    get_patient_tags,
+    add_patient_custom_tag,
+    remove_patient_custom_tag,
     register_patient,
     upsert_consent_record,
     update_patient,
@@ -305,3 +308,29 @@ def ask_patient_record(curp: str, data: dict = Body(...)):
         daily_logs=history["patient_daily_logs"],
         llm_mode=str(data.get("llm_mode") or "offline"),
     )
+
+
+@router.get("/{curp}/tags")
+def list_patient_tags_endpoint(curp: str):
+    """Obtiene todas las etiquetas activas (predeterminadas y personalizadas) del paciente."""
+    tags = get_patient_tags(curp.upper())
+    return {"curp": curp.upper(), "tags": tags}
+
+
+@router.post("/{curp}/tags")
+def add_patient_tag_endpoint(curp: str, data: dict = Body(...)):
+    """Crea y asocia una nueva etiqueta personalizada para el paciente."""
+    name = str(data.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="El nombre de la etiqueta es obligatorio")
+    color = str(data.get("color") or "blue").strip().lower()
+    author = str(data.get("author") or "Médico Tratante").strip()
+    updated_tags = add_patient_custom_tag(curp.upper(), name, color, author)
+    return {"success": True, "curp": curp.upper(), "tags": updated_tags}
+
+
+@router.delete("/{curp}/tags/{tag_name}")
+def delete_patient_tag_endpoint(curp: str, tag_name: str):
+    """Elimina una etiqueta personalizada del paciente."""
+    updated_tags = remove_patient_custom_tag(curp.upper(), tag_name)
+    return {"success": True, "curp": curp.upper(), "tags": updated_tags}
