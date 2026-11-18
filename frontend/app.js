@@ -1871,7 +1871,7 @@ async function onDashboardPatientChange(curp) {
     allergiesText = '⚠️ Alergia: ' + patient.alergias.map(a => a.descripcion).join(', ');
   }
 
-  // Update elements
+  // Actualizar datos de identidad
   const elName = document.getElementById('dash-patient-name');
   if (elName) elName.textContent = fullName;
   const elAvatar = document.getElementById('dash-patient-avatar');
@@ -1894,26 +1894,51 @@ async function onDashboardPatientChange(curp) {
     elAllergies.innerHTML = `<span class="allergy-tag">${allergiesText}</span>`;
   }
 
-  // Buscar última lectura de telemetría / wearables
-  let bpmVal = '75';
-  let devVal = 'Triaje Clínico Oficial';
-  try {
-    const vRes = await fetch(`${API}/api/wearables/readings?curp=${encodeURIComponent(curp)}&limit=1`);
-    if (vRes.ok) {
-      const vData = await vRes.json();
-      const reading = (vData.readings && vData.readings[0]);
-      if (reading) {
-        bpmVal = String(reading.heart_rate || 75);
-        devVal = reading.device_name || 'Smart Health Watch';
+  // Actualizar Diagnóstico y Plan Clínico (Sustituto de Smartwatch)
+  const elDiag = document.getElementById('dash-patient-diagnosis');
+  const elAnte = document.getElementById('dash-patient-antecedentes');
+  const elTreat = document.getElementById('dash-patient-treatment');
+  const elReportDiag = document.getElementById('dash-report-doc-diagnosis');
+
+  let activeDx = 'J00 Rinofaringitis Aguda · Cuadro leve controlado';
+  let activeAnte = 'Seguimiento preventivo regular. Sin intervenciones quirúrgicas recientes.';
+  let activeRxPills = '<span class="treatment-pill">💊 Paracetamol 500mg c/8h</span><span class="treatment-pill">💧 Hidratación oral</span>';
+
+  if (patient && patient.resumen_ia) {
+    activeAnte = patient.resumen_ia.slice(0, 160) + '...';
+  } else if (patient && Array.isArray(patient.antecedentes) && patient.antecedentes.length > 0) {
+    activeAnte = patient.antecedentes.map(a => a.descripcion).join(' · ');
+  }
+
+  if (patient && patient.padecimientos) {
+    activeDx = patient.padecimientos;
+  } else if (patient && patient.enfermedad) {
+    activeDx = patient.enfermedad;
+  }
+
+  if (elDiag) elDiag.textContent = activeDx;
+  if (elAnte) elAnte.textContent = activeAnte;
+  if (elTreat) elTreat.innerHTML = activeRxPills;
+  if (elReportDiag) elReportDiag.innerHTML = `<strong>Dx CIE-10:</strong> ${activeDx}`;
+
+  // Cargar etiquetas del paciente
+  const elTags = document.getElementById('dash-patient-tags');
+  if (elTags) {
+    try {
+      const tRes = await fetch(`${API}/api/patients/${encodeURIComponent(curp)}/tags`);
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        const tags = tData.tags || [];
+        if (tags.length > 0) {
+          elTags.innerHTML = tags.map(t => `<span class="custom-patient-tag tag-${t.color || 'blue'}">#${t.name}</span>`).join('');
+        } else {
+          elTags.innerHTML = '<span class="custom-patient-tag tag-blue">#ExpedienteVigente</span><span class="custom-patient-tag tag-amber">#CruzRojaMérida</span>';
+        }
       }
+    } catch {
+      elTags.innerHTML = '<span class="custom-patient-tag tag-blue">#ExpedienteVigente</span>';
     }
-  } catch {}
-
-  const elBpm = document.getElementById('dash-bpm-value');
-  if (elBpm) elBpm.textContent = bpmVal;
-
-  const elDev = document.getElementById('dash-device-name');
-  if (elDev) elDev.textContent = devVal;
+  }
 
   // Sincronizar estado global
   AppState.selectedPatientCurp = curp;
@@ -1923,7 +1948,6 @@ async function onDashboardPatientChange(curp) {
     showToast(`Paciente seleccionado: ${fullName}`, 'info');
   }
 }
-
 
 /* ==========================================================================
    PACIENTES: MAPA CLÍNICO Y MOTOR DE RENDERIZADO POR MÓDULOS DE SECCIÓN

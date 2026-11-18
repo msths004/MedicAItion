@@ -208,80 +208,69 @@
       <!-- TOP BAR -->
       <header class="topbar">
         <div class="topbar-left">
-          <!-- Search Bar -->
+          <!-- Búsqueda Rápida Clínica -->
           <div class="topbar-search">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="global-quick-search" placeholder="Búsqueda rápida (⌘K)" oninput="if(AppState.mainTab==='expedientes'){document.getElementById('search-input').value=this.value; handleSearch();}" onkeydown="if(event.key==='Enter'){runQuickTopSearch(this.value);}" />
+            <input type="text" id="global-quick-search" placeholder="Buscar paciente o enfermedad (Ctrl+K)" oninput="if(AppState.mainTab==='expedientes'){document.getElementById('search-input').value=this.value; handleSearch();}" onkeydown="if(event.key==='Enter'){runQuickTopSearch(this.value);}" />
           </div>
 
-          <!-- Sync Status -->
-          <div class="status-sync-wrap" id="status-badge">
-            <span class="status-dot"></span>
-            <div class="status-sync-text">
-              <span class="status-main-line" id="status-text">Sistema listo</span>
-              <span class="status-sub-line">(sincronizado)</span>
-            </div>
-          </div>
-
-          <!-- Red Hospitalaria Node Badge -->
-          <div class="hospital-network-pill" onclick="switchMainTab('red-hospitalaria')" title="Red Interhospitalaria Federada: Sede Activa Cruz Roja Mérida (YUC-CR-001) - 7 Hospitales Conectados">
+          <!-- Sede y Red Hospitalaria Conectada -->
+          <div class="hospital-network-pill" onclick="switchMainTab('red-hospitalaria')" title="Red Interhospitalaria Federada: Cruz Roja Mérida · 7 Hospitales Conectados">
             <span class="hosp-net-icon">🏥</span>
             <div class="hosp-net-info">
-              <span class="hosp-net-title">Cruz Roja Mérida (YUC-CR-001)</span>
-              <span class="hosp-net-sub">Red Yucatán Conectada (7 Nodos)</span>
+              <span class="hosp-net-title">Cruz Roja Mérida</span>
+              <span class="hosp-net-sub">Red Yucatán (7 Nodos)</span>
             </div>
             <span class="hosp-net-dot"></span>
           </div>
 
-          <!-- Laboratorio & Gabinete Hub Button -->
-          <button class="topbar-icon-btn lab-active-btn" onclick="openLaboratorioModal()" title="Centro de Laboratorio y Gabinete Clínico (Estudios recientes)">
+          <!-- Centro de Laboratorio y Gabinete -->
+          <button class="topbar-icon-btn lab-active-btn" onclick="openLaboratorioModal()" title="Centro de Laboratorio y Gabinete Clínico">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.62 18.25A2 2 0 0 0 6.34 21h11.32a2 2 0 0 0 1.72-2.75L14 9.31V2"/><path d="M8.5 2h7"/></svg>
           </button>
         </div>
 
         <div class="topbar-right">
-          
-          <!-- CONTROLES DE ACCESIBILIDAD & INCLUSIÓN (WCAG 2.1 AA) -->
-          <div class="accessibility-controls-strip" title="Herramientas de Inclusión y Accesibilidad Universal">
-            <button type="button" class="access-pill-btn" onclick="EthicalGovernance.adjustFontSize('decrease')" title="Disminuir tamaño de letra (A-)">A-</button>
-            <span class="access-size-label" id="font-size-indicator" title="Tamaño actual">100%</span>
-            <button type="button" class="access-pill-btn" onclick="EthicalGovernance.adjustFontSize('increase')" title="Aumentar tamaño de letra (A+)">A+</button>
-            <button type="button" class="access-pill-btn" id="btn-toggle-contrast" onclick="EthicalGovernance.toggleHighContrast()" title="Alternar modo de alto contraste para visibilidad clínica">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>
+          <!-- Herramientas de Accesibilidad (Discretas) -->
+          <div class="accessibility-controls-strip" title="Tamaño de texto y contraste">
+            <button type="button" class="access-pill-btn" onclick="EthicalGovernance.adjustFontSize('decrease')" title="Disminuir letra">A-</button>
+            <span class="access-size-label" id="font-size-indicator">100%</span>
+            <button type="button" class="access-pill-btn" onclick="EthicalGovernance.adjustFontSize('increase')" title="Aumentar letra">A+</button>
+            <button type="button" class="access-pill-btn" id="btn-toggle-contrast" onclick="EthicalGovernance.toggleHighContrast()" title="Alto contraste">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor"/></svg>
             </button>
           </div>
 
-          <!-- BOTÓN INSIGNIA: GOBERNANZA & ÉTICA IA (7 PILARES) -->
-          <button type="button" class="ethical-governance-badge-btn" id="btn-ethical-governance" onclick="EthicalGovernance.openGovernanceModal()" title="Auditoría Ética: Transparencia, Inclusión, Responsabilidad, Imparcialidad, Fiabilidad, Seguridad y Privacidad">
+          <!-- Insignia Ética IA NOM-024 Compacta -->
+          <button type="button" class="ethical-governance-badge-btn" id="btn-ethical-governance" onclick="EthicalGovernance.openGovernanceModal()" title="Gobernanza y Ética IA (NOM-024 · 7 Pilares)">
             <span class="ethical-shield-icon">🛡️</span>
-            <span class="ethical-badge-text">IA Ética & Confiable</span>
-            <span class="ethical-verified-check">✓ 7/7</span>
+            <span class="ethical-badge-text">IA NOM-024</span>
           </button>
 
-          <button type="button" class="topbar-role-pill" id="topbar-role-pill" onclick="switchMainTab('config')" title="Cambiar rol activo o cédula profesional (RBAC NOM-024)">
+          <!-- Perfil / Rol Operativo -->
+          <button type="button" class="topbar-role-pill" id="topbar-role-pill" onclick="switchMainTab('config')" title="Rol clínico y cédula profesional">
             <span class="role-dot"></span>
             <span id="topbar-role-label">Médico • CED-9482710</span>
           </button>
 
-          <button type="button" class="topbar-logout-btn" id="topbar-logout-btn" onclick="logoutActiveUser()" title="Cambiar de usuario (Personal o Paciente)">
+          <!-- Alternar Tema (Solo Icono Minimalista) -->
+          <button class="topbar-icon-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Alternar Modo Diurno / Guardia Nocturna">
+            <span id="theme-icon">☀️</span>
+          </button>
+
+          <!-- Notificaciones -->
+          <button class="topbar-icon-btn" onclick="focusTasksSection()" title="Notificaciones clínicas">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </button>
+
+          <!-- Configuración -->
+          <button class="topbar-icon-btn" onclick="switchMainTab('config')" title="Configuración y Auditoría">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+
+          <!-- Cerrar Sesión -->
+          <button type="button" class="topbar-logout-btn" id="topbar-logout-btn" onclick="logoutActiveUser()" title="Cerrar sesión">
             Cerrar Sesión
-          </button>
-
-          <!-- Notifications Bell -->
-          <button class="topbar-icon-btn" onclick="focusTasksSection()" title="Notificaciones y alertas pendientes">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-          </button>
-
-          <!-- Settings with Red Dot -->
-          <button class="topbar-icon-btn has-red-dot" onclick="switchMainTab('config')" title="Roles RBAC, Cédula, Offline y Auditoría NOM-024">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            <span class="topbar-red-dot"></span>
-          </button>
-
-          <!-- Theme Switcher (Doble Modo Clínico Diurno / Modo Nocturno Guardia) -->
-          <button class="topbar-theme-pill" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema: Modo Clínico Diurno / Modo Nocturno Guardia">
-            <span class="theme-pill-icon" id="theme-icon">☀️</span>
-            <span class="theme-pill-label" id="theme-label">Modo Clínico Diurno</span>
           </button>
         </div>
       </header>
@@ -293,346 +282,307 @@
              VIEW 1: DASHBOARD BENTO GRID ("Resumen")
              ================================================================= -->
         <section class="view-panel" id="panel-dashboard-section">
-          <!-- =================================================================
-               MODULAR CLINICAL DASHBOARD (PATIENT PROFILE & TELEMETRY COMMAND)
-               Inspirado 1:1 en la arquitectura modular de las referencias clínicas
-               ================================================================= -->
-          <div class="modular-dashboard-wrapper">
+            <div class="modular-dashboard-wrapper">
 
-            <!-- BARRA DE CONTROL MODULAR SUPERIOR -->
-            <div class="modular-topbar-strip">
-              <div class="modular-topbar-left">
-                <h1 class="modular-page-title">Perfil Clínico & Resumen de Paciente</h1>
-                <span class="modular-page-subtitle">Sincronización biométrica en tiempo real · NOM-004 / NOM-024</span>
-              </div>
-
-              <div class="modular-topbar-actions">
-                <!-- Selector rápido de paciente -->
-                <div class="modular-patient-picker" title="Seleccionar paciente activo">
-                  <span class="picker-label">PACIENTE:</span>
-                  <select id="dashboard-patient-select" class="modular-select-pill" onchange="onDashboardPatientChange(this.value)">
-                    <option value="MOBK070228HYNRTVA3">Kevin Enrique Morales B. (19 años)</option>
-                    <option value="GOPC790814HYNCLN04">Carlos Manuel González P. (47 años)</option>
-                    <option value="TESTCURP1234567890">Juan Pérez Gómez (45 años)</option>
-                  </select>
+              <!-- BARRA DE CONTROL DEL RESUMEN CLÍNICO -->
+              <div class="modular-topbar-strip">
+                <div class="modular-topbar-left">
+                  <h1 class="modular-page-title">Resumen Clínico Ejecutivo</h1>
+                  <span class="modular-page-subtitle">Expediente médico integral, diagnósticos activos y prescripciones vigentes · NOM-004-SSA3-2012</span>
                 </div>
 
-                <div class="patient-monitoring-badge" title="Monitoreo biométrico continuo">
-                  <span class="telemetry-live-dot"></span>
-                  <span>Toma Presencial de Triaje (Enfermería)</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- FILA 1: PERFIL DEL PACIENTE + ECG / TELEMETRÍA CARDÍACA EN VIVO -->
-            <div class="modular-grid-row row-hero">
-
-              <!-- MÓDULO 1: TARJETA DE IDENTIDAD DEL PACIENTE (PATIENT CARD) -->
-              <div class="modular-card patient-hero-card">
-                <div class="patient-card-header">
-                  <span class="module-eyebrow">DATOS DEMOGRÁFICOS</span>
-                  <div class="patient-card-options-btn" title="Opciones de expediente">•••</div>
-                </div>
-
-                <div class="patient-hero-body">
-                  <div class="patient-photo-container">
-                    <div class="patient-avatar-large" id="dash-patient-avatar">KM</div>
-                    <div class="patient-status-indicator-dot online" title="Paciente activo en clínica"></div>
+                <div class="modular-topbar-actions">
+                  <div class="modular-patient-picker" title="Seleccionar paciente activo">
+                    <span class="picker-label">PACIENTE:</span>
+                    <select id="dashboard-patient-select" class="modular-select-pill" onchange="onDashboardPatientChange(this.value)">
+                      <option value="MOBK070228HYNRTVA3">Kevin Enrique Morales B. (19 años)</option>
+                      <option value="GOPC790814HYNCLN04">Carlos Manuel González P. (47 años)</option>
+                      <option value="TESTCURP1234567890">Juan Pérez Gómez (45 años)</option>
+                    </select>
                   </div>
 
-                  <div class="patient-hero-details">
-                    <h2 class="patient-name-display" id="dash-patient-name">Kevin Enrique Morales Bautista</h2>
-                    
-                    <div class="patient-specs-grid">
-                      <div class="spec-item">
-                        <span class="spec-label">Edad</span>
-                        <strong class="spec-val" id="dash-patient-age">19 Años</strong>
-                      </div>
-                      <div class="spec-item">
-                        <span class="spec-label">Nacimiento</span>
-                        <strong class="spec-val" id="dash-patient-dob">28/02/2007</strong>
-                      </div>
-                      <div class="spec-item">
-                        <span class="spec-label">ID Clínico</span>
-                        <strong class="spec-val" id="dash-patient-id">PT-2026-0001</strong>
-                      </div>
-                      <div class="spec-item">
-                        <span class="spec-label">Sexo</span>
-                        <strong class="spec-val" id="dash-patient-gender">Masculino</strong>
-                      </div>
-                      <div class="spec-item">
-                        <span class="spec-label">Grupo Sanguíneo</span>
-                        <strong class="spec-val blood-highlight" id="dash-patient-blood">A+ (Rh+)</strong>
-                      </div>
-                      <div class="spec-item">
-                        <span class="spec-label">Teléfono</span>
-                        <strong class="spec-val" id="dash-patient-phone">+52 999 415 6931</strong>
-                      </div>
-                    </div>
-
-                    <!-- Alergias Destacadas del Paciente -->
-                    <div class="patient-allergies-chip-bar" id="dash-patient-allergies">
-                      <span class="allergy-tag">⚠️ Alergia Crítica: Penicilina, AINEs (Ketorolaco)</span>
-                    </div>
+                  <div class="patient-monitoring-badge" title="Sede Hospitalaria Activa">
+                    <span class="telemetry-live-dot"></span>
+                    <span>Cruz Roja Mexicana · Sede Mérida</span>
                   </div>
                 </div>
               </div>
 
-              <!-- MÓDULO 2: ECG & TELEMETRÍA EN VIVO (CARDIO TELEMETRY) -->
-              <div class="modular-card ecg-live-card">
-                <div class="ecg-card-header">
-                  <div class="ecg-title-badge">
-                    <span class="ecg-check-icon">✓</span>
+              <!-- FILA 1: DATOS DEMOGRÁFICOS + DIAGNÓSTICO ACTIVO Y PLAN CLÍNICO -->
+              <div class="modular-grid-row row-hero">
+
+                <!-- TARJETA 1: DATOS DEMOGRÁFICOS Y FILIACIÓN -->
+                <div class="modular-card patient-hero-card">
+                  <div class="patient-card-header">
+                    <span class="module-eyebrow">DATOS DEL PACIENTE</span>
+                    <div class="patient-card-options-btn" onclick="openPatientProfile(AppState.selectedPatientCurp || 'MOBK070228HYNRTVA3')" title="Ver expediente">•••</div>
+                  </div>
+
+                  <div class="patient-hero-body">
+                    <div class="patient-photo-container">
+                      <div class="patient-avatar-large" id="dash-patient-avatar">KM</div>
+                      <div class="patient-status-indicator-dot online" title="Expediente Activo"></div>
+                    </div>
+
+                    <div class="patient-hero-details">
+                      <h2 class="patient-name-display" id="dash-patient-name">Kevin Enrique Morales Bautista</h2>
+                      
+                      <div class="patient-specs-grid">
+                        <div class="spec-item">
+                          <span class="spec-label">Edad</span>
+                          <strong class="spec-val" id="dash-patient-age">19 Años</strong>
+                        </div>
+                        <div class="spec-item">
+                          <span class="spec-label">Nacimiento</span>
+                          <strong class="spec-val" id="dash-patient-dob">28/02/2007</strong>
+                        </div>
+                        <div class="spec-item">
+                          <span class="spec-label">ID Clínico</span>
+                          <strong class="spec-val" id="dash-patient-id">PT-2026-0001</strong>
+                        </div>
+                        <div class="spec-item">
+                          <span class="spec-label">Sexo</span>
+                          <strong class="spec-val" id="dash-patient-gender">Masculino</strong>
+                        </div>
+                        <div class="spec-item">
+                          <span class="spec-label">Grupo Sanguíneo</span>
+                          <strong class="spec-val blood-highlight" id="dash-patient-blood">A+ (Rh+)</strong>
+                        </div>
+                        <div class="spec-item">
+                          <span class="spec-label">Teléfono</span>
+                          <strong class="spec-val" id="dash-patient-phone">+52 999 415 6931</strong>
+                        </div>
+                      </div>
+
+                      <!-- Alergias Críticas y Etiquetas -->
+                      <div class="patient-allergies-chip-bar" id="dash-patient-allergies">
+                        <span class="allergy-tag">⚠️ Alergia Crítica: Penicilina, AINEs (Ketorolaco)</span>
+                      </div>
+                      <div class="patient-tags-strip" id="dash-patient-tags" style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+                        <span class="custom-patient-tag tag-amber">#AtenciónPrioritaria</span>
+                        <span class="custom-patient-tag tag-blue">#ControlAmbulatorio</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- TARJETA 2: DIAGNÓSTICO ACTIVO Y PLAN TERAPÉUTICO (SUSTITUYE AL SMARTWATCH) -->
+                <div class="modular-card clinical-plan-card">
+                  <div class="ecg-card-header">
+                    <div class="ecg-title-badge">
+                      <span class="ecg-check-icon">🩺</span>
+                      <div>
+                        <div class="ecg-main-label">Diagnóstico Activo & Plan Terapéutico</div>
+                        <span class="ecg-last-checked">Seguimiento Médico NOM-004</span>
+                      </div>
+                    </div>
+                    <span class="pill-badge-active">Control Vigente</span>
+                  </div>
+
+                  <div class="clinical-plan-body">
+                    <div class="diagnosis-lead-box">
+                      <span class="spec-label">Diagnóstico Principal (CIE-10)</span>
+                      <h3 class="diagnosis-title" id="dash-patient-diagnosis">J00 Rinofaringitis Aguda · Cuadro leve en remisión</h3>
+                    </div>
+
+                    <div class="clinical-plan-grid">
+                      <div class="plan-sub-item">
+                        <span class="spec-label">Antecedentes Relevantes</span>
+                        <p class="plan-text" id="dash-patient-antecedentes">Hipertensión arterial en manejo médico. Sin antecedentes quirúrgicos recientes.</p>
+                      </div>
+                      <div class="plan-sub-item">
+                        <span class="spec-label">Farmacoterapia Activa</span>
+                        <div class="treatment-pills-row" id="dash-patient-treatment">
+                          <span class="treatment-pill">💊 Paracetamol 500mg c/8h</span>
+                          <span class="treatment-pill">💧 Hidratación oral</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="clinical-plan-actions">
+                      <button type="button" class="btn-primary-gradient btn-compact-action" onclick="switchMainTab('consulta')">
+                        <span>📝 Iniciar Nueva Consulta</span>
+                        <span class="btn-arrow">→</span>
+                      </button>
+                      <button type="button" class="btn-outline-pill btn-compact-action" onclick="openLaboratorioModal()">
+                        <span>🧪 Ver Laboratorios</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- FILA 2: 4 INDICADORES CLÍNICOS ESENCIALES (SIN PASOS NI SMARTWATCH) -->
+              <div class="modular-metrics-row">
+                <!-- KPI 1: Estado Clínico -->
+                <div class="modular-card kpi-metric-card">
+                  <div class="kpi-metric-head">
+                    <span class="kpi-metric-name">Control Clínico</span>
+                    <span class="kpi-dots">🩺</span>
+                  </div>
+                  <div class="kpi-metric-val-row">
+                    <strong class="kpi-metric-number">Estable</strong>
+                    <span class="kpi-delta-pill delta-up">Óptimo</span>
+                  </div>
+                  <div class="kpi-progress-track">
+                    <div class="kpi-progress-bar bar-blue" style="width: 90%"></div>
+                  </div>
+                  <div class="kpi-sub-text">Sin descompensación aguda</div>
+                </div>
+
+                <!-- KPI 2: Adherencia Terapéutica -->
+                <div class="modular-card kpi-metric-card">
+                  <div class="kpi-metric-head">
+                    <span class="kpi-metric-name">Adherencia al Tratamiento</span>
+                    <span class="kpi-dots">💊</span>
+                  </div>
+                  <div class="kpi-metric-val-row">
+                    <strong class="kpi-metric-number">88%</strong>
+                    <span class="kpi-delta-pill delta-up">+5.0%</span>
+                  </div>
+                  <div class="kpi-progress-track">
+                    <div class="kpi-progress-bar bar-amber" style="width: 88%"></div>
+                  </div>
+                  <div class="kpi-sub-text">Prescripción regular en curso</div>
+                </div>
+
+                <!-- KPI 3: Laboratorio y Gabinete -->
+                <div class="modular-card kpi-metric-card">
+                  <div class="kpi-metric-head">
+                    <span class="kpi-metric-name">Estudios Registrados</span>
+                    <span class="kpi-dots">🧪</span>
+                  </div>
+                  <div class="kpi-metric-val-row">
+                    <strong class="kpi-metric-number">3 Recientes</strong>
+                    <span class="kpi-delta-pill delta-up">Al día</span>
+                  </div>
+                  <div class="kpi-progress-track">
+                    <div class="kpi-progress-bar bar-lime" style="width: 75%"></div>
+                  </div>
+                  <div class="kpi-sub-text">Química, Biometría e Imagen</div>
+                </div>
+
+                <!-- KPI 4: Red Hospitalaria Interoperable (Sustituye pasos de reloj) -->
+                <div class="modular-card kpi-metric-card kpi-gauge-card">
+                  <div class="kpi-metric-head">
+                    <span class="kpi-metric-name">Red Interhospitalaria</span>
+                    <span class="kpi-dots">🌐</span>
+                  </div>
+                  <div class="kpi-metric-val-row">
+                    <strong class="kpi-metric-number">7 Nodos</strong>
+                    <span class="kpi-metric-total">Sincronizados</span>
+                  </div>
+                  <div class="kpi-progress-track">
+                    <div class="kpi-progress-bar bar-purple" style="width: 100%"></div>
+                  </div>
+                  <div class="kpi-sub-text">Expediente federado Yucatán</div>
+                </div>
+              </div>
+
+              <!-- FILA 3: CRONOGRAMA DE ATENCIÓN MÉDICA + REPORTE NOM-004 -->
+              <div class="modular-grid-row row-bottom">
+
+                <!-- CRONOGRAMA CLÍNICO (EVENTOS MÉDICOS, NO PASOS) -->
+                <div class="modular-card timeline-tracking-card">
+                  <div class="card-section-header">
                     <div>
-                      <div class="ecg-main-label">ECG Ritmo Sinusal</div>
-                      <span class="ecg-last-checked">Sincronizado hoy, 10:45 AM</span>
+                      <h3 class="card-section-title">Cronograma de Atención Médica</h3>
+                      <span class="card-section-sub">Eventos asistenciales y seguimiento clínico</span>
                     </div>
-                  </div>
-                  <div class="ecg-header-options">•••</div>
-                </div>
-
-                <div class="ecg-telemetry-meta-bar">
-                  <div class="ecg-meta-col">
-                    <span class="meta-label">⏱️ Duración</span>
-                    <strong class="meta-val">1m 30s</strong>
-                  </div>
-                  <div class="ecg-meta-col">
-                    <span class="meta-label">🩺 Estado</span>
-                    <strong class="meta-val status-normal">Normal</strong>
-                  </div>
-                  <div class="ecg-meta-col">
-                    <span class="meta-label">⌚ Dispositivo</span>
-                    <strong class="meta-val" id="dash-device-name">Triaje Clínico Oficial</strong>
-                  </div>
-                  <div class="ecg-bpm-giant">
-                    <span class="bpm-num" id="dash-bpm-value">82</span>
-                    <span class="bpm-unit">bpm</span>
-                  </div>
-                </div>
-
-                <!-- Gráfica Digital de Barras y Onda Cardíaca de Alta Definición -->
-                <div class="ecg-digital-graph-wrap">
-                  <div class="ecg-bars-equalizer">
-                    <span style="height: 38%"></span>
-                    <span style="height: 65%"></span>
-                    <span style="height: 48%"></span>
-                    <span style="height: 82%"></span>
-                    <span style="height: 40%"></span>
-                    <span style="height: 60%"></span>
-                    <span style="height: 95%"></span>
-                    <span style="height: 52%"></span>
-                    <span style="height: 70%"></span>
-                    <span style="height: 42%"></span>
-                    <span style="height: 88%"></span>
-                    <span style="height: 58%"></span>
-                    <span style="height: 64%"></span>
-                    <span style="height: 36%"></span>
-                    <span style="height: 78%"></span>
-                    <span style="height: 46%"></span>
-                    <span style="height: 92%"></span>
-                    <span style="height: 62%"></span>
-                    <span style="height: 50%"></span>
-                    <span style="height: 74%"></span>
-                    <span style="height: 38%"></span>
-                    <span style="height: 80%"></span>
-                    <span style="height: 44%"></span>
-                    <span style="height: 66%"></span>
-                  </div>
-                  <svg class="ecg-line-overlay" viewBox="0 0 500 50" preserveAspectRatio="none">
-                    <path d="M0,25 L80,25 L90,10 L100,42 L110,4 L120,44 L130,25 L240,25 L250,10 L260,42 L270,4 L280,44 L290,25 L400,25 L410,10 L420,42 L430,4 L440,44 L450,25 L500,25" fill="none" stroke="var(--blue-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- FILA 2: 4 MÉTRICAS CLÍNICAS MODULARES EN HORIZONTAL -->
-            <div class="modular-metrics-row">
-              <!-- KPI 1: Health Overview -->
-              <div class="modular-card kpi-metric-card">
-                <div class="kpi-metric-head">
-                  <span class="kpi-metric-name">Índice de Salud General</span>
-                  <span class="kpi-dots">•••</span>
-                </div>
-                <div class="kpi-metric-val-row">
-                  <strong class="kpi-metric-number">84%</strong>
-                  <span class="kpi-delta-pill delta-up">+3.1%</span>
-                </div>
-                <div class="kpi-progress-track">
-                  <div class="kpi-progress-bar bar-blue" style="width: 84%"></div>
-                </div>
-                <div class="kpi-sub-text">Constantes vitales en rango óptimo</div>
-              </div>
-
-              <!-- KPI 2: Recovery Status -->
-              <div class="modular-card kpi-metric-card">
-                <div class="kpi-metric-head">
-                  <span class="kpi-metric-name">Estado de Recuperación</span>
-                  <span class="kpi-dots">•••</span>
-                </div>
-                <div class="kpi-metric-val-row">
-                  <strong class="kpi-metric-number">91%</strong>
-                  <span class="kpi-delta-pill delta-up">+4.2%</span>
-                </div>
-                <div class="kpi-progress-track">
-                  <div class="kpi-progress-bar bar-amber" style="width: 91%"></div>
-                </div>
-                <div class="kpi-sub-text">Excelente evolución post-tratamiento</div>
-              </div>
-
-              <!-- KPI 3: Medication Tracking -->
-              <div class="modular-card kpi-metric-card">
-                <div class="kpi-metric-head">
-                  <span class="kpi-metric-name">Adherencia Terapéutica</span>
-                  <span class="kpi-dots">•••</span>
-                </div>
-                <div class="kpi-metric-val-row">
-                  <strong class="kpi-metric-number">58%</strong>
-                  <span class="kpi-delta-pill delta-down">-3.1%</span>
-                </div>
-                <div class="kpi-progress-track">
-                  <div class="kpi-progress-bar bar-lime" style="width: 58%"></div>
-                </div>
-                <div class="kpi-sub-text">Recordatorio de toma activado</div>
-              </div>
-
-              <!-- KPI 4: Biometric Step Tracker -->
-              <div class="modular-card kpi-metric-card kpi-gauge-card">
-                <div class="kpi-metric-head">
-                  <span class="kpi-metric-name">Monitoreo Biométrico</span>
-                  <span class="kpi-dots">•••</span>
-                </div>
-                <div class="kpi-metric-val-row">
-                  <strong class="kpi-metric-number">7,520</strong>
-                  <span class="kpi-metric-total">/ 8,000 pasos</span>
-                </div>
-                <div class="kpi-progress-track">
-                  <div class="kpi-progress-bar bar-purple" style="width: 94%"></div>
-                </div>
-                <div class="kpi-sub-text">Meta diaria al 94% completada</div>
-              </div>
-            </div>
-
-            <!-- FILA 3: CRONOGRAMA DE ACTIVIDAD + REPORTE MÉDICO NOM-004 -->
-            <div class="modular-grid-row row-bottom">
-
-              <!-- MÓDULO 4: LÍNEA DE TIEMPO CLÍNICA Y ACTIVIDAD (TIMELINE TRACKING) -->
-              <div class="modular-card timeline-tracking-card">
-                <div class="card-section-header">
-                  <div>
-                    <h3 class="card-section-title">Cronograma de Actividad & Consultas</h3>
-                    <span class="card-section-sub">Eventos clínicos y sincronizaciones del día de hoy</span>
-                  </div>
-                  <div class="header-dots">•••</div>
-                </div>
-
-                <div class="timeline-visual-container">
-                  <!-- Escala de Horas -->
-                  <div class="timeline-hours-axis">
-                    <div class="hour-mark"><span>08:00 AM</span></div>
-                    <div class="hour-mark"><span>10:00 AM</span></div>
-                    <div class="hour-mark"><span>12:00 PM</span></div>
-                    <div class="hour-mark"><span>02:00 PM</span></div>
-                    <div class="hour-mark"><span>04:00 PM</span></div>
-                    <div class="hour-mark"><span>06:00 PM</span></div>
+                    <div class="header-dots">•••</div>
                   </div>
 
-                  <!-- Cuadrícula de Eventos Horarios con Líneas Punteadas -->
-                  <div class="timeline-slots-grid">
-                    <div class="timeline-guide-line" style="left: 0%"></div>
-                    <div class="timeline-guide-line" style="left: 20%"></div>
-                    <div class="timeline-guide-line" style="left: 40%"></div>
-                    <div class="timeline-guide-line" style="left: 60%"></div>
-                    <div class="timeline-guide-line" style="left: 80%"></div>
-                    <div class="timeline-guide-line" style="left: 100%"></div>
+                  <div class="timeline-visual-container">
+                    <div class="timeline-hours-axis">
+                      <div class="hour-mark"><span>08:00 AM</span></div>
+                      <div class="hour-mark"><span>10:00 AM</span></div>
+                      <div class="hour-mark"><span>12:00 PM</span></div>
+                      <div class="hour-mark"><span>02:00 PM</span></div>
+                      <div class="hour-mark"><span>04:00 PM</span></div>
+                      <div class="hour-mark"><span>06:00 PM</span></div>
+                    </div>
 
-                    <!-- Evento 1: Triaje matutino -->
-                    <div class="timeline-event-pill event-cyan" style="left: 2%; top: 12px; width: 34%;">
-                      <div class="event-icon-circle">🚶</div>
-                      <div class="event-pill-content">
-                        <strong>Actividad Matutina</strong>
-                        <span>7,170 Pasos · 08:00 - 08:45 AM</span>
+                    <div class="timeline-slots-grid">
+                      <div class="timeline-guide-line" style="left: 0%"></div>
+                      <div class="timeline-guide-line" style="left: 20%"></div>
+                      <div class="timeline-guide-line" style="left: 40%"></div>
+                      <div class="timeline-guide-line" style="left: 60%"></div>
+                      <div class="timeline-guide-line" style="left: 80%"></div>
+                      <div class="timeline-guide-line" style="left: 100%"></div>
+
+                      <!-- Evento 1: Admisión y Apertura -->
+                      <div class="timeline-event-pill event-cyan" style="left: 2%; top: 14px; width: 34%;">
+                        <div class="event-icon-circle">📋</div>
+                        <div class="event-pill-content">
+                          <strong>Apertura de Turno</strong>
+                          <span>Admisión · Cruz Roja Mérida</span>
+                        </div>
+                        <span class="event-status-check">✓</span>
                       </div>
-                      <span class="event-status-check">✓</span>
-                    </div>
 
-                    <!-- Evento 2: Toma de Signos Vitales -->
-                    <div class="timeline-event-pill event-green" style="left: 22%; top: 76px; width: 35%;">
-                      <div class="event-icon-circle">🩺</div>
-                      <div class="event-pill-content">
-                        <strong>Triaje / Signos Vitales</strong>
-                        <span>TA 120/78 · FC 82 · 10:15 AM</span>
+                      <!-- Evento 2: Consulta Médica -->
+                      <div class="timeline-event-pill event-green" style="left: 24%; top: 76px; width: 36%;">
+                        <div class="event-icon-circle">🩺</div>
+                        <div class="event-pill-content">
+                          <strong>Consulta Médica NOM-004</strong>
+                          <span>Dr. Roberto Morales · YUC-CR-001</span>
+                        </div>
+                        <span class="event-status-check">✓</span>
                       </div>
-                      <span class="event-status-check">✓</span>
-                    </div>
 
-                    <!-- Evento 3: Control Clínico Registrado -->
-                    <div class="timeline-event-pill event-amber" style="left: 56%; top: 38px; width: 38%;">
-                      <div class="event-icon-circle">📋</div>
-                      <div class="event-pill-content">
-                        <strong>Control Clínico Registrado</strong>
-                        <span>Nota Previa · Dr. Roberto Morales</span>
+                      <!-- Evento 3: Prescripción Farmacológica -->
+                      <div class="timeline-event-pill event-amber" style="left: 58%; top: 38px; width: 38%;">
+                        <div class="event-icon-circle">💊</div>
+                        <div class="event-pill-content">
+                          <strong>Receta Electrónica Emitida</strong>
+                          <span>Farmacoterapia y Plan de Control</span>
+                        </div>
+                        <span class="event-status-check">✓</span>
                       </div>
-                      <span class="event-status-check">✓</span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- MÓDULO 5: REPORTE MÉDICO NOM-004 & ÚLTIMA CONSULTA (MEDICAL REPORT) -->
-              <div class="modular-card medical-report-card">
-                <div class="card-section-header">
-                  <h3 class="card-section-title">Último Reporte Médico</h3>
-                  <div class="header-dots">•••</div>
-                </div>
+                <!-- ÚLTIMO REPORTE MÉDICO NOM-004 -->
+                <div class="modular-card medical-report-card">
+                  <div class="card-section-header">
+                    <h3 class="card-section-title">Última Nota Médica NOM-004</h3>
+                    <div class="header-dots">•••</div>
+                  </div>
 
-                <div class="report-card-center-preview">
-                  <div class="report-illustration-badge">
-                    <div class="doc-icon-3d">
-                      <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <div class="report-card-center-preview">
+                    <div class="report-illustration-badge">
+                      <div class="doc-icon-3d">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                      </div>
                     </div>
+
+                    <h4 class="report-doc-title">Nota de Evolución y Control</h4>
+                    <div class="report-doc-meta">
+                      <span class="report-calendar-icon">📅</span>
+                      <span>14 Nov 2026 · Dr. Roberto Morales</span>
+                    </div>
+                    <p class="report-doc-diagnosis" id="dash-report-doc-diagnosis">
+                      <strong>Dx CIE-10:</strong> J00 Rinofaringitis Aguda · Manejo ambulatorio satisfactorio.
+                    </p>
                   </div>
 
-                  <h4 class="report-doc-title">Consulta de Control General NOM-004</h4>
-                  <div class="report-doc-meta">
-                    <span class="report-calendar-icon">📅</span>
-                    <span>14 Nov 2026 · Dr. Roberto Morales (YUC-CR-001)</span>
+                  <div class="report-card-actions">
+                    <button type="button" class="btn-report-view" onclick="openPatientProfile(AppState.selectedPatientCurp || 'MOBK070228HYNRTVA3')" title="Ver expediente clínico completo">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
+                      Ver Expediente
+                    </button>
+                    <button type="button" class="btn-report-download" onclick="switchMainTab('expediente')" title="Consultar notas previas">
+                      Historial
+                    </button>
                   </div>
-                  <p class="report-doc-diagnosis">
-                    <strong>Dx CIE-10:</strong> J00 Rinofaringitis Aguda · Cuadro leve controlado.
-                  </p>
                 </div>
 
-                <!-- Botones de Acción de 1 Clic (View Report & Download) -->
-                <div class="report-card-actions">
-                  <button type="button" class="btn-report-view" onclick="openPatientProfile('MOBK070228HYNRTVA3')" title="Ver expediente y nota completa">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>
-                    Ver Expediente
-                  </button>
-                  <button type="button" class="btn-report-download" onclick="switchMainTab('expediente')" title="Consultar historial clínico completo">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    Historial Completo
-                  </button>
-                </div>
               </div>
 
             </div>
-
-            <!-- SLOTS AUXILIARES OCULTOS PARA COMPATIBILIDAD CON SCRIPTS JS DE KPIS -->
-            <div style="display:none;" aria-hidden="true">
-              <span id="kpi-pendientes">3</span>
-              <span id="kpi-sala">1</span>
-              <span id="kpi-criticos">0</span>
-              <span id="kpi-atendidas">8</span>
-              <div id="next-patient-body"></div>
-              <div id="dashboard-agenda-list"></div>
-              <div id="dashboard-consultas-list"></div>
-              <div id="dashboard-tasks-list"></div>
-              <div id="epi-mini-list"></div>
-            </div>
-
-          </div>
-        </section>
+          </section>
 
         <!-- =================================================================
              VIEW: REPORTES Y ESTADÍSTICAS (datos reales SQLite / CIE-10)
