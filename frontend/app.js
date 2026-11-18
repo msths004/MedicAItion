@@ -124,17 +124,136 @@ function setLlmMode(mode) {
 /* ── RESULTS TAB TOGGLE ── */
 function setResultTab(tab) {
   AppState.currentResultTab = tab;
-  document.getElementById('tab-original').classList.toggle('active', tab === 'original');
-  document.getElementById('tab-nota').classList.toggle('active', tab === 'nota');
-  document.getElementById('tab-receta').classList.toggle('active', tab === 'receta');
+  const tabResumen = document.getElementById('tab-resumen');
+  const tabNota = document.getElementById('tab-nota');
+  const tabReceta = document.getElementById('tab-receta');
+  const tabOriginal = document.getElementById('tab-original');
 
-  document.getElementById('original-content').style.display = tab === 'original' ? 'block' : 'none';
-  document.getElementById('nota-content').style.display     = tab === 'nota'     ? 'block' : 'none';
-  document.getElementById('receta-content').style.display   = tab === 'receta'   ? 'block' : 'none';
+  if (tabResumen) tabResumen.classList.toggle('active', tab === 'resumen');
+  if (tabNota) tabNota.classList.toggle('active', tab === 'nota');
+  if (tabReceta) tabReceta.classList.toggle('active', tab === 'receta');
+  if (tabOriginal) tabOriginal.classList.toggle('active', tab === 'original');
+
+  const resumenContent = document.getElementById('resumen-content');
+  const notaContent = document.getElementById('nota-content');
+  const recetaContent = document.getElementById('receta-content');
+  const originalContent = document.getElementById('original-content');
+
+  if (resumenContent) resumenContent.style.display = tab === 'resumen' ? 'block' : 'none';
+  if (notaContent) notaContent.style.display       = tab === 'nota'     ? 'block' : 'none';
+  if (recetaContent) recetaContent.style.display   = tab === 'receta'   ? 'block' : 'none';
+  if (originalContent) originalContent.style.display = tab === 'original' ? 'block' : 'none';
 
   if (tab === 'nota' && AppState.lastProcessedCurp) {
     loadNotaMedica(AppState.lastProcessedCurp);
   }
+}
+
+/* ── RECETA MÉDICA EDITABLE HELPERS ── */
+function addRecetaMedRow(initialData = {}) {
+  const medsListEl = document.getElementById('receta-meds-list');
+  if (!medsListEl) return;
+  const emptyRow = medsListEl.querySelector('td[colspan]');
+  if (emptyRow) medsListEl.innerHTML = '';
+
+  const tr = document.createElement('tr');
+  tr.setAttribute('data-med-row', 'true');
+  tr.innerHTML = `
+    <td contenteditable="true" class="receta-editable-cell" data-field="nombre" title="Haz clic para editar"><strong>${esc(initialData.nombre || 'Nuevo Medicamento')}</strong></td>
+    <td contenteditable="true" class="receta-editable-cell" data-field="dosis" title="Haz clic para editar">${esc(initialData.dosis || '500 mg')}</td>
+    <td contenteditable="true" class="receta-editable-cell" data-field="via" title="Haz clic para editar">${esc(initialData.via || 'Oral')}</td>
+    <td contenteditable="true" class="receta-editable-cell" data-field="periodicidad" title="Haz clic para editar">${esc(initialData.periodicidad || 'Cada 8 hrs')}</td>
+    <td contenteditable="true" class="receta-editable-cell" data-field="duracion" title="Haz clic para editar">${esc(initialData.duracion || '5 días')}</td>
+    <td class="receta-actions-cell no-print">
+      <button type="button" class="btn-del-med" onclick="removeRecetaMedRow(this)" title="Eliminar medicamento">×</button>
+    </td>`;
+  medsListEl.appendChild(tr);
+
+  attachRecetaEditListeners();
+  syncEditedRecetaToState();
+
+  const firstCell = tr.querySelector('[data-field="nombre"]');
+  if (firstCell) {
+    firstCell.focus();
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(firstCell);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch {}
+  }
+}
+
+function removeRecetaMedRow(btn) {
+  const row = btn.closest('tr');
+  if (!row) return;
+  row.remove();
+  const medsListEl = document.getElementById('receta-meds-list');
+  if (medsListEl && !medsListEl.querySelector('tr[data-med-row]')) {
+    medsListEl.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#777; padding:16px;">No se prescribieron medicamentos específicos. Presiona "+ Agregar Medicamento" para redactar.</td></tr>';
+  }
+  syncEditedRecetaToState();
+}
+
+function syncEditedRecetaToState() {
+  const rows = document.querySelectorAll('#receta-meds-list tr[data-med-row]');
+  const meds = [];
+  rows.forEach(r => {
+    const nombre = r.querySelector('[data-field="nombre"]')?.textContent?.trim() || '';
+    const dosis = r.querySelector('[data-field="dosis"]')?.textContent?.trim() || '';
+    const via = r.querySelector('[data-field="via"]')?.textContent?.trim() || '';
+    const periodicidad = r.querySelector('[data-field="periodicidad"]')?.textContent?.trim() || '';
+    const duracion = r.querySelector('[data-field="duracion"]')?.textContent?.trim() || '';
+    if (nombre && nombre !== '—') {
+      meds.push({ nombre, dosis, via, periodicidad, duracion });
+    }
+  });
+
+  const instructionsEl = document.getElementById('receta-instructions-text');
+  const instructions = instructionsEl ? instructionsEl.textContent.trim() : '';
+
+  if (AppState.lastProcessedRecord) {
+    AppState.lastProcessedRecord.medicamentos = meds;
+    AppState.lastProcessedRecord.receta_paciente = instructions;
+    if (AppState.lastProcessedRecord.entidades_extraidas) {
+      AppState.lastProcessedRecord.entidades_extraidas.medicamentos = meds;
+      AppState.lastProcessedRecord.entidades_extraidas.receta_paciente = instructions;
+    }
+    if (AppState.lastProcessedRecord.nota_clinica) {
+      AppState.lastProcessedRecord.nota_clinica.plan_tratamiento = instructions;
+    }
+    const jsonEl = document.getElementById('result-json');
+    if (jsonEl) {
+      const displayData = { ...AppState.lastProcessedRecord };
+      delete displayData.nota_medica_html;
+      jsonEl.textContent = JSON.stringify(displayData, null, 2);
+    }
+  }
+
+  const syncBadge = document.getElementById('receta-sync-status');
+  if (syncBadge) {
+    syncBadge.textContent = '✓ Guardado (' + meds.length + (meds.length === 1 ? ' fármaco)' : ' fármacos)');
+    syncBadge.style.color = '#059669';
+  }
+}
+
+function attachRecetaEditListeners() {
+  const card = document.getElementById('receta-card');
+  if (!card || card.hasAttribute('data-edit-listeners-attached')) return;
+  card.setAttribute('data-edit-listeners-attached', 'true');
+
+  card.addEventListener('input', (e) => {
+    if (e.target.isContentEditable || e.target.closest('[contenteditable="true"]')) {
+      syncEditedRecetaToState();
+    }
+  });
+
+  card.addEventListener('blur', (e) => {
+    if (e.target.isContentEditable || e.target.closest('[contenteditable="true"]')) {
+      syncEditedRecetaToState();
+    }
+  }, true);
 }
 
 /* ── NOTA MÉDICA (iframe) ── */
@@ -169,7 +288,13 @@ function printActiveTab() {
       showToast('No hay nota médica para imprimir', 'error');
     }
   } else if (AppState.currentResultTab === 'receta') {
-    const cardHtml = document.getElementById('receta-card').outerHTML;
+    syncEditedRecetaToState();
+    const card = document.getElementById('receta-card');
+    if (!card) return;
+    const clone = card.cloneNode(true);
+    clone.querySelectorAll('.no-print').forEach(el => el.remove());
+    clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+    const cardHtml = clone.outerHTML;
     const pw = window.open('', '_blank', 'width=900,height=700');
     if (pw) {
       pw.document.write(`
@@ -181,6 +306,7 @@ function printActiveTab() {
           .receta-table { width: 100%; border-collapse: collapse; font-size: 12px; }
           .receta-table th { text-align: left; background: #f9fafb; padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #e5e7eb; }
           .receta-table td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; }
+          .receta-instructions { font-size: 12px; line-height: 1.6; white-space: pre-wrap; color: #374151; background: #fafafa; border-radius: 6px; padding: 12px; border: 1px dashed #d1d5db; margin-top: 6px; }
           .receta-alarma-box { margin-top: 14px; padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; }
           .receta-alarma-box h6 { margin: 0 0 6px; font-size: 12px; color: #b91c1c; }
           .receta-alarma-box ul { margin: 0; padding-left: 18px; font-size: 11px; color: #7f1d1d; }
@@ -191,6 +317,47 @@ function printActiveTab() {
           @media print { body { padding: 0; } }
         </style></head><body>
         ${cardHtml}
+        <script>window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 300); }<\/script>
+        </body></html>
+      `);
+      pw.document.close();
+    }
+  } else if (AppState.currentResultTab === 'resumen') {
+    const resumenEl = document.getElementById('resumen-content');
+    if (!resumenEl) return;
+    const pw = window.open('', '_blank', 'width=900,height=700');
+    if (pw) {
+      pw.document.write(`
+        <html><head><title>Resumen Clínico — Cruz Roja Mérida</title>
+        <style>
+          body { background: white; color: #1a1a1a; padding: 30px; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.5; }
+          h3 { color: #0369a1; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-top: 20px; font-size: 14px; }
+          .tag { display: inline-block; padding: 3px 8px; background: #f1f5f9; border-radius: 4px; margin-right: 6px; margin-bottom: 6px; font-size: 12px; }
+          .cie10-item { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+          .cie10-code { font-weight: bold; color: #0284c7; }
+          @media print { body { padding: 0; } }
+        </style></head><body>
+        <h2>Resumen Clínico y Evolución</h2>
+        ${resumenEl.innerHTML}
+        <script>window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 300); }<\/script>
+        </body></html>
+      `);
+      pw.document.close();
+    }
+  } else if (AppState.currentResultTab === 'original') {
+    const origText = document.getElementById('result-text')?.textContent || '';
+    const pw = window.open('', '_blank', 'width=900,height=700');
+    if (pw) {
+      pw.document.write(`
+        <html><head><title>Dictado Original — Cruz Roja Mérida</title>
+        <style>
+          body { background: white; color: #1a1a1a; padding: 30px; font-family: 'Inter', sans-serif; }
+          h2 { color: #334155; }
+          p { font-size: 14px; line-height: 1.6; white-space: pre-wrap; background: #f8fafc; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; }
+          @media print { body { padding: 0; } }
+        </style></head><body>
+        <h2>Dictado Clínico Original</h2>
+        <p>${esc(origText)}</p>
         <script>window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 300); }<\/script>
         </body></html>
       `);
@@ -355,7 +522,7 @@ function renderResults(data) {
     resultsTabs.style.setProperty('display', 'flex', 'important');
   }
 
-  setResultTab('nota');
+  setResultTab('resumen');
 
   const iframe = document.getElementById('nota-iframe');
   if (data.nota_medica_html) {
@@ -444,17 +611,21 @@ function renderResults(data) {
   const meds = data.medicamentos || (data.entidades_extraidas && data.entidades_extraidas.medicamentos) || [];
   if (meds.length > 0) {
     meds.forEach(med => {
-      medsListEl.innerHTML += `
-        <tr>
-          <td><strong>${esc(med.nombre)}</strong></td>
-          <td>${esc(med.dosis || '—')}</td>
-          <td>${esc(med.via || '—')}</td>
-          <td>${esc(med.periodicidad || '—')}</td>
-          <td>${esc(med.duracion || '—')}</td>
-        </tr>`;
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-med-row', 'true');
+      tr.innerHTML = `
+        <td contenteditable="true" class="receta-editable-cell" data-field="nombre" title="Haz clic para editar"><strong>${esc(med.nombre || 'Medicamento')}</strong></td>
+        <td contenteditable="true" class="receta-editable-cell" data-field="dosis" title="Haz clic para editar">${esc(med.dosis || '—')}</td>
+        <td contenteditable="true" class="receta-editable-cell" data-field="via" title="Haz clic para editar">${esc(med.via || '—')}</td>
+        <td contenteditable="true" class="receta-editable-cell" data-field="periodicidad" title="Haz clic para editar">${esc(med.periodicidad || '—')}</td>
+        <td contenteditable="true" class="receta-editable-cell" data-field="duracion" title="Haz clic para editar">${esc(med.duracion || '—')}</td>
+        <td class="receta-actions-cell no-print">
+          <button type="button" class="btn-del-med" onclick="removeRecetaMedRow(this)" title="Eliminar medicamento">×</button>
+        </td>`;
+      medsListEl.appendChild(tr);
     });
   } else {
-    medsListEl.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#777;">No se prescribieron medicamentos específicos.</td></tr>';
+    medsListEl.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#777; padding: 16px;">No se prescribieron medicamentos específicos. Presiona "+ Agregar Medicamento" para redactar.</td></tr>';
   }
 
   const instructions = data.receta_paciente || 
@@ -463,6 +634,9 @@ function renderResults(data) {
                        data.plan_tratamiento || 
                        'Seguir indicaciones generales médicas.';
   document.getElementById('receta-instructions-text').textContent = instructions;
+
+  attachRecetaEditListeners();
+  syncEditedRecetaToState();
 
   // 6. Guardián Clínico CDSS, DDx, Evidencia Vinculada y QR + Alarma en Receta
   renderClinicalSafetyAndInsights(data);

@@ -1373,6 +1373,142 @@ body {
   font-weight: 700;
 }
 
+/* ── RECETA MÉDICA EDITABLE ── */
+.receta-edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.receta-edit-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #166534;
+}
+.receta-edit-chip {
+  background: #15803d;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.receta-edit-hint {
+  font-weight: 500;
+}
+.btn-receta-add {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn-receta-add:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+.receta-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
+}
+.receta-section-header h5 {
+  margin: 0 !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+.receta-sync-badge {
+  font-size: 11px;
+  color: #059669;
+  font-weight: 600;
+}
+.receta-subtle-hint {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+.receta-editable-cell {
+  position: relative;
+  transition: background-color 0.2s, outline 0.2s;
+  cursor: text;
+  border-radius: 4px;
+}
+.receta-editable-cell:hover {
+  background-color: #f0f9ff;
+  outline: 1px dashed #7dd3fc;
+}
+.receta-editable-cell:focus {
+  background-color: #ffffff;
+  outline: 2px solid #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+.receta-actions-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+.btn-del-med {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 6px;
+  transition: all 0.15s ease;
+}
+.btn-del-med:hover {
+  color: #dc2626;
+  background: #fee2e2;
+}
+.receta-instructions-editable {
+  cursor: text;
+  transition: background-color 0.2s, outline 0.2s;
+}
+.receta-instructions-editable:hover {
+  background: #f8fafc;
+  outline: 1px dashed #94a3b8;
+}
+.receta-instructions-editable:focus {
+  background: #ffffff;
+  outline: 2px solid #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .receta-editable-cell {
+    outline: none !important;
+    background: transparent !important;
+  }
+  .receta-instructions-editable {
+    outline: none !important;
+    background: #fafafa !important;
+  }
+}
+
 .receta-table {
   width: 100%;
   border-collapse: collapse;

@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=7.1.0-perf" />
+  <link rel="stylesheet" href="style.css?v=7.2.0-receta-resumen" />
 </head>
 <body class="mode-dashboard">
 
@@ -1772,16 +1772,19 @@
 
               <!-- Pestañas de Resultados -->
               <div class="results-tabs" id="results-tabs" style="display:none">
-                <button class="results-tab active" id="tab-nota" onclick="setResultTab('nota')" title="Nota médica de evolución NOM-004">
+                <button class="results-tab active" id="tab-resumen" onclick="setResultTab('resumen')" title="Resumen clínico inteligente y CIE-10">
+                  📊 Resumen
+                </button>
+                <button class="results-tab" id="tab-nota" onclick="setResultTab('nota')" title="Nota médica de evolución NOM-004">
                   📝 Nota NOM-004
                 </button>
-                <button class="results-tab" id="tab-receta" onclick="setResultTab('receta')" title="Receta médica oficial">
+                <button class="results-tab" id="tab-receta" onclick="setResultTab('receta')" title="Receta médica oficial editable">
                   💊 Receta Médica
                 </button>
                 <button class="results-tab" id="tab-original" onclick="setResultTab('original')" title="Texto original del dictado">
                   📋 Original
                 </button>
-                <button class="print-btn" id="print-btn" onclick="printActiveTab()" title="Imprimir">
+                <button class="print-btn" id="print-btn" onclick="printActiveTab()" title="Imprimir vista actual">
                   🖨️ Imprimir
                 </button>
               </div>
@@ -1813,9 +1816,22 @@
                 <iframe id="nota-iframe" class="nota-iframe" title="Nota Médica NOM-004"></iframe>
               </div>
 
-              <!-- TAB: RECETA MÉDICA -->
+              <!-- TAB: RECETA MÉDICA (EDITABLE) -->
               <div id="receta-content" class="tab-content" style="display:none">
                 <div class="receta-card" id="receta-card">
+                  <!-- Banner de Edición Rápida -->
+                  <div class="receta-edit-banner no-print">
+                    <div class="receta-edit-banner-left">
+                      <span class="receta-edit-chip">✏️ MODO EDICIÓN ACTIVO</span>
+                      <span class="receta-edit-hint">Haz clic en cualquier medicamento, dosis o indicación para editar antes de imprimir.</span>
+                    </div>
+                    <div class="receta-edit-banner-right">
+                      <button type="button" class="btn-receta-add" onclick="addRecetaMedRow()" title="Agregar nuevo fármaco a la receta">
+                        + Agregar Medicamento
+                      </button>
+                    </div>
+                  </div>
+
                   <div class="receta-header">
                     <div class="receta-logo">
                       <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1839,22 +1855,29 @@
                   </div>
 
                   <div class="receta-body">
-                    <h5>Rp. Indicación Farmacológica</h5>
-                    <table class="receta-table">
+                    <div class="receta-section-header">
+                      <h5>Rp. Indicación Farmacológica</h5>
+                      <span class="receta-sync-badge no-print" id="receta-sync-status">✓ Sincronizado</span>
+                    </div>
+                    <table class="receta-table" id="receta-table-main">
                       <thead>
                         <tr>
-                          <th>Medicamento</th>
-                          <th>Dosis</th>
-                          <th>Vía</th>
-                          <th>Periodicidad</th>
-                          <th>Duración</th>
+                          <th style="width: 28%;">Medicamento</th>
+                          <th style="width: 18%;">Dosis</th>
+                          <th style="width: 14%;">Vía</th>
+                          <th style="width: 20%;">Periodicidad</th>
+                          <th style="width: 14%;">Duración</th>
+                          <th class="no-print" style="width: 6%; text-align: center;"></th>
                         </tr>
                       </thead>
                       <tbody id="receta-meds-list"></tbody>
                     </table>
 
-                    <h5>Indicaciones y Cuidados Generales</h5>
-                    <div class="receta-instructions" id="receta-instructions-text"></div>
+                    <div class="receta-section-header">
+                      <h5>Indicaciones y Cuidados Generales</h5>
+                      <span class="receta-subtle-hint no-print">✏️ Clic en el recuadro para modificar</span>
+                    </div>
+                    <div class="receta-instructions receta-instructions-editable" id="receta-instructions-text" contenteditable="true" title="Haz clic para editar las indicaciones generales"></div>
 
                     <div class="receta-alarma-box" id="receta-alarma-box" style="display:none">
                       <h6>⚠️ Signos de Alarma — Acudir a Urgencias si presenta:</h6>
@@ -1878,42 +1901,63 @@
                 </div>
               </div>
 
-              <!-- TAB: ORIGINAL -->
-              <div id="original-content" class="tab-content" style="display:none">
-                <div class="result-section">
-                  <h3 class="section-title">Texto del Dictado</h3>
-                  <p id="result-text" class="result-text-content"></p>
-                </div>
-
-                <div class="result-section" id="result-section-redactado" style="display:none">
-                  <h3 class="section-title title-cyan">Resumen Clínico IA</h3>
+              <!-- TAB: RESUMEN CLÍNICO (SÍNTESIS, ENTIDADES Y CIE-10) -->
+              <div id="resumen-content" class="tab-content" style="display:none">
+                <div class="result-section" id="result-section-redactado">
+                  <h3 class="section-title title-cyan">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    Resumen Clínico y Evolución Sintetizada
+                  </h3>
                   <p id="result-text-redactado" class="result-text-content redactado-box"></p>
                 </div>
 
                 <div class="result-section">
-                  <h3 class="section-title">Datos Demográficos Identificados</h3>
+                  <h3 class="section-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Datos Demográficos Identificados
+                  </h3>
                   <div id="result-demo" class="tags-row"></div>
                 </div>
 
                 <div class="result-section">
-                  <h3 class="section-title">Códigos CIE-10</h3>
+                  <h3 class="section-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    Codificación Diagnóstica (CIE-10) y Procedimientos (CIE-9MC)
+                  </h3>
                   <div id="result-cie10"></div>
                 </div>
 
                 <div class="result-section" id="result-section-ddx" style="display:none">
-                  <h3 class="section-title">Diagnóstico Diferencial IA</h3>
+                  <h3 class="section-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                    Diagnóstico Diferencial IA (Estratificado)
+                  </h3>
                   <div id="result-ddx" class="ddx-grid"></div>
                 </div>
 
                 <div class="result-section" id="result-section-evidence" style="display:none">
-                  <h3 class="section-title title-cyan">Evidencia Vinculada</h3>
+                  <h3 class="section-title title-cyan">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Evidencia Clínica Vinculada (GPC / CENETEC / SSA)
+                  </h3>
                   <div id="result-evidence" class="evidence-list"></div>
                 </div>
 
                 <details class="json-details">
-                  <summary>Ver JSON estructurado</summary>
+                  <summary>Ver JSON estructurado (Interoperabilidad NOM-024 / FHIR)</summary>
                   <pre id="result-json" class="json-block"></pre>
                 </details>
+              </div>
+
+              <!-- TAB: ORIGINAL -->
+              <div id="original-content" class="tab-content" style="display:none">
+                <div class="result-section">
+                  <h3 class="section-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Texto Original del Dictado / Entrada Clínica
+                  </h3>
+                  <p id="result-text" class="result-text-content"></p>
+                </div>
               </div>
 
             </div>
@@ -2901,7 +2945,7 @@
   <script src="specialized_care.js?v=7.1.0-perf"></script>
   <script src="pulso_assistant.js?v=7.1.0-perf"></script>
   <script src="premium_search.js?v=7.1.0-perf"></script>
-  <script src="app.js?v=7.1.0-perf"></script>
+  <script src="app.js?v=7.2.0-receta-resumen"></script>
 
   <!-- =========================================================================
        MODAL DE GOBERNANZA, ÉTICA Y SEGURIDAD CLÍNICA (7 PILARES)
