@@ -11408,6 +11408,10 @@ body.mode-legal #panel-legal-section {
   display: block !important;
 }
 
+body.mode-red-hospitalaria #panel-red-hospitalaria-section {
+  display: block !important;
+}
+
 
 /* ==========================================================================
    NUEVA CONSULTA - REFINED 2-COLUMN WORKSTATION (DR. OSO SOLO FLOTANTE)
@@ -13300,6 +13304,10 @@ body.mode-config #panel-config-section {
 }
 
 body.mode-legal #panel-legal-section {
+  display: block !important;
+}
+
+body.mode-red-hospitalaria #panel-red-hospitalaria-section {
   display: block !important;
 }
 
