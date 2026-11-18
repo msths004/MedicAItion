@@ -1,5 +1,5 @@
 // ============================================================================
-// premium_search.js — MedicAItion v3.0 (Linux_Ver)
+// premium_search.js — MedicAItion v3.0
 // ============================================================================
 // Sistema de Búsqueda Premium, Semántica & Command Palette (OmniSearch Spotlight)
 // - Atajo global Ctrl+K / Cmd+K / "/"
@@ -681,43 +681,55 @@
       if (!curp) return;
       this.close();
 
-      console.log(`[OmniSearch] Paciente seleccionado: ${curp} -> Vista: ${targetView}`);
+      const upperCurp = String(curp).trim().toUpperCase();
+      console.log(`[OmniSearch] Paciente seleccionado: ${upperCurp} -> Vista: ${targetView}`);
+
+      // Asegurar caché de pacientes
+      await _ensurePatientsCache();
+      const patient = OmniSearchState.patientsCache.find(p => (p.curp || '').toUpperCase() === upperCurp);
 
       // Sincronizar estado global
       if (window.AppState) {
-        window.AppState.selectedPatientCurp = curp;
-        window.AppState.activeCurp = curp;
+        window.AppState.selectedPatientCurp = upperCurp;
+        window.AppState.activeCurp = upperCurp;
+      }
+      if (typeof window._ExpCareState !== 'undefined') {
+        window._ExpCareState.curp = upperCurp;
       }
 
-      // Actualizar selects nativos y comboboxes
-      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown'].forEach(selId => {
+      // Actualizar selects nativos y comboboxes en toda la app
+      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select'].forEach(selId => {
         const sel = document.getElementById(selId);
         if (sel) {
-          sel.value = curp;
-          // Actualizar gatillo del combobox
-          const patient = OmniSearchState.patientsCache.find(p => p.curp === curp);
+          sel.value = upperCurp;
           if (patient) _updateComboboxTrigger(selId, patient);
         }
       });
 
-      // Redirigir a la vista solicitada y disparar los métodos de carga
-      if (targetView === 'dashboard') {
-        if (typeof window.switchMainTab === 'function') window.switchMainTab('dashboard');
-        if (typeof window.onDashboardPatientChange === 'function') window.onDashboardPatientChange(curp);
-      } else if (targetView === 'consulta') {
-        if (typeof window.switchMainTab === 'function') window.switchMainTab('nueva-consulta');
-        if (typeof window.onConsultaPatientSelect === 'function') window.onConsultaPatientSelect(curp);
-      } else if (selectId === 'lab-patient-select' && typeof window.onLabPatientChange === 'function') {
-        window.onLabPatientChange(curp);
-      } else {
-        if (typeof window.switchMainTab === 'function') window.switchMainTab('expediente');
-        if (typeof window.loadSpecializedPatient === 'function') {
-          await window.loadSpecializedPatient(curp);
+      // Redirigir a la vista solicitada y sincronizar carga de expediente
+      try {
+        if (targetView === 'dashboard') {
+          if (typeof window.switchMainTab === 'function') window.switchMainTab('dashboard');
+          if (typeof window.onDashboardPatientChange === 'function') await window.onDashboardPatientChange(upperCurp);
+        } else if (targetView === 'consulta') {
+          if (typeof window.switchMainTab === 'function') window.switchMainTab('consulta');
+          if (typeof window.onConsultaPatientSelect === 'function') window.onConsultaPatientSelect(upperCurp);
+        } else if (targetView === 'lab') {
+          if (typeof window.openLaboratorioModal === 'function') window.openLaboratorioModal();
+          if (typeof window.onLabPatientChange === 'function') window.onLabPatientChange(upperCurp);
+        } else {
+          if (typeof window.switchMainTab === 'function') window.switchMainTab('expediente');
+          if (typeof window.loadSpecializedPatient === 'function') {
+            await window.loadSpecializedPatient(upperCurp);
+          }
         }
+      } catch (err) {
+        console.error('[OmniSearch] Error cargando paciente en vista ' + targetView + ':', err);
       }
 
       if (typeof window.showToast === 'function') {
-        window.showToast(`Expediente cargado: ${curp}`, 'info');
+        const pName = patient ? `${patient.nombres || ''} ${patient.primer_apellido || ''}`.trim() : upperCurp;
+        window.showToast(`Expediente cargado: ${pName}`, 'info');
       }
     },
 
@@ -756,38 +768,71 @@
       });
     },
 
-    chooseComboboxOption(selectId, curp) {
-      const rawSelect = document.getElementById(selectId);
-      if (rawSelect) {
-        rawSelect.value = curp;
-        // Disparar evento onchange nativo para asegurar compatibilidad
-        const event = new Event('change', { bubbles: true });
-        rawSelect.dispatchEvent(event);
-      }
+    async chooseComboboxOption(selectId, curp) {
+      if (!curp) return;
+      const upperCurp = String(curp).trim().toUpperCase();
 
       const dd = document.getElementById(`${selectId}-dropdown`);
       const btn = document.getElementById(`${selectId}-btn`);
       if (dd) dd.style.display = 'none';
       if (btn) btn.setAttribute('aria-expanded', 'false');
 
-      const patient = OmniSearchState.patientsCache.find(p => p.curp === curp);
-      if (patient) _updateComboboxTrigger(selectId, patient);
+      await _ensurePatientsCache();
+      const patient = OmniSearchState.patientsCache.find(p => (p.curp || '').toUpperCase() === upperCurp);
 
-      // Cargar expediente según el selector
-      if (selectId === 'exp-patient-select' && typeof window.loadSpecializedPatient === 'function') {
-        window.loadSpecializedPatient(curp);
-      } else if (selectId === 'dashboard-patient-select' && typeof window.onDashboardPatientChange === 'function') {
-        window.onDashboardPatientChange(curp);
-      } else if (selectId === 'consulta-patient-dropdown' && typeof window.onConsultaPatientSelect === 'function') {
-        window.onConsultaPatientSelect(curp);
+      // Sincronizar estado global
+      if (window.AppState) {
+        window.AppState.selectedPatientCurp = upperCurp;
+        window.AppState.activeCurp = upperCurp;
       }
+      if (typeof window._ExpCareState !== 'undefined') {
+        window._ExpCareState.curp = upperCurp;
+      }
+
+      // Sincronizar todos los comboboxes y selects nativos
+      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = upperCurp;
+        if (patient) _updateComboboxTrigger(id, patient);
+      });
+
+      // Cargar vista correspondiente
+      try {
+        if (selectId === 'exp-patient-select' && typeof window.loadSpecializedPatient === 'function') {
+          await window.loadSpecializedPatient(upperCurp);
+        } else if (selectId === 'dashboard-patient-select' && typeof window.onDashboardPatientChange === 'function') {
+          await window.onDashboardPatientChange(upperCurp);
+        } else if (selectId === 'consulta-patient-dropdown' && typeof window.onConsultaPatientSelect === 'function') {
+          window.onConsultaPatientSelect(upperCurp);
+        } else if (selectId === 'lab-patient-select' && typeof window.onLabPatientChange === 'function') {
+          window.onLabPatientChange(upperCurp);
+        }
+      } catch (err) {
+        console.error('[OmniSearch] Error en chooseComboboxOption:', err);
+      }
+
+      if (typeof window.showToast === 'function') {
+        const pName = patient ? `${patient.nombres || ''} ${patient.primer_apellido || ''}`.trim() : upperCurp;
+        window.showToast(`Paciente seleccionado: ${pName}`, 'info');
+      }
+    },
+
+    syncAllTriggers(curp) {
+      if (!curp) return;
+      const upperCurp = String(curp).trim().toUpperCase();
+      const patient = OmniSearchState.patientsCache.find(p => (p.curp || '').toUpperCase() === upperCurp);
+      ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = upperCurp;
+        if (patient) _updateComboboxTrigger(id, patient);
+      });
     },
 
     // Refrescar datos en todos los componentes
     refreshAll() {
       OmniSearchState.patientsCache = [];
       _ensurePatientsCache().then(() => {
-        ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown'].forEach(id => {
+        ['exp-patient-select', 'dashboard-patient-select', 'consulta-patient-dropdown', 'lab-patient-select'].forEach(id => {
           _refreshComboboxData(id);
         });
       });

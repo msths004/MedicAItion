@@ -5,7 +5,7 @@
  * Nota SOAP con Dictado | Receta Electrónica + Seguridad Alergias + Órdenes + Firma NOM-004).
  */
 
-const _ExpCareState = {
+const _ExpCareState = window._ExpCareState = {
   curp: null,
   patient: null,
   events: [],
@@ -63,20 +63,29 @@ async function _populateExpPatientSelector() {
     if (!res.ok) return;
     const data = await res.json();
     const list = Array.isArray(data) ? data : (data.patients || []);
-    const prev = _ExpCareState.curp || sel.value;
+    
+    // Determinar qué CURP debe ser la seleccionada de forma prioritaria
+    const targetCurp = _ExpCareState.curp || (window.AppState && AppState.selectedPatientCurp) || sel.value;
+    
     sel.innerHTML = list.length
       ? list.map(p => {
           const name = `${p.nombres || ''} ${p.primer_apellido || ''} ${p.segundo_apellido || ''}`.trim() || p.curp;
           return `<option value="${_expEsc(p.curp)}">${_expEsc(name)} (${_expEsc(p.curp)})</option>`;
         }).join('')
       : '<option value="">Sin pacientes registrados</option>';
-    if (window.OmniSearch && typeof window.OmniSearch.refreshAll === 'function') {
-      window.OmniSearch.refreshAll();
-    }
-    if (prev && [...sel.options].some(o => o.value === prev)) {
-      sel.value = prev;
+
+    if (targetCurp && [...sel.options].some(o => o.value === targetCurp)) {
+      sel.value = targetCurp;
+      _ExpCareState.curp = targetCurp;
+      if (window.AppState) AppState.selectedPatientCurp = targetCurp;
     } else if (list.length) {
       _ExpCareState.curp = list[0].curp;
+      sel.value = list[0].curp;
+      if (window.AppState) AppState.selectedPatientCurp = list[0].curp;
+    }
+
+    if (window.OmniSearch && typeof window.OmniSearch.refreshAll === 'function') {
+      window.OmniSearch.refreshAll();
     }
   } catch (e) {
     console.warn('[Expediente] Error cargando lista de pacientes:', e);
@@ -87,6 +96,12 @@ async function loadSpecializedPatient(curp) {
   if (!curp) return;
   _ExpCareState.curp = curp.toUpperCase();
   AppState.selectedPatientCurp = _ExpCareState.curp;
+
+  const sel = document.getElementById('exp-patient-select');
+  if (sel) sel.value = _ExpCareState.curp;
+  if (window.OmniSearch && typeof window.OmniSearch.syncAllTriggers === 'function') {
+    window.OmniSearch.syncAllTriggers(_ExpCareState.curp);
+  }
 
   try {
     const [pRes, evRes, vitRes, conRes] = await Promise.all([
