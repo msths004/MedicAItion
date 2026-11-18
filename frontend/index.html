@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=6.5.0" />
+  <link rel="stylesheet" href="style.css?v=7.0.0-cute" />
 </head>
 <body class="mode-dashboard">
 
@@ -149,9 +149,9 @@
           <span class="nav-dot-green"></span>
         </button>
 
-        <button class="sidebar-nav-btn nav-labs-pill" id="nav-btn-labs" onclick="openLaboratorioModal()" title="Estudios de Laboratorio, Química Sanguínea y Gabinete">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31L4.62 18.25A2 2 0 0 0 6.34 21h11.32a2 2 0 0 0 1.72-2.75L14 9.31V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>
-          <span>Laboratorio y Gabinete</span>
+        <button class="sidebar-nav-btn nav-wearable-pill" id="nav-btn-wearables" onclick="openWearableModal()" title="Monitoreo biométrico y relojes inteligentes conectados">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="12" height="12" x="6" y="6" rx="3"/><path d="M9 6V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/><path d="M9 18v3a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-3"/><path d="M9 12h2l1-2 1 4 1-2h1"/></svg>
+          <span>Dispositivos Médicos</span>
         </button>
 
         <button class="sidebar-nav-btn" id="nav-btn-ia-tools" onclick="switchMainTab('herramientas')" title="Ask-Expediente, Calculadoras Clínicas, Pasaporte QR y FHIR">
@@ -217,9 +217,9 @@
             </div>
           </div>
 
-          <!-- Laboratorio & Gabinete Hub Button -->
-          <button class="topbar-icon-btn lab-active-btn" onclick="openLaboratorioModal()" title="Centro de Laboratorio y Gabinete Clínico (Estudios recientes)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.62 18.25A2 2 0 0 0 6.34 21h11.32a2 2 0 0 0 1.72-2.75L14 9.31V2"/><path d="M8.5 2h7"/></svg>
+          <!-- Bluetooth / Wearable Hub Button -->
+          <button class="topbar-icon-btn bt-active-btn" onclick="openWearableModal()" title="Bluetooth & Hub de Relojes Médicos Conectados (2 activos)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
           </button>
         </div>
 
@@ -303,7 +303,7 @@
 
                 <div class="patient-monitoring-badge" title="Monitoreo biométrico continuo">
                   <span class="telemetry-live-dot"></span>
-                  <span>Toma Presencial de Triaje (Enfermería)</span>
+                  <span>Telemetría Conectada (Apple Watch S9)</span>
                 </div>
               </div>
             </div>
@@ -386,7 +386,7 @@
                   </div>
                   <div class="ecg-meta-col">
                     <span class="meta-label">⌚ Dispositivo</span>
-                    <strong class="meta-val" id="dash-device-name">Triaje Clínico Oficial</strong>
+                    <strong class="meta-val" id="dash-device-name">Apple Watch S9</strong>
                   </div>
                   <div class="ecg-bpm-giant">
                     <span class="bpm-num" id="dash-bpm-value">82</span>
@@ -1283,7 +1283,7 @@
             <div class="static-vitals-section">
               <div class="section-micro-header">
                 <span>SIGNOS VITALES BASALES</span>
-                <span class="vitals-telemetry-badge" id="panel-vitals-device-badge">Triaje de Enfermería • Verificado</span>
+                <span class="vitals-telemetry-badge" id="panel-vitals-device-badge">Apple Watch S9 · Sincronizado</span>
               </div>
 
               <div class="static-vitals-grid">
@@ -2408,7 +2408,8 @@
 
         <div class="appt-field">
           <label class="appt-checkbox-label">
-            <input type="checkbox" id="appt-wearable" /> <span>Adjuntar resultados de Laboratorio y Gabinete previo</span>
+            <input type="checkbox" id="appt-wearable" />
+            <span>Vincular monitoreo de Wearable / Smartwatch conectado</span>
           </label>
         </div>
       </div>
@@ -2420,197 +2421,78 @@
     </div>
   </div>
 
-  <!-- =========================================================================
-       LABORATORIO & GABINETE CLÍNICO MODAL (Sustituye Wearables / Smartwatches)
-       ========================================================================= -->
-  <div class="llm-modal-overlay" id="laboratorio-modal-overlay">
-    <div class="llm-modal lab-modal-box">
-      <div class="modal-top-badge" style="background:#e0f2fe; color:#0284c7;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10 2v7.31L4.62 18.25A2 2 0 0 0 6.34 21h11.32a2 2 0 0 0 1.72-2.75L14 9.31V2"/>
-          <path d="M8.5 2h7"/>
-          <path d="M7 16h10"/>
-        </svg>
+  <!-- WEARABLES / DISPOSITIVOS MÉDICOS MODAL -->
+  <div class="llm-modal-overlay" id="wearable-modal-overlay">
+    <div class="llm-modal wearable-modal-box">
+      <div class="modal-top-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="12" height="12" x="6" y="6" rx="3"/><path d="M9 6V3h6v3"/><path d="M9 18v3h6v-3"/><path d="M9 12h2l1-2 1 4 1-2h1"/></svg>
       </div>
-      <h2>Centro de Laboratorio y Gabinete Clínico</h2>
-      <p class="modal-sub">Consulta de química sanguínea, biometría hemática, EGO y estudios de imagenología (Rayos X, ECG, Ultrasonido) vinculados al expediente.</p>
+      <h2>Central de Dispositivos Médicos (Wearables)</h2>
+      <p class="modal-sub">Conecta un sensor Bluetooth real, importa el archivo exportado del reloj o captura signos de triaje. Todo se guarda en el expediente y genera alertas automáticas.</p>
 
-      <div class="lab-patient-row">
-        <label for="lab-patient-select">Paciente Titular</label>
-        <select id="lab-patient-select" class="input-field" onchange="onLabPatientChange(this.value)">
-          <option value="">Cargando pacientes...</option>
+      <div class="wearable-patient-row">
+        <label for="wearable-patient-select">Paciente</label>
+        <select id="wearable-patient-select" class="input-field">
+          <option value="">— Selecciona paciente —</option>
         </select>
       </div>
 
-      <div class="lab-tabs">
-        <button class="lab-tab active" id="ltab-quimica" onclick="setLabTab('quimica')">🧪 Química & Biometría</button>
-        <button class="lab-tab" id="ltab-gabinete" onclick="setLabTab('gabinete')">🩻 Rayos X & ECG</button>
-        <button class="lab-tab" id="ltab-registro" onclick="setLabTab('registro')">📝 Registrar / Cargar Estudio</button>
+      <div class="wearable-tabs">
+        <button class="wearable-tab active" id="wtab-ble" onclick="setWearableTab('ble')">📡 Bluetooth en vivo</button>
+        <button class="wearable-tab" id="wtab-file" onclick="setWearableTab('file')">📁 Importar archivo</button>
+        <button class="wearable-tab" id="wtab-manual" onclick="setWearableTab('manual')">✍️ Captura manual</button>
       </div>
 
-      <!-- PANE 1: QUÍMICA & BIOMETRÍA -->
-      <div class="lab-pane" id="lpane-quimica">
-        <div class="lab-results-header">
-          <div>
-            <strong>Perfil Bioquímico Completo (Última Toma Oficial)</strong>
-            <small style="display:block; color:#64748b; font-style:italic;">Validado por Laboratorio Clínico Central • Sin dependencias de hardware inalámbrico</small>
+      <!-- BLE -->
+      <div class="wearable-pane" id="wpane-ble">
+        <p class="wearable-help">Compatible con bandas y relojes que exponen el <strong>Servicio de Frecuencia Cardíaca BLE (0x180D)</strong> — Polar, Garmin (modo broadcast), Wahoo, Coospo, etc. Requiere Chrome o Edge.</p>
+        <div class="ble-live-box">
+          <div class="ble-live-val"><span id="ble-live-hr">--</span><small>lpm</small></div>
+          <div class="ble-live-meta">
+            <div id="ble-device-name">Sin dispositivo conectado</div>
+            <div id="ble-live-status" class="ble-status-idle">● Desconectado</div>
           </div>
-          <span class="lab-status-badge ok">✓ Resultados Validados</span>
         </div>
-
-        <div class="lab-table-wrap">
-          <table class="lab-data-table">
-            <thead>
-              <tr>
-                <th>Prueba / Analito</th>
-                <th>Resultado</th>
-                <th>Unidades</th>
-                <th>Rango de Referencia</th>
-                <th>Estado Clínico</th>
-              </tr>
-            </thead>
-            <tbody id="lab-table-body">
-              <tr>
-                <td><strong>Glucosa en ayunas</strong></td>
-                <td><strong class="lab-val-highlight">108.0</strong></td>
-                <td>mg/dL</td>
-                <td>70.0 - 99.0</td>
-                <td><span class="lab-chip warn">Ligeramente Elevada</span></td>
-              </tr>
-              <tr>
-                <td><strong>Hemoglobina Glucosilada (HbA1c)</strong></td>
-                <td><strong class="lab-val-highlight">6.2</strong></td>
-                <td>%</td>
-                <td>4.0 - 5.6</td>
-                <td><span class="lab-chip warn">Prediabetes / Monitoreo</span></td>
-              </tr>
-              <tr>
-                <td><strong>Creatinina sérica</strong></td>
-                <td><strong>0.92</strong></td>
-                <td>mg/dL</td>
-                <td>0.70 - 1.20</td>
-                <td><span class="lab-chip ok">Normal</span></td>
-              </tr>
-              <tr>
-                <td><strong>Urea sérica</strong></td>
-                <td><strong>28.4</strong></td>
-                <td>mg/dL</td>
-                <td>15.0 - 45.0</td>
-                <td><span class="lab-chip ok">Normal</span></td>
-              </tr>
-              <tr>
-                <td><strong>Colesterol Total</strong></td>
-                <td><strong>185.0</strong></td>
-                <td>mg/dL</td>
-                <td>&lt; 200.0</td>
-                <td><span class="lab-chip ok">Deseable</span></td>
-              </tr>
-              <tr>
-                <td><strong>Triglicéridos</strong></td>
-                <td><strong>142.0</strong></td>
-                <td>mg/dL</td>
-                <td>&lt; 150.0</td>
-                <td><span class="lab-chip ok">Normal</span></td>
-              </tr>
-              <tr>
-                <td><strong>Hemoglobina</strong></td>
-                <td><strong>14.5</strong></td>
-                <td>g/dL</td>
-                <td>13.5 - 17.5</td>
-                <td><span class="lab-chip ok">Normal</span></td>
-              </tr>
-              <tr>
-                <td><strong>Leucocitos totales</strong></td>
-                <td><strong>7,200</strong></td>
-                <td>/µL</td>
-                <td>4,500 - 11,000</td>
-                <td><span class="lab-chip ok">Normal</span></td>
-              </tr>
-              <tr>
-                <td><strong>Plaquetas</strong></td>
-                <td><strong>248,000</strong></td>
-                <td>/µL</td>
-                <td>150,000 - 450,000</td>
-                <td><span class="lab-chip ok">Normal</span></td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="wearable-btn-row">
+          <button class="btn-dark-pill" id="ble-connect-btn" onclick="connectBleHeartRate()">Conectar sensor Bluetooth</button>
+          <button class="btn-outline-pill" id="ble-disconnect-btn" onclick="disconnectBle()" style="display:none">Desconectar</button>
         </div>
       </div>
 
-      <!-- PANE 2: GABINETE & IMAGEN -->
-      <div class="lab-pane" id="lpane-gabinete" style="display:none">
-        <div class="gabinete-cards-grid">
-          <div class="gabinete-card">
-            <div class="gabinete-card-header">
-              <span class="gab-icon">🫁</span>
-              <div>
-                <strong>Radiografía de Tórax PA</strong>
-                <small>Fecha: 12 nov 2026 • Servicio de Radiología</small>
-              </div>
-              <span class="lab-chip ok">Sin Hallazgos Críticos</span>
-            </div>
-            <div class="gabinete-body">
-              <p><strong>Informe Radiológico:</strong> Campos pulmonares con adecuada expansión y transparencia. Trama broncovascular de distribución y calibre normales. Silueta cardíaca dentro de límites para la edad y complexión (Índice Cardiotorácico &lt; 0.50). Senos costo y cardiofrénicos libres.</p>
-              <div class="gabinete-footer">
-                <em>Conclusión: Estudio dentro de parámetros normales. Sin condensaciones activas.</em>
-              </div>
-            </div>
-          </div>
+      <!-- FILE -->
+      <div class="wearable-pane" id="wpane-file" style="display:none">
+        <p class="wearable-help">Archivo <strong>CSV</strong> o <strong>JSON</strong> exportado del reloj. Columnas reconocidas: <code>timestamp, heart_rate, spo2, systolic, diastolic, temperature, steps</code>.</p>
+        <input type="file" id="wearable-file-input" accept=".csv,.json,text/csv,application/json" class="input-field" />
+        <div class="wearable-btn-row">
+          <button class="btn-dark-pill" onclick="importWearableFile()">Importar lecturas</button>
+          <button class="btn-outline-pill" onclick="downloadWearableTemplate()">Descargar plantilla CSV</button>
+        </div>
+        <div id="wearable-import-result" class="wearable-import-result"></div>
+      </div>
 
-          <div class="gabinete-card">
-            <div class="gabinete-card-header">
-              <span class="gab-icon">📈</span>
-              <div>
-                <strong>Electrocardiograma Basal de 12 Derivaciones (ECG)</strong>
-                <small>Fecha: 10 nov 2026 • Triaje y Medicina Interna</small>
-              </div>
-              <span class="lab-chip ok">Ritmo Sinusal</span>
-            </div>
-            <div class="gabinete-body">
-              <p><strong>Trazado Electrocardiográfico:</strong> Ritmo sinusal regular con frecuencia cardíaca de 76 lpm. Intervalo PR 0.16 seg, QRS 0.08 seg, QTc 0.41 seg. Eje eléctrico QRS a +60°. Sin signos de isquemia subepicárdica ni sobrecarga ventricular.</p>
-              <div class="gabinete-footer">
-                <em>Conclusión: ECG clínicamente normal en reposo.</em>
-              </div>
-            </div>
-          </div>
+      <!-- MANUAL -->
+      <div class="wearable-pane" id="wpane-manual" style="display:none">
+        <div class="manual-vitals-grid">
+          <label>FC (lpm)<input type="number" id="mv-hr" class="input-field" min="20" max="250" placeholder="72" /></label>
+          <label>SpO2 (%)<input type="number" id="mv-spo2" class="input-field" min="50" max="100" placeholder="98" /></label>
+          <label>TA sistólica<input type="number" id="mv-sys" class="input-field" min="50" max="260" placeholder="120" /></label>
+          <label>TA diastólica<input type="number" id="mv-dia" class="input-field" min="30" max="160" placeholder="80" /></label>
+          <label>Temp (°C)<input type="number" id="mv-temp" class="input-field" step="0.1" min="30" max="43" placeholder="36.5" /></label>
+          <label>Glucosa (mg/dL)<input type="number" id="mv-glu" class="input-field" min="20" max="900" placeholder="opcional" /></label>
+        </div>
+        <div class="wearable-btn-row">
+          <button class="btn-dark-pill" onclick="saveManualVitals()">Guardar signos vitales</button>
         </div>
       </div>
 
-      <!-- PANE 3: REGISTRO / CARGA RÁPIDA -->
-      <div class="lab-pane" id="lpane-registro" style="display:none">
-        <p class="modal-sub" style="margin-top:0;">Ingresa o adjunta un nuevo reporte analítico para incorporarlo al expediente clínico electrónico NOM-004 sin configuraciones de hardware.</p>
-        <div class="lab-form-grid">
-          <div class="lab-form-field">
-            <label>Tipo de Estudio</label>
-            <select id="new-lab-type" class="input-field">
-              <option value="Química Sanguínea">Química Sanguínea (6 - 24 elementos)</option>
-              <option value="Biometría Hemática">Biometría Hemática Completa</option>
-              <option value="Examen General de Orina">Examen General de Orina (EGO)</option>
-              <option value="Perfil Lipídico">Perfil Lipídico / Colesterol</option>
-              <option value="Hemoglobina Glucosilada">Hemoglobina Glucosilada (HbA1c)</option>
-              <option value="Rayos X de Tórax">Rayos X de Tórax PA</option>
-              <option value="Electrocardiograma">Electrocardiograma 12D</option>
-              <option value="Ultrasonido">Ultrasonido Diagnóstico</option>
-            </select>
-          </div>
-          <div class="lab-form-field">
-            <label>Laboratorio / Gabinete Emisor</label>
-            <input type="text" id="new-lab-provider" class="input-field" placeholder="Ej. Laboratorio Central Cruz Roja / Salud Digna" />
-          </div>
-          <div class="lab-form-field" style="grid-column: 1 / -1;">
-            <label>Interpretación y Hallazgos Principales</label>
-            <textarea id="new-lab-summary" class="input-field" rows="3" placeholder="Ej. Glucosa 110 mg/dL, urea 30 mg/dL, creatinina 0.9 mg/dL. Parámetros renales normales."></textarea>
-          </div>
-        </div>
-        <div class="lab-btn-row">
-          <button type="button" class="btn-dark-pill" onclick="saveNewLabStudy()">Guardar Estudio en Expediente</button>
-        </div>
+      <h4 class="wearable-list-title">Últimas lecturas registradas</h4>
+      <div class="llm-options-grid" id="wearable-latest-list">
+        <div class="wearable-empty">Cargando lecturas...</div>
       </div>
 
-      <div class="llm-modal-actions" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-        <button class="btn-primary-pill" onclick="importLaboratorioData(); closeLaboratorioModal();">Usar datos de laboratorio en consulta</button>
-        <button class="llm-modal-close" style="background:#64748b;" onclick="closeLaboratorioModal()">Cerrar</button>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="llm-modal-close" style="background:#0f172a;" onclick="importWearableHealthData(); closeWearableModal();">Usar signos en la consulta</button>
+        <button class="llm-modal-close" style="background:#64748b;" onclick="closeWearableModal()">Cerrar</button>
       </div>
     </div>
   </div>

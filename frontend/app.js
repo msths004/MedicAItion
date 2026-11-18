@@ -1893,7 +1893,7 @@ async function onDashboardPatientChange(curp) {
 
   // Buscar última lectura de telemetría / wearables
   let bpmVal = '75';
-  let devVal = 'Triaje Clínico Oficial';
+  let devVal = 'Monitor Clínico';
   try {
     const vRes = await fetch(`${API}/api/wearables/readings?curp=${encodeURIComponent(curp)}&limit=1`);
     if (vRes.ok) {
@@ -1988,96 +1988,4 @@ function jumpToConsultWithPatient(curp) {
   if (typeof onConsultaPatientSelect === 'function') {
     onConsultaPatientSelect(curp);
   }
-}
-
-
-/* ==========================================================================
-   MÓDULO DE LABORATORIO Y GABINETE CLÍNICO (Sustituto de Wearables)
-   ========================================================================== */
-
-function openLaboratorioModal(tab) {
-  document.getElementById('laboratorio-modal-overlay')?.classList.add('open');
-  setLabTab(tab || 'quimica');
-  _populateLabPatients();
-}
-
-function closeLaboratorioModal() {
-  document.getElementById('laboratorio-modal-overlay')?.classList.remove('open');
-}
-
-// Alias para compatibilidad
-function openWearableModal(tab) {
-  openLaboratorioModal(tab);
-}
-function closeWearableModal() {
-  closeLaboratorioModal();
-}
-
-function setLabTab(tab) {
-  ['quimica', 'gabinete', 'registro'].forEach(t => {
-    document.getElementById(`ltab-${t}`)?.classList.toggle('active', t === tab);
-    const pane = document.getElementById(`lpane-${t}`);
-    if (pane) pane.style.display = t === tab ? 'block' : 'none';
-  });
-}
-
-function _populateLabPatients() {
-  const sel = document.getElementById('lab-patient-select');
-  if (!sel) return;
-  const patients = (window.AppState && AppState.allPatients) || [];
-  if (!patients.length) {
-    sel.innerHTML = '<option value="">Sin pacientes registrados</option>';
-    return;
-  }
-  const cur = (window.AppState && AppState.activeCurp) || '';
-  sel.innerHTML = patients.map(p => {
-    const isSel = p.curp === cur ? 'selected' : '';
-    const name = p.nombre_completo || p.nombre || 'Paciente';
-    return `<option value="${p.curp}" ${isSel}>${name} (${p.curp})</option>`;
-  }).join('');
-}
-
-function onLabPatientChange(curp) {
-  if (!curp) return;
-  if (window.AppState) {
-    AppState.activeCurp = curp;
-  }
-  if (typeof showToast === 'function') {
-    showToast('Estudios de laboratorio actualizados para el paciente seleccionado', 'info');
-  }
-}
-
-function saveNewLabStudy() {
-  const studyType = document.getElementById('new-lab-type')?.value;
-  const provider = document.getElementById('new-lab-provider')?.value || 'Laboratorio Central';
-  const summary = document.getElementById('new-lab-summary')?.value;
-
-  if (!summary || !summary.trim()) {
-    if (typeof showToast === 'function') showToast('Por favor ingresa la interpretación o hallazgos del estudio', 'error');
-    return;
-  }
-
-  if (typeof showToast === 'function') {
-    showToast(`Estudio "${studyType}" registrado con éxito en el expediente`, 'success');
-  }
-  document.getElementById('new-lab-summary').value = '';
-  setLabTab('quimica');
-}
-
-function importLaboratorioData() {
-  if (typeof switchMainTab === 'function') switchMainTab('consulta');
-  if (typeof setMode === 'function') setMode('text');
-  const txtEl = document.getElementById('text-input');
-  const labNote = 'Estudios de Laboratorio recientes (Química Sanguínea / Biometría): Glucosa 108 mg/dL, Creatinina 0.92 mg/dL, Colesterol 185 mg/dL, HbA1c 6.2%, Leucocitos 7,200/µL. Rx Tórax sin infiltrados.
-';
-  if (txtEl) {
-    txtEl.value = labNote + (txtEl.value ? txtEl.value : 'Paciente acude a valoración y revisión de estudios analíticos...');
-  }
-  if (typeof showToast === 'function') {
-    showToast('Resultados analíticos incorporados al caso clínico', 'success');
-  }
-}
-
-function importWearableHealthData() {
-  importLaboratorioData();
 }
