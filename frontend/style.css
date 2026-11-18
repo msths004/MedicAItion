@@ -3656,15 +3656,16 @@ body {
 
 /* ── RESULTS TABS ── */
 .results-tabs {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  background: rgba(15, 23, 42, 0.45) !important;
-  padding: 6px !important;
-  border-radius: 12px !important;
-  border: 1px solid var(--border) !important;
-  backdrop-filter: blur(8px) !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.45);
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
 }
+.results-tabs[style*="none"] { display: none !important; }
 
 .results-tab {
   padding: 8px 16px !important;
@@ -3708,12 +3709,17 @@ body {
 
 /* ── EMPTY STATE MODERN ── */
 .empty-state {
-  padding: 50px 30px !important;
-  text-align: center !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 12px !important;
+  padding: 50px 30px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.empty-state.hidden,
+#empty-state[style*="display: none"],
+#empty-state[style*="display:none"] {
+  display: none !important;
 }
 
 .empty-icon-wrap {

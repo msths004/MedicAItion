@@ -265,12 +265,12 @@ function stopRecording() {
 
 /* ── SUBMIT PIPELINE ── */
 async function submitData() {
-  const curp  = document.getElementById('curp-input').value.trim();
-  const clues = document.getElementById('clues-input').value.trim();
+  const curp  = document.getElementById('curp-input')?.value?.trim() || '';
+  const clues = document.getElementById('clues-input')?.value?.trim() || 'YUC-CR-001';
 
   if (AppState.currentMode === 'audio' && !AppState.recordedBlob)
     return showToast('Graba un audio primero', 'error');
-  if (AppState.currentMode === 'text' && !document.getElementById('text-input').value.trim())
+  if (AppState.currentMode === 'text' && !document.getElementById('text-input')?.value?.trim())
     return showToast('Escribe el texto clínico', 'error');
   if (AppState.currentMode === 'transcripcion') {
     const rxNarrative = buildNarrativeFromRxEditor();
@@ -288,11 +288,10 @@ async function submitData() {
     }
   }
 
-  setLoading(true);
-
   try {
+    setLoading(true);
     let data;
-    const apiKey = document.getElementById('api-key-input').value.trim();
+    const apiKey = document.getElementById('api-key-input')?.value?.trim() || '';
 
     if (AppState.currentMode === 'audio') {
       const fd = new FormData();
@@ -308,7 +307,7 @@ async function submitData() {
       data = await res.json();
     } else {
       const fd = new FormData();
-      fd.append('text', document.getElementById('text-input').value.trim());
+      fd.append('text', document.getElementById('text-input')?.value?.trim() || '');
       fd.append('curp', curp);
       fd.append('clues', clues);
       fd.append('llm_mode', AppState.llmMode);
@@ -325,7 +324,8 @@ async function submitData() {
     setTimeout(() => { if (typeof loadPatients === 'function') loadPatients(); }, 150);
 
     // Mostrar el botón de asociar nota después de generar exitosamente
-    document.getElementById('btn-associate-note').style.display = 'flex';
+    const btnAssoc = document.getElementById('btn-associate-note');
+    if (btnAssoc) btnAssoc.style.display = 'flex';
 
     showToast('Notas médicas generadas exitosamente', 'success');
     if (data?.legal_privacy_guard?.cloud_transfer_blocked) {
@@ -345,8 +345,15 @@ async function submitData() {
 
 /* ── RENDER RESULTS ── */
 function renderResults(data) {
-  document.getElementById('empty-state').style.display = 'none';
-  document.getElementById('results-tabs').style.display = 'flex';
+  const emptyState = document.getElementById('empty-state');
+  if (emptyState) {
+    emptyState.style.setProperty('display', 'none', 'important');
+    emptyState.classList.add('hidden');
+  }
+  const resultsTabs = document.getElementById('results-tabs');
+  if (resultsTabs) {
+    resultsTabs.style.setProperty('display', 'flex', 'important');
+  }
 
   setResultTab('nota');
 
@@ -1017,10 +1024,13 @@ function esc(str) {
 /* ── UTILITIES ── */
 function setLoading(on) {
   const btn = document.getElementById('submit-btn');
-  btn.disabled = on;
-  document.getElementById('submit-label').style.display = on ? 'none'   : 'inline';
-  document.getElementById('spinner').style.display      = on ? 'block'  : 'none';
-  document.getElementById('status-text').textContent    = on ? 'Procesando...' : 'Sistema listo';
+  if (btn) btn.disabled = on;
+  const label = document.getElementById('submit-label');
+  if (label) label.style.display = on ? 'none' : 'inline';
+  const spinner = document.getElementById('spinner');
+  if (spinner) spinner.style.display = on ? 'block' : 'none';
+  const statusEl = document.getElementById('status-text') || document.getElementById('event-status-text');
+  if (statusEl) statusEl.textContent = on ? 'Procesando con IA...' : 'Sistema listo';
 }
 
 function formatDate(iso) {
