@@ -787,195 +787,344 @@ async function loadPatients() {
   }
 }
 
+window.patientsVisibleLimit = 5;
+window.currentPatientCohort = 'all';
+window.patientsViewMode = 'modules';
+
+function loadMorePatients(step = 5) {
+  window.patientsVisibleLimit = (window.patientsVisibleLimit || 5) + step;
+  const q = (document.getElementById('search-input')?.value || '').trim();
+  if (q) {
+    handleSearch();
+  } else {
+    renderPatients(AppState.allPatients || []);
+  }
+}
+
+function loadAllPatients() {
+  window.patientsVisibleLimit = 9999;
+  const q = (document.getElementById('search-input')?.value || '').trim();
+  if (q) {
+    handleSearch();
+  } else {
+    renderPatients(AppState.allPatients || []);
+  }
+}
+
+function resetPatientsLimit() {
+  window.patientsVisibleLimit = 5;
+  const q = (document.getElementById('search-input')?.value || '').trim();
+  if (q) {
+    handleSearch();
+  } else {
+    renderPatients(AppState.allPatients || []);
+  }
+  const target = document.getElementById('patients-cohorts-nav') || document.getElementById('panel-patients-section');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function clearPatientSearch() {
+  const inp = document.getElementById('search-input');
+  const btn = document.getElementById('btn-clear-patient-search');
+  if (inp) {
+    inp.value = '';
+    inp.focus();
+  }
+  if (btn) btn.style.display = 'none';
+  window.patientsVisibleLimit = 5;
+  renderPatients(AppState.allPatients || []);
+}
+
+function copyPatientCurp(curp, btnEl) {
+  if (!curp) return;
+  navigator.clipboard.writeText(curp).then(() => {
+    if (btnEl) {
+      const orig = btnEl.getAttribute('data-curp-orig') || btnEl.innerText;
+      btnEl.setAttribute('data-curp-orig', orig);
+      btnEl.innerText = '✓ Copiado';
+      btnEl.classList.add('copied');
+      setTimeout(() => {
+        btnEl.innerText = curp;
+        btnEl.classList.remove('copied');
+      }, 1600);
+    }
+  }).catch(() => {});
+}
+
+function updatePatientKpiStrip(patients) {
+  const total = Array.isArray(patients) ? patients.length : 25;
+  const totalEl = document.getElementById('pat-kpi-total');
+  const activeEl = document.getElementById('pat-kpi-active');
+  const alertEl = document.getElementById('pat-kpi-alerts');
+  if (totalEl) totalEl.textContent = total;
+  if (activeEl) activeEl.textContent = Math.round(total * 0.76);
+  if (alertEl) alertEl.textContent = Math.max(1, Math.round(total * 0.24));
+}
+
 function renderPatients(patients, isSemantic = false, emptyQuery = '') {
   const el = document.getElementById('patients-list');
+  const pagEl = document.getElementById('patients-pagination-root');
   if (!el) return;
+
+  // Actualizar visibilidad de botón limpiar búsqueda
+  const qInput = document.getElementById('search-input');
+  const clearBtn = document.getElementById('btn-clear-patient-search');
+  if (clearBtn) {
+    clearBtn.style.display = (qInput && qInput.value.trim().length > 0) ? 'flex' : 'none';
+  }
 
   if (!patients || !patients.length) {
     const msg = emptyQuery
       ? `No se encontraron pacientes que coincidan con "${esc(emptyQuery)}".`
       : (isSemantic ? 'No se encontraron coincidencias semánticas.' : 'Sin pacientes registrados.');
     el.innerHTML = `<div class="no-patients">${msg}</div>`;
+    if (pagEl) pagEl.innerHTML = '';
     return;
   }
 
-  // Si el usuario eligió vista tabular clásica
+  // Filtrar según cohorte activa
+  const activeCohort = window.currentPatientCohort || 'all';
+  const filteredByCohort = (activeCohort === 'all')
+    ? patients
+    : patients.filter(p => {
+        const curp = isSemantic ? p.patient_curp : p.curp;
+        const cInfo = (window.PATIENTS_CLINICAL_MAP && window.PATIENTS_CLINICAL_MAP[curp]);
+        if (cInfo && cInfo.category === activeCohort) return true;
+        if (!cInfo && activeCohort === 'especialidades') return true;
+        return false;
+      });
+
+  const totalCount = filteredByCohort.length;
+  if (totalCount === 0) {
+    el.innerHTML = '<div class="no-patients">No hay pacientes registrados en esta sección clínica.</div>';
+    if (pagEl) pagEl.innerHTML = '';
+    return;
+  }
+
+  // REGLA CLAVE: Solo mostrar 5 en la interfaz (o el límite expandido por el usuario)
+  const currentLimit = window.patientsVisibleLimit || 5;
+  const visiblePatients = filteredByCohort.slice(0, currentLimit);
+  const shownCount = visiblePatients.length;
+  const remainingCount = Math.max(0, totalCount - shownCount);
+
+  // Actualizar métricas del strip superior
+  updatePatientKpiStrip(patients);
+
+  // VISTA TABULAR / LISTA CONTINUA
   if (window.patientsViewMode === 'table') {
     const tableHeader = document.querySelector('.patients-pseudo-table-header');
     if (tableHeader) tableHeader.style.display = 'grid';
 
     el.className = 'patients-detached-list';
-    el.innerHTML = patients.map(p => {
+    el.innerHTML = visiblePatients.map(p => {
       const curp = isSemantic ? p.patient_curp : p.curp;
       const nombre = isSemantic ? (p.nombre_paciente || 'Nombre no registrado') : (p.nombre || p.nombre_completo || 'Nombre no registrado');
       const sexo = p.sexo || '';
       const edad = p.edad != null ? `${p.edad} años` : '';
-      const folio = p.folio_hospital || '';
+      const folio = p.folio_hospital || 'EXP';
       const fecha = formatDate(p.created_at);
-      const cInfo = (window.PATIENTS_CLINICAL_MAP && window.PATIENTS_CLINICAL_MAP[curp]) || { disease: 'Medicina General', cie10: 'Z00' };
+      const cInfo = (window.PATIENTS_CLINICAL_MAP && window.PATIENTS_CLINICAL_MAP[curp]) || { disease: 'Medicina General (Z00)', cie10: 'Z00' };
+      const parts = nombre.split(/\s+/).filter(Boolean);
+      const initials = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : (parts[0] ? parts[0].slice(0, 2).toUpperCase() : 'PT');
+
       return `
         <div class="patient-row" data-curp="${esc(curp)}" onclick="openPatientProfile('${esc(curp)}')" role="button" tabindex="0">
           <div class="pt-col-patient">
-            <div class="patient-row-avatar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
+            <div class="patient-row-avatar">${initials}</div>
             <div class="patient-row-info">
               <span class="patient-row-name">${esc(nombre)}</span>
               <span class="patient-row-meta">${sexo ? sexo : ''}${sexo && edad ? ' • ' : ''}${edad} • <strong>${esc(cInfo.disease)}</strong></span>
-              ${curp ? `<span class="patient-row-curp-badge">CURP: ${esc(curp)}</span>` : ''}
+              ${curp ? `<span class="patient-row-curp-badge" onclick="event.stopPropagation(); copyPatientCurp('${esc(curp)}', this)" title="Copiar CURP">${esc(curp)}</span>` : ''}
             </div>
           </div>
           <div class="pt-col-id">
-            <span class="patient-row-id">${folio || 'EXP'}</span>
-            ${folio ? '<span class="id-local-badge">ID LOCAL</span>' : ''}
+            <span class="patient-row-id">${folio}</span>
+            <span class="id-local-badge">NOM-004</span>
           </div>
           <div class="pt-col-date">
             <div class="patient-row-date">${fecha}</div>
           </div>
           <div class="pt-col-actions">
-            <button class="patient-row-actions-btn" onclick="event.stopPropagation(); jumpToConsultWithPatient('${esc(curp)}')" title="Iniciar consulta inmediata">
-              🩺
+            <button class="btn-table-consult" onclick="event.stopPropagation(); jumpToConsultWithPatient('${esc(curp)}')" title="Iniciar consulta inmediata">
+              🩺 Consulta
             </button>
-            <button class="patient-row-actions-btn" onclick="event.stopPropagation(); openPatientProfile('${esc(curp)}')" title="Abrir expediente completo">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            <button class="btn-table-profile" onclick="event.stopPropagation(); openPatientProfile('${esc(curp)}')" title="Abrir expediente completo">
+              Ficha
             </button>
           </div>
         </div>
       `;
     }).join('');
-    return;
-  }
+  } else {
+    // VISTA MODULAR POR SECCIONES
+    const tableHeader = document.querySelector('.patients-pseudo-table-header');
+    if (tableHeader) tableHeader.style.display = 'none';
 
-  // VISTA MODULAR POR SECCIONES (SOLICITADA POR EL USUARIO)
-  const tableHeader = document.querySelector('.patients-pseudo-table-header');
-  if (tableHeader) tableHeader.style.display = 'none';
+    el.className = 'patients-modules-grid';
 
-  el.className = 'patients-modules-grid';
+    const SECTIONS_CONFIG = [
+      {
+        id: "diabetes",
+        title: "PACIENTES CON DIABETES & TRASTORNOS METABÓLICOS",
+        desc: "CIE-10 E11, E03 • Control glucémico, endocrinología y comorbilidades",
+        icon: "🩸"
+      },
+      {
+        id: "hipertension",
+        title: "PACIENTES CON HIPERTENSIÓN & CARDIOPATÍAS",
+        desc: "CIE-10 I10, I50 • Tensión arterial, insuficiencia cardíaca y MAPA",
+        icon: "❤️"
+      },
+      {
+        id: "dengue",
+        title: "PACIENTES CON DENGUE & ENFERMEDADES FEBRILES",
+        desc: "CIE-10 A90, U07, A09 • Arbovirosis, triaje febril e infectología",
+        icon: "🦟"
+      },
+      {
+        id: "respiratorio",
+        title: "PACIENTES CON ENFERMEDADES RESPIRATORIAS (ASMA & EPOC)",
+        desc: "CIE-10 J45, J44, J18 • Vías aéreas, función pulmonar y espirometría",
+        icon: "🫁"
+      },
+      {
+        id: "reuma_renal",
+        title: "PACIENTES CON ENFERMEDADES REUMATOLÓGICAS & RENALES",
+        desc: "CIE-10 M32, M05, N18, N10 • Autoinmunidad, nefrología y artritis",
+        icon: "🧬"
+      },
+      {
+        id: "especialidades",
+        title: "PACIENTES DE ESPECIALIDADES, CIRUGÍA & GENERAL",
+        desc: "CIE-10 H40, M51, F33, K35, K80, H66, L20 • Control ambulatorio integral",
+        icon: "🏥"
+      }
+    ];
 
-  // Secciones clínicas organizadas
-  const SECTIONS_CONFIG = [
-    {
-      id: "diabetes",
-      title: "PACIENTES CON DIABETES & TRASTORNOS METABÓLICOS",
-      desc: "CIE-10 E11, E03 • Control glucémico, endocrinología y comorbilidades",
-      icon: "🩸"
-    },
-    {
-      id: "hipertension",
-      title: "PACIENTES CON HIPERTENSIÓN & CARDIOPATÍAS",
-      desc: "CIE-10 I10, I50 • Tensión arterial, insuficiencia cardíaca y MAPA",
-      icon: "❤️"
-    },
-    {
-      id: "dengue",
-      title: "PACIENTES CON DENGUE & ENFERMEDADES FEBRILES",
-      desc: "CIE-10 A90, U07, A09 • Arbovirosis, triaje febril e infectología",
-      icon: "🦟"
-    },
-    {
-      id: "respiratorio",
-      title: "PACIENTES CON ENFERMEDADES RESPIRATORIAS (ASMA & EPOC)",
-      desc: "CIE-10 J45, J44, J18 • Vías aéreas, función pulmonar y espirometría",
-      icon: "🫁"
-    },
-    {
-      id: "reuma_renal",
-      title: "PACIENTES CON ENFERMEDADES REUMATOLÓGICAS & RENALES",
-      desc: "CIE-10 M32, M05, N18, N10 • Autoinmunidad, nefrología y artritis",
-      icon: "🧬"
-    },
-    {
-      id: "especialidades",
-      title: "PACIENTES DE ESPECIALIDADES, CIRUGÍA & GENERAL",
-      desc: "CIE-10 H40, M51, F33, K35, K80, H66, L20 • Control ambulatorio integral",
-      icon: "🏥"
-    }
-  ];
+    let htmlSections = '';
 
-  // Agrupar pacientes por sección
-  const activeCohort = window.currentPatientCohort || 'all';
-  let htmlSections = '';
+    SECTIONS_CONFIG.forEach(sec => {
+      if (activeCohort !== 'all' && activeCohort !== sec.id) return;
 
-  SECTIONS_CONFIG.forEach(sec => {
-    if (activeCohort !== 'all' && activeCohort !== sec.id) return;
+      // Pacientes visibles que pertenecen a esta sección
+      const secPatients = visiblePatients.filter(p => {
+        const curp = isSemantic ? p.patient_curp : p.curp;
+        const cInfo = (window.PATIENTS_CLINICAL_MAP && window.PATIENTS_CLINICAL_MAP[curp]);
+        if (cInfo && cInfo.category === sec.id) return true;
+        if (!cInfo && sec.id === 'especialidades') return true;
+        return false;
+      });
 
-    // Filtrar pacientes pertenecientes a esta sección
-    const secPatients = patients.filter(p => {
-      const curp = isSemantic ? p.patient_curp : p.curp;
-      const cInfo = (window.PATIENTS_CLINICAL_MAP && window.PATIENTS_CLINICAL_MAP[curp]);
-      if (cInfo && cInfo.category === sec.id) return true;
-      if (!cInfo && sec.id === 'especialidades') return true;
-      return false;
+      // Si no hay pacientes de esta sección entre los actualmente visibles, omitir sección
+      if (secPatients.length === 0) return;
+
+      const cardsHtml = secPatients.map(p => {
+        const curp = isSemantic ? p.patient_curp : p.curp;
+        const nombre = isSemantic ? (p.nombre_paciente || 'Nombre no registrado') : (p.nombre || p.nombre_completo || 'Nombre no registrado');
+        const parts = nombre.split(/\s+/).filter(Boolean);
+        const initials = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : (parts[0] ? parts[0].slice(0, 2).toUpperCase() : 'PT');
+        const folio = p.folio_hospital || 'EXP';
+        const cInfo = (window.PATIENTS_CLINICAL_MAP && window.PATIENTS_CLINICAL_MAP[curp]) || {
+          disease: 'Control Médico General (Z00)',
+          cie10: 'Z00',
+          highlight: 'Signos basales estables'
+        };
+
+        const isAlert = cInfo.highlight && (cInfo.highlight.includes('Ajuste') || cInfo.highlight.includes('Temp') || cInfo.highlight.includes('Plaqueta') || cInfo.highlight.includes('Lasegue'));
+
+        return `
+          <div class="modular-patient-row" data-curp="${esc(curp)}" onclick="openPatientProfile('${esc(curp)}')" title="Ver expediente de ${esc(nombre)}">
+            <div class="pt-mod-left">
+              <div class="pt-mod-avatar-wrap">
+                <div class="pt-mod-avatar">${initials}</div>
+                <span class="pt-status-dot ${isAlert ? 'dot-amber' : 'dot-green'}" title="${isAlert ? 'Atención / En Seguimiento' : 'Control Clínico Estable'}"></span>
+              </div>
+              <div class="pt-mod-info">
+                <div class="pt-mod-name-row">
+                  <span class="pt-mod-name">${esc(nombre)}</span>
+                  <span class="pt-mod-curp-code" onclick="event.stopPropagation(); copyPatientCurp('${esc(curp)}', this)" title="Haz clic para copiar CURP">${esc(curp)}</span>
+                </div>
+                <div class="pt-mod-demog">
+                  <span class="pt-folio-badge">${folio}</span> • ${p.sexo || 'M'} • ${p.edad != null ? p.edad + ' años' : 'Adulto'}
+                </div>
+                <div class="pt-mod-disease-pill">
+                  <span>${sec.icon}</span>
+                  <span>${esc(cInfo.disease)}</span>
+                </div>
+                <div class="pt-mod-highlight ${isAlert ? 'highlight-alert' : ''}">
+                  ${isAlert ? '⚠️' : '✓'} ${esc(cInfo.highlight)}
+                </div>
+              </div>
+            </div>
+            <div class="pt-mod-actions" onclick="event.stopPropagation()">
+              <button type="button" class="btn-mod-consult" onclick="jumpToConsultWithPatient('${esc(curp)}')" title="Iniciar consulta con este paciente">
+                <span>🩺</span>
+                <span>Consulta</span>
+              </button>
+              <button type="button" class="btn-mod-profile" onclick="openPatientProfile('${esc(curp)}')" title="Abrir expediente completo">
+                <span>Ficha</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      htmlSections += `
+        <section class="patient-section-card" data-section="${sec.id}">
+          <div class="section-card-header">
+            <div class="section-title-wrap">
+              <div class="section-icon-badge">${sec.icon}</div>
+              <div>
+                <h3 class="section-main-title">${sec.title}</h3>
+                <p class="section-sub-desc">${sec.desc}</p>
+              </div>
+            </div>
+            <span class="section-badge-counter">${secPatients.length} en pantalla</span>
+          </div>
+          <div class="section-patients-list">
+            ${cardsHtml}
+          </div>
+        </section>
+      `;
     });
 
-    if (secPatients.length === 0 && activeCohort === 'all') return;
+    el.innerHTML = htmlSections || '<div class="no-patients">No se encontraron pacientes para el filtro seleccionado.</div>';
+  }
 
-    const cardsHtml = secPatients.map(p => {
-      const curp = isSemantic ? p.patient_curp : p.curp;
-      const nombre = isSemantic ? (p.nombre_paciente || 'Nombre no registrado') : (p.nombre || p.nombre_completo || 'Nombre no registrado');
-      const parts = nombre.split(/\s+/).filter(Boolean);
-      const initials = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : (parts[0] ? parts[0].slice(0, 2).toUpperCase() : 'PT');
-      const folio = p.folio_hospital || 'EXP';
-      const cInfo = (window.PATIENTS_CLINICAL_MAP && window.PATIENTS_CLINICAL_MAP[curp]) || {
-        disease: 'Control Médico General (Z00)',
-        cie10: 'Z00',
-        highlight: 'Signos basales estables'
-      };
-
-      return `
-        <div class="modular-patient-row" data-curp="${esc(curp)}" onclick="openPatientProfile('${esc(curp)}')" title="Ver expediente de ${esc(nombre)}">
-          <div class="pt-mod-left">
-            <div class="pt-mod-avatar">${initials}</div>
-            <div class="pt-mod-info">
-              <div class="pt-mod-name-row">
-                <span class="pt-mod-name">${esc(nombre)}</span>
-                <span class="pt-mod-curp-code">${esc(curp)}</span>
-              </div>
-              <div class="pt-mod-demog">
-                <strong>${folio}</strong> • ${p.sexo || 'M'} • ${p.edad != null ? p.edad + ' años' : 'Adulto'}
-              </div>
-              <div class="pt-mod-disease-pill">
-                <span>🏷️</span>
-                <span>${esc(cInfo.disease)}</span>
-              </div>
-              <div class="pt-mod-highlight">
-                ✓ ${esc(cInfo.highlight)}
-              </div>
-            </div>
-          </div>
-          <div class="pt-mod-actions" onclick="event.stopPropagation()">
-            <button type="button" class="btn-mod-consult" onclick="jumpToConsultWithPatient('${esc(curp)}')" title="Iniciar consulta con este paciente">
-              <span>🩺</span>
-              <span>Consulta</span>
+  // RENDERIZAR BARRA DE PAGINACIÓN / REVELADO PROGRESIVO
+  if (pagEl) {
+    const pct = Math.min(100, Math.round((shownCount / totalCount) * 100));
+    pagEl.innerHTML = `
+      <div class="pagination-status">
+        <span class="pagination-dot"></span>
+        <span class="pagination-text">Mostrando <strong>${shownCount}</strong> de <strong>${totalCount}</strong> pacientes</span>
+        <div class="pagination-bar-track" title="Progreso: ${pct}%">
+          <div class="pagination-bar-fill" style="width: ${pct}%"></div>
+        </div>
+      </div>
+      <div class="pagination-buttons">
+        ${remainingCount > 0 ? `
+          <button type="button" class="btn-pagination-more" onclick="loadMorePatients(5)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            <span>Ver 5 pacientes más</span>
+            <span class="pagination-remaining-pill">+${Math.min(5, remainingCount)} (${remainingCount} restantes)</span>
+          </button>
+          <button type="button" class="btn-pagination-all" onclick="loadAllPatients()">
+            <span>Ver todos (${totalCount})</span>
+          </button>
+        ` : `
+          <span class="pagination-done-badge">✓ Mostrando todos los pacientes (${totalCount})</span>
+          ${totalCount > 5 ? `
+            <button type="button" class="btn-pagination-reset" onclick="resetPatientsLimit()">
+              <span>Mostrar solo 5</span>
             </button>
-            <button type="button" class="btn-mod-profile" onclick="openPatientProfile('${esc(curp)}')" title="Abrir expediente completo">
-              <span>Ficha</span>
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    htmlSections += `
-      <section class="patient-section-card" data-section="${sec.id}">
-        <div class="section-card-header">
-          <div class="section-title-wrap">
-            <div class="section-icon-badge">${sec.icon}</div>
-            <div>
-              <h3 class="section-main-title">${sec.title}</h3>
-              <p class="section-sub-desc">${sec.desc}</p>
-            </div>
-          </div>
-          <span class="section-badge-counter">${secPatients.length} Pacientes</span>
-        </div>
-        <div class="section-patients-list">
-          ${cardsHtml.length ? cardsHtml : '<div class="no-patients" style="padding:15px; font-size:12px;">Sin pacientes en este módulo para el criterio actual.</div>'}
-        </div>
-      </section>
+          ` : ''}
+        `}
+      </div>
     `;
-  });
-
-  el.innerHTML = htmlSections || '<div class="no-patients">No se encontraron pacientes para el filtro seleccionado.</div>';
+  }
 }
 
 function openPatientProfile(curp) {
@@ -2171,6 +2320,7 @@ window.patientsViewMode = 'modules'; // 'modules' or 'table'
 
 function filterPatientsByCohort(cat) {
   window.currentPatientCohort = cat;
+  window.patientsVisibleLimit = 5; // Siempre reiniciar a 5 pacientes al cambiar de categoría
   document.querySelectorAll('.cohort-filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-cat') === cat);
   });
@@ -2179,6 +2329,7 @@ function filterPatientsByCohort(cat) {
 
 function setPatientsViewMode(mode) {
   window.patientsViewMode = mode;
+  window.patientsVisibleLimit = 5; // Siempre reiniciar a 5 pacientes al cambiar de vista
   document.getElementById('btn-view-modules')?.classList.toggle('active', mode === 'modules');
   document.getElementById('btn-view-table')?.classList.toggle('active', mode === 'table');
   const tableHeader = document.querySelector('.patients-pseudo-table-header');

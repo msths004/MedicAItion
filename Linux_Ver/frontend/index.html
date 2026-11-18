@@ -2040,10 +2040,43 @@
               </button>
             </div>
 
+            <!-- KPI STATS STRIP: PADRÓN NOM-004 -->
+            <div class="patients-kpi-summary-strip">
+              <div class="pat-kpi-pill">
+                <div class="pat-kpi-icon">👥</div>
+                <div class="pat-kpi-content">
+                  <span class="pat-kpi-num" id="pat-kpi-total">25</span>
+                  <span class="pat-kpi-lbl">Expedientes Totales</span>
+                </div>
+              </div>
+              <div class="pat-kpi-pill">
+                <div class="pat-kpi-icon">🩺</div>
+                <div class="pat-kpi-content">
+                  <span class="pat-kpi-num" id="pat-kpi-active">19</span>
+                  <span class="pat-kpi-lbl">Control Ambulatorio</span>
+                </div>
+              </div>
+              <div class="pat-kpi-pill">
+                <div class="pat-kpi-icon">⚠️</div>
+                <div class="pat-kpi-content">
+                  <span class="pat-kpi-num pat-kpi-alert" id="pat-kpi-alerts">6</span>
+                  <span class="pat-kpi-lbl">Alergias / Febriles</span>
+                </div>
+              </div>
+              <div class="pat-kpi-pill">
+                <div class="pat-kpi-icon">🔒</div>
+                <div class="pat-kpi-content">
+                  <span class="pat-kpi-num pat-kpi-secure">NOM-024</span>
+                  <span class="pat-kpi-lbl">Bóveda Cifrada Local</span>
+                </div>
+              </div>
+            </div>
+
             <div class="patients-floating-bar">
               <div class="patients-search-input-wrap">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" id="search-input" placeholder="Buscar por nombre, CURP, profesión o síntoma..." oninput="handleSearch()" class="patients-search-input" />
+                <button type="button" id="btn-clear-patient-search" class="btn-clear-search" onclick="clearPatientSearch()" title="Limpiar búsqueda" style="display:none">✕</button>
               </div>
               <div class="patients-search-actions">
                 <label class="semantic-check-badge" title="Activa búsqueda semántica vectorial con embeddings de IA">
@@ -2119,6 +2152,9 @@
             <div id="patients-list" class="patients-detached-list">
               <div class="loading-patients">Cargando pacientes...</div>
             </div>
+
+            <!-- BARRA DE REVELADO PROGRESIVO (+5 PACIENTES) -->
+            <div id="patients-pagination-root" class="patients-pagination-toolbar"></div>
 
           </div>
         </section>

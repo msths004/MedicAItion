@@ -1579,6 +1579,463 @@ h1, h2, h3, h4,
   100% { top: 100%; opacity: 0; }
 }
 
+/* ── PERFECCIÓN DEL DIRECTORIO DE PACIENTES & PAGINACIÓN PROGRESIVA (+5) ── */
+
+/* 1. Eliminación radical de scrollbar nativa horizontal en filtros de cohorte */
+.cohorts-scroll-wrap {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.cohorts-scroll-wrap::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 2. Botón limpiar búsqueda de pacientes */
+.btn-clear-search {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  transition: color 0.15s ease;
+}
+.btn-clear-search:hover {
+  color: var(--ink);
+}
+
+/* 3. Strip Superior de Estadísticas del Padrón Clínico (KPI Strip) */
+.patients-kpi-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 16px 0 20px;
+}
+@media (max-width: 900px) {
+  .patients-kpi-summary-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.pat-kpi-pill {
+  background: var(--card-read) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  padding: 13px 16px !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(14px);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.pat-kpi-pill:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-strong) !important;
+}
+.pat-kpi-icon {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(124, 224, 244, 0.12);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+:root[data-theme="light"] .pat-kpi-icon {
+  background: #E0F2FE;
+  border-color: #BAE6FD;
+}
+.pat-kpi-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pat-kpi-num {
+  font: 700 1.35rem "Plus Jakarta Sans", sans-serif;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.pat-kpi-num.pat-kpi-alert {
+  color: #F59E0B !important;
+}
+.pat-kpi-num.pat-kpi-secure {
+  color: #10B981 !important;
+  font-size: 1.05rem;
+}
+.pat-kpi-lbl {
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* 4. Tarjetas de Sección y Filas Modulares de Pacientes */
+.patient-section-card {
+  background: var(--card-read) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 20px !important;
+  overflow: hidden;
+  backdrop-filter: blur(18px) !important;
+  box-shadow: var(--glass-shadow);
+  margin-bottom: 20px;
+  transition: border-color 0.2s ease;
+}
+.patient-section-card:hover {
+  border-color: var(--line-strong) !important;
+}
+.section-card-header {
+  padding: 14px 18px !important;
+  background: rgba(5, 13, 20, 0.45) !important;
+  border-bottom: 1px solid var(--line) !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+:root[data-theme="light"] .section-card-header {
+  background: rgba(240, 249, 255, 0.8) !important;
+  border-bottom-color: rgba(186, 230, 253, 0.7) !important;
+}
+.section-main-title {
+  font-size: 0.86rem !important;
+  font-weight: 800 !important;
+  color: var(--ink) !important;
+  letter-spacing: 0.02em;
+}
+.section-sub-desc {
+  font-size: 0.74rem !important;
+  color: var(--muted) !important;
+}
+.section-badge-counter {
+  background: rgba(124, 224, 244, 0.15) !important;
+  color: var(--accent) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  padding: 3px 10px !important;
+  font: 600 0.74rem "JetBrains Mono", monospace !important;
+  white-space: nowrap;
+}
+:root[data-theme="light"] .section-badge-counter {
+  background: #E0F2FE !important;
+  color: #0369A1 !important;
+  border-color: #BAE6FD !important;
+}
+
+/* Fila Modular del Paciente */
+.modular-patient-row {
+  background: rgba(6, 16, 26, 0.55) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  padding: 12px 16px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 8px 10px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
+}
+:root[data-theme="light"] .modular-patient-row {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+}
+.modular-patient-row:hover {
+  background: rgba(12, 28, 42, 0.85) !important;
+  border-color: var(--line-strong) !important;
+  transform: translateX(4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(124, 224, 244, 0.12);
+}
+:root[data-theme="light"] .modular-patient-row:hover {
+  background: #FFFFFF !important;
+  border-color: #38BDF8 !important;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.1);
+}
+
+/* Avatar con indicador de estado */
+.pt-mod-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.pt-mod-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284C7 0%, #06B6D4 100%) !important;
+  color: #FFFFFF !important;
+  font: 700 0.95rem "JetBrains Mono", monospace !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+.pt-status-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+.pt-status-dot.dot-green {
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+.pt-status-dot.dot-amber {
+  background: #F59E0B;
+  box-shadow: 0 0 8px #F59E0B;
+}
+
+/* Tipografía y Metadatos */
+.pt-mod-name {
+  font-size: 0.96rem !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+}
+.pt-mod-curp-code {
+  font-size: 0.72rem !important;
+  font-family: "JetBrains Mono", monospace !important;
+  color: var(--muted) !important;
+  background: rgba(184, 236, 255, 0.1) !important;
+  border: 1px solid var(--line) !important;
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+  cursor: copy !important;
+  transition: all 0.15s ease !important;
+}
+.pt-mod-curp-code:hover {
+  background: rgba(124, 224, 244, 0.25) !important;
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+.pt-mod-curp-code.copied {
+  background: #10B981 !important;
+  color: #FFFFFF !important;
+  border-color: #10B981 !important;
+}
+.pt-mod-demog {
+  font-size: 0.76rem !important;
+  color: var(--muted) !important;
+  margin-top: 2px;
+}
+.pt-folio-badge {
+  color: var(--accent) !important;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 600;
+}
+.pt-mod-disease-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  color: var(--accent) !important;
+  background: rgba(124, 224, 244, 0.12) !important;
+  border: 1px solid var(--line) !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  margin-top: 3px;
+  width: fit-content;
+}
+:root[data-theme="light"] .pt-mod-disease-pill {
+  color: #0369A1 !important;
+  background: #E0F2FE !important;
+  border-color: #BAE6FD !important;
+}
+.pt-mod-highlight {
+  font-size: 0.74rem !important;
+  color: #10B981 !important;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.pt-mod-highlight.highlight-alert {
+  color: #F59E0B !important;
+  font-weight: 600;
+}
+
+/* Botones de acción */
+.btn-mod-consult {
+  background: linear-gradient(135deg, #0284C7 0%, #06B6D4 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 7px 14px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.3) !important;
+  transition: all 0.18s ease !important;
+}
+.btn-mod-consult:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.45) !important;
+}
+.btn-mod-profile {
+  background: rgba(124, 224, 244, 0.08) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  padding: 7px 12px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.18s ease !important;
+}
+.btn-mod-profile:hover {
+  background: rgba(124, 224, 244, 0.2) !important;
+  border-color: var(--line-strong) !important;
+}
+
+/* Botones de acción en Vista Tabular */
+.btn-table-consult {
+  background: linear-gradient(135deg, #0284C7 0%, #06B6D4 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 5px 11px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  transition: all 0.15s ease !important;
+}
+.btn-table-profile {
+  background: rgba(124, 224, 244, 0.08) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  padding: 5px 10px !important;
+  font-size: 0.75rem !important;
+  cursor: pointer;
+  transition: all 0.15s ease !important;
+}
+
+/* 5. Barra de Paginación Progresiva (+5 Pacientes) */
+.patients-pagination-toolbar {
+  margin-top: 24px;
+  margin-bottom: 32px;
+  padding: 16px 22px;
+  border-radius: 20px;
+  background: var(--card-read) !important;
+  border: 1px solid var(--line-strong) !important;
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  box-shadow: var(--glass-shadow);
+}
+.pagination-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 240px;
+}
+.pagination-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 10px #10B981;
+  flex-shrink: 0;
+}
+.pagination-text {
+  font-size: 0.88rem;
+  color: var(--ink);
+  font-weight: 500;
+}
+.pagination-text strong {
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.95rem;
+}
+.pagination-bar-track {
+  width: 120px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--bar-bg);
+  overflow: hidden;
+  margin-left: 6px;
+}
+.pagination-bar-fill {
+  height: 100%;
+  background: var(--nacar);
+  border-radius: 999px;
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.btn-pagination-more {
+  background: linear-gradient(135deg, #0284C7 0%, #06B6D4 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 12px !important;
+  padding: 9px 18px !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35) !important;
+  transition: all 0.22s ease !important;
+}
+.btn-pagination-more:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.5) !important;
+  background: linear-gradient(135deg, #0369A1 0%, #0891B2 100%) !important;
+}
+.pagination-remaining-pill {
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", monospace;
+}
+.btn-pagination-all,
+.btn-pagination-reset {
+  background: rgba(124, 224, 244, 0.1) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  padding: 9px 16px !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.2s ease !important;
+}
+.btn-pagination-all:hover,
+.btn-pagination-reset:hover {
+  background: rgba(124, 224, 244, 0.2) !important;
+  border-color: var(--line-strong) !important;
+  color: var(--accent) !important;
+}
+.pagination-done-badge {
+  font-size: 0.85rem;
+  color: #10B981;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 /* Espacio inferior para que el HUD no tape botones al final del scroll */
 .view-viewport {
   padding-bottom: 52px !important;
