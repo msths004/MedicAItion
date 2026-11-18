@@ -15377,3 +15377,114 @@ textarea:focus {
   box-shadow: 0 8px 24px rgba(2, 132, 199, 0.08) !important;
   border-color: #bae6fd !important;
 }
+
+
+/* =====================================================================
+   REDISEÑO MINIMALISTA DE LA PANTALLA DE ACCESO (CARD COMPACTA 1 COLUMNA)
+   ===================================================================== */
+.auth-login-card.auth-card-minimal {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  width: 100% !important;
+  max-width: 430px !important;
+  background: #ffffff !important;
+  border-radius: 24px !important;
+  padding: 32px 30px 22px !important;
+  box-shadow: 0 25px 70px rgba(2, 6, 23, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+  animation: authCardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  margin: auto;
+}
+
+body.dark-theme .auth-login-card.auth-card-minimal {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+.auth-minimal-header {
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.auth-minimal-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.auth-minimal-titles {
+  text-align: left;
+}
+
+.auth-minimal-appname {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  line-height: 1.15;
+}
+
+body.dark-theme .auth-minimal-appname {
+  color: #ffffff;
+}
+
+.auth-minimal-org {
+  display: block;
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+body.dark-theme .auth-minimal-org {
+  color: #94a3b8;
+}
+
+.auth-tabs-minimal {
+  margin-bottom: 18px !important;
+}
+
+.auth-tabs-minimal .auth-mode-tab {
+  justify-content: center !important;
+  padding: 10px 14px !important;
+}
+
+.auth-micro-hint {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 5px;
+  padding-left: 2px;
+}
+
+.auth-micro-hint code {
+  background: #f1f5f9;
+  color: #0f766e;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+body.dark-theme .auth-micro-hint code {
+  background: #1e293b;
+  color: #5eead3;
+}
+
+.auth-minimal-footer {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
+}
+
+body.dark-theme .auth-minimal-footer {
+  border-top-color: #1e293b;
+  color: #64748b;
+}
+
