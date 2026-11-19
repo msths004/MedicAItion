@@ -2,7 +2,7 @@ import re
 from contextlib import asynccontextmanager
 from urllib.parse import unquote
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -217,6 +217,18 @@ app.include_router(security_router)
 app.include_router(legal_router)
 app.include_router(auth_router)
 app.include_router(pulso_router)
+
+@app.get("/landing")
+def get_landing():
+    return FileResponse("frontend/landing.html")
+
+@app.get("/pitch")
+def get_pitch():
+    return FileResponse("frontend/landing.html")
+
+@app.get("/presentacion")
+def get_presentacion():
+    return FileResponse("frontend/landing.html")
 
 # Servir frontend estático
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
