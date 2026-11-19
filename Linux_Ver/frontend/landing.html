@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MedicAItion · La consulta vuelve a ser del paciente</title>
+<meta name="description" content="MedicAItion convierte el dictado del médico en una Nota NOM-004, códigos CIE-10 y receta en segundos. IA clínica local, sin nube y sin internet.">
+<meta property="og:title" content="MedicAItion · Copiloto clínico con IA local">
+<meta property="og:description" content="Del dictado a la Nota NOM-004, CIE-10 y receta en segundos. 100% local, cero datos en la nube.">
+<meta name="theme-color" content="#050D14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS (paleta Nácar) ============ */
+:root{
+  --bg:#050D14; --bg2:#03090F; --card:rgba(12,28,42,.58); --card-hi:rgba(18,40,58,.72);
+  --ink:#FFFFFF; --muted:#B9D3E0; --soft:#7F9BAA; --line:rgba(184,236,255,.14); --line-hi:rgba(184,236,255,.32);
+  --accent:#7CE0F4; --accent2:#56C8E0; --pearl:#B8ECFF; --ok:#5EE6A8; --warn:#FFC46B; --danger:#FF7A8A;
+  --nacar:linear-gradient(90deg,#FFFFFF 0%,#B8ECFF 52%,#56C8E0 100%);
+  --glass-shadow:0 28px 64px -16px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.10);
+  --r:18px; --ease:cubic-bezier(.16,1,.3,1);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.65 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.008em;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:"Plus Jakarta Sans","Inter",system-ui,sans-serif;margin:0;color:#fff;letter-spacing:-.025em}
+p{margin:0 0 16px;color:var(--muted)}
+a{color:inherit;text-decoration:none}
+img,svg,canvas{display:block}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.grad{background:var(--nacar);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ============ FONDO AMBIENTAL ============ */
+.bg-stage{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden;background:var(--bg2)}
+.bg-aurora{position:absolute;inset:-15%;filter:blur(110px);opacity:.5;
+  background:radial-gradient(circle at 78% 22%,rgba(255,255,255,.12) 0%,transparent 36%),
+             radial-gradient(circle at 18% 64%,rgba(184,236,255,.18) 0%,transparent 34%),
+             radial-gradient(circle at 60% 90%,rgba(86,200,224,.16) 0%,transparent 30%);
+  animation:aurora 24s ease-in-out infinite alternate}
+@keyframes aurora{to{transform:translate3d(-3%,4%,0) scale(1.08)}}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(184,236,255,.035) 1px,transparent 1px),linear-gradient(to bottom,rgba(184,236,255,.035) 1px,transparent 1px);background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(ellipse 75% 70% at 50% 40%,#000 15%,transparent 85%);mask-image:radial-gradient(ellipse 75% 70% at 50% 40%,#000 15%,transparent 85%)}
+.bg-noise{position:absolute;inset:0;opacity:.035;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+#neural{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;opacity:.75}
+
+/* ============ PROGRESO + HEADER ============ */
+.progress{position:fixed;top:0;left:0;height:2px;width:100%;z-index:90;background:var(--nacar);transform-origin:left;transform:scaleX(0);box-shadow:0 0 12px rgba(124,224,244,.7)}
+header.top{position:fixed;inset:0 0 auto 0;z-index:60;padding:14px 0;transition:padding .35s var(--ease)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.nav-shell{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 10px 8px 16px;border-radius:999px;border:1px solid transparent;transition:background .35s,border-color .35s,box-shadow .35s,backdrop-filter .35s}
+header.top.solid .nav-shell{background:rgba(5,15,24,.62);border-color:var(--line);box-shadow:0 18px 40px -20px rgba(0,0,0,.7);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%)}
+.brand{display:flex;align-items:center;gap:10px;font:800 1.02rem/1 "Plus Jakarta Sans",sans-serif;letter-spacing:-.01em}
+.brand-mark{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--nacar);color:#041018;box-shadow:0 0 18px rgba(124,224,244,.45)}
+.brand b{font-weight:800}.brand i{font-style:normal;background:var(--nacar);-webkit-background-clip:text;background-clip:text;color:transparent}
+nav.links{display:flex;gap:2px}
+nav.links a{position:relative;padding:9px 14px;border-radius:999px;font:500 .86rem/1 "Plus Jakarta Sans",sans-serif;color:var(--muted);transition:color .3s,background .3s}
+nav.links a:hover{color:#fff;background:rgba(184,236,255,.07)}
+nav.links a.active{color:var(--accent)}
+nav.links a.active::after{content:"";position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.nav-cta{display:flex;align-items:center;gap:10px}
+.burger{display:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:rgba(184,236,255,.05);color:#fff;cursor:pointer;place-items:center}
+.burger span,.burger span::before,.burger span::after{display:block;width:16px;height:1.5px;background:#fff;border-radius:2px;position:relative;transition:transform .3s var(--ease),background .3s}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0}
+.burger span::before{top:-5px}.burger span::after{top:5px}
+body.menu-open .burger span{background:transparent}
+body.menu-open .burger span::before{transform:translateY(5px) rotate(45deg)}
+body.menu-open .burger span::after{transform:translateY(-5px) rotate(-45deg)}
+
+/* ============ BOTONES ============ */
+.btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:12px;font:600 .92rem/1 "Plus Jakarta Sans",sans-serif;border:1.5px solid transparent;cursor:pointer;transition:transform .35s var(--ease),box-shadow .35s,background .3s,color .3s,border-color .3s;will-change:transform}
+.btn svg{width:16px;height:16px;transition:transform .35s var(--ease)}
+.btn:hover svg{transform:translateX(3px)}
+.btn.primary{background:var(--nacar);color:#041018;box-shadow:0 10px 30px -8px rgba(124,224,244,.55)}
+.btn.primary:hover{box-shadow:0 16px 40px -8px rgba(124,224,244,.75)}
+.btn.ghost{color:#fff;border-color:var(--line-hi);background:rgba(184,236,255,.05);backdrop-filter:blur(8px)}
+.btn.ghost:hover{background:#fff;color:#041018;border-color:#fff}
+.btn.sm{padding:10px 16px;font-size:.84rem;border-radius:999px}
+
+/* ============ SECCIONES BASE ============ */
+section{position:relative;padding:120px 0}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font:500 .72rem/1 "JetBrains Mono",monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.eyebrow .num{color:var(--soft)}
+h2.title{font-size:clamp(1.9rem,3.4vw,2.9rem);font-weight:700;line-height:1.12;max-width:20ch;margin-bottom:18px}
+.lead{font-size:1.08rem;max-width:58ch;color:var(--muted)}
+.sec-head{margin-bottom:56px}
+.sec-head.center{text-align:center;display:flex;flex-direction:column;align-items:center}
+.sec-head.center .title,.sec-head.center .lead{margin-left:auto;margin-right:auto}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:var(--glass-shadow)}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--line-hi),transparent)}
+
+/* reveal on scroll */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+
+/* spotlight + tilt cards */
+.spot{position:relative;overflow:hidden;transition:transform .45s var(--ease),border-color .35s,box-shadow .35s}
+.spot::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .35s;
+  background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(124,224,244,.14),transparent 45%)}
+.spot:hover{border-color:var(--line-hi);box-shadow:0 30px 70px -20px rgba(0,0,0,.75),0 0 0 1px rgba(124,224,244,.08),inset 0 1px 0 rgba(255,255,255,.14)}
+.spot:hover::before{opacity:1}
+
+/* ============ HERO ============ */
+.hero{min-height:100svh;display:flex;align-items:center;padding:130px 0 90px}
+.hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px 7px 8px;border-radius:999px;border:1px solid var(--line);background:rgba(184,236,255,.05);font:500 .8rem/1 "Inter",sans-serif;color:var(--muted);margin-bottom:26px}
+.pill b{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:rgba(94,230,168,.12);color:var(--ok);font:600 .7rem/1 "JetBrains Mono",monospace;letter-spacing:.06em}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:ping 2s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(94,230,168,.6)}70%{box-shadow:0 0 0 8px rgba(94,230,168,0)}100%{box-shadow:0 0 0 0 rgba(94,230,168,0)}}
+.hero h1{font-size:clamp(2.4rem,5vw,4.15rem);font-weight:800;line-height:1.03;letter-spacing:-.04em;margin-bottom:22px;max-width:15ch}
+.hero h1 .line{display:block;overflow:hidden;padding-bottom:.06em}
+.hero h1 .line>span{display:inline-block;transform:translateY(105%);transition:transform 1.1s var(--ease);transition-delay:var(--d,0s)}
+.loaded .hero h1 .line>span{transform:none}
+.hero .lead{font-size:1.12rem;margin-bottom:32px}
+.hero .btns{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:44px}
+.hero-stats{display:flex;flex-wrap:wrap;gap:30px;padding-top:26px;border-top:1px solid var(--line)}
+.hs b{display:block;font:700 1.7rem/1.1 "Plus Jakarta Sans",sans-serif;letter-spacing:-.03em}
+.hs span{font-size:.82rem;color:var(--soft)}
+
+/* mockup del producto */
+.mock{position:relative;padding:18px;border-radius:24px}
+.mock-halo{position:absolute;inset:-40px;z-index:-1;background:radial-gradient(circle at 50% 45%,rgba(124,224,244,.22),transparent 60%);filter:blur(30px)}
+.mock-bar{display:flex;align-items:center;gap:8px;padding:2px 4px 14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.mock-bar i{width:9px;height:9px;border-radius:50%;background:rgba(184,236,255,.18)}
+.mock-bar .ttl{margin-left:8px;font:500 .74rem "JetBrains Mono",monospace;color:var(--soft);letter-spacing:.04em}
+.mock-bar .live{margin-left:auto;display:flex;align-items:center;gap:6px;font:600 .68rem "JetBrains Mono",monospace;color:var(--ok);letter-spacing:.08em}
+.mock-cols{display:grid;grid-template-columns:1fr;gap:12px}
+.panel{border:1px solid var(--line);border-radius:14px;background:rgba(3,12,20,.55);padding:14px 16px}
+.panel h5{margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;font:600 .7rem/1 "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)}
+.wave{display:flex;align-items:center;gap:3px;height:22px}
+.wave i{width:3px;border-radius:2px;background:var(--accent);opacity:.85;animation:wv 1.1s ease-in-out infinite;animation-delay:calc(var(--i)*-.09s)}
+@keyframes wv{0%,100%{height:4px}50%{height:20px}}
+.dictation{font-size:.9rem;line-height:1.6;color:#E3F3FA;min-height:4.8em}
+.caret{display:inline-block;width:2px;height:1em;background:var(--accent);vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.soap{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.soap div{padding:9px 11px;border-radius:10px;background:rgba(184,236,255,.05);border:1px solid var(--line);opacity:.25;transform:translateY(6px);transition:opacity .6s var(--ease),transform .6s var(--ease),border-color .4s}
+.soap div.on{opacity:1;transform:none;border-color:rgba(124,224,244,.28)}
+.soap b{display:block;font:700 .68rem "JetBrains Mono",monospace;color:var(--accent);letter-spacing:.1em;margin-bottom:3px}
+.soap span{font-size:.78rem;color:var(--muted);line-height:1.4;display:block}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font:600 .7rem/1 "JetBrains Mono",monospace;padding:6px 9px;border-radius:8px;border:1px solid var(--line);color:var(--muted);opacity:0;transform:scale(.9);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.tag.on{opacity:1;transform:none}
+.tag.cie{color:var(--accent);border-color:rgba(124,224,244,.35);background:rgba(124,224,244,.08)}
+.tag.safe{color:var(--ok);border-color:rgba(94,230,168,.35);background:rgba(94,230,168,.08)}
+.timer{position:absolute;right:-18px;bottom:28px;padding:12px 16px;border-radius:14px;display:flex;align-items:center;gap:12px}
+.timer b{font:700 1.35rem/1 "Plus Jakarta Sans",sans-serif}
+.timer span{font-size:.72rem;color:var(--soft);line-height:1.3;display:block}
+.float-chip{position:absolute;left:-26px;top:70px;padding:10px 14px;border-radius:12px;display:flex;align-items:center;gap:10px;font-size:.78rem;color:var(--muted);animation:floaty 6s ease-in-out infinite}
+.float-chip svg{width:18px;height:18px;color:var(--ok)}
+@keyframes floaty{50%{transform:translateY(-10px)}}
+.scroll-cue{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;font:500 .68rem "JetBrains Mono",monospace;letter-spacing:.2em;color:var(--soft);text-transform:uppercase}
+.scroll-cue i{width:1px;height:30px;background:linear-gradient(#fff,transparent);transform-origin:top;animation:cue 2.2s ease-in-out infinite}
+@keyframes cue{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+
+/* ============ PROBLEMA ============ */
+.problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.stat{padding:30px 28px}
+.stat .big{font:800 clamp(2.6rem,4.4vw,3.6rem)/1 "Plus Jakarta Sans",sans-serif;letter-spacing:-.04em;margin-bottom:14px;font-variant-numeric:tabular-nums}
+.stat h3{font-size:1.06rem;margin-bottom:8px}
+.stat p{font-size:.92rem;margin:0}
+.stat .bar{height:4px;border-radius:4px;background:rgba(184,236,255,.1);margin-top:22px;overflow:hidden}
+.stat .bar i{display:block;height:100%;width:0;background:var(--nacar);border-radius:4px;transition:width 1.6s var(--ease) .3s}
+.stat.in .bar i{width:var(--w)}
+.pains{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px}
+.pain{padding:22px;display:flex;gap:14px;align-items:flex-start}
+.ico{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(124,224,244,.08);border:1px solid rgba(124,224,244,.22);color:var(--accent)}
+.ico svg{width:20px;height:20px}
+.pain.red .ico{background:rgba(255,122,138,.08);border-color:rgba(255,122,138,.25);color:var(--danger)}
+.pain h4{font-size:.95rem;margin-bottom:4px}
+.pain p{font-size:.84rem;margin:0;line-height:1.5}
+.quote{margin-top:56px;padding:34px 38px;display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center}
+.quote .q{font:800 4.5rem/0.6 "Plus Jakarta Sans",sans-serif;color:var(--accent);opacity:.7}
+.quote p{font:500 clamp(1.1rem,1.7vw,1.32rem)/1.55 "Plus Jakarta Sans",sans-serif;color:#EAF6FC;margin:0;max-width:none;letter-spacing:-.015em}
+.quote p em{font-style:normal;color:var(--accent)}
+
+/* ============ SOLUCIÓN (bento) ============ */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(210px,auto);gap:18px}
+.feat{padding:28px;display:flex;flex-direction:column}
+.feat .ico{margin-bottom:20px}
+.feat h3{font-size:1.15rem;margin-bottom:8px}
+.feat p{font-size:.92rem;margin:0}
+.feat .kpi{margin-top:auto;padding-top:20px;font:600 .74rem "JetBrains Mono",monospace;letter-spacing:.08em;color:var(--accent);display:flex;align-items:center;gap:8px}
+.feat .kpi::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.f-a{grid-column:span 3;grid-row:span 2}
+.f-b,.f-c{grid-column:span 3}
+.f-d,.f-e,.f-f{grid-column:span 2}
+.privacy-vis{margin:26px 0 6px;position:relative;height:200px;border-radius:14px;border:1px solid var(--line);background:radial-gradient(circle at 50% 50%,rgba(124,224,244,.1),transparent 65%),rgba(3,12,20,.5);overflow:hidden}
+.pv-core{position:absolute;left:50%;top:50%;width:74px;height:74px;margin:-37px 0 0 -37px;border-radius:20px;display:grid;place-items:center;background:var(--nacar);color:#041018;box-shadow:0 0 40px rgba(124,224,244,.55)}
+.pv-core svg{width:32px;height:32px}
+.pv-ring{position:absolute;left:50%;top:50%;border-radius:50%;border:1px dashed rgba(184,236,255,.25);transform:translate(-50%,-50%)}
+.pv-ring.r1{width:150px;height:150px;animation:spin 22s linear infinite}
+.pv-ring.r2{width:240px;height:240px;border-style:solid;border-color:rgba(184,236,255,.1)}
+.pv-ring.r1::after{content:"";position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.pv-cloud{position:absolute;right:22px;top:22px;display:flex;align-items:center;gap:8px;font:600 .68rem "JetBrains Mono",monospace;color:var(--danger);letter-spacing:.08em;padding:7px 10px;border-radius:9px;border:1px solid rgba(255,122,138,.3);background:rgba(255,122,138,.06)}
+.pv-cloud svg{width:14px;height:14px}
+.pv-lbl{position:absolute;left:18px;bottom:16px;font:500 .7rem "JetBrains Mono",monospace;color:var(--soft);letter-spacing:.08em}
+
+/* ============ CÓMO FUNCIONA ============ */
+.how{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:start}
+.steps{display:flex;flex-direction:column;gap:12px;position:relative}
+.step{position:relative;display:grid;grid-template-columns:auto 1fr;gap:18px;padding:20px 22px;border-radius:16px;border:1px solid transparent;cursor:pointer;text-align:left;background:transparent;color:inherit;font:inherit;transition:background .35s,border-color .35s}
+.step:hover{background:rgba(184,236,255,.035)}
+.step.active{background:var(--card);border-color:var(--line-hi);box-shadow:var(--glass-shadow)}
+.step .n{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font:700 .82rem "JetBrains Mono",monospace;border:1px solid var(--line);color:var(--soft);transition:all .35s}
+.step.active .n{background:var(--nacar);color:#041018;border-color:transparent;box-shadow:0 0 18px rgba(124,224,244,.45)}
+.step h4{font-size:1.02rem;margin-bottom:4px}
+.step p{font-size:.88rem;margin:0}
+.step .prog{position:absolute;left:22px;right:22px;bottom:0;height:2px;border-radius:2px;background:transparent;overflow:hidden}
+.step.active .prog i{display:block;height:100%;background:var(--nacar);animation:fill var(--dur,5.5s) linear forwards}
+.paused .step.active .prog i{animation-play-state:paused}
+@keyframes fill{from{width:0}to{width:100%}}
+.screen{padding:22px;border-radius:22px;min-height:440px;position:sticky;top:100px}
+.screen-view{display:none;animation:viewIn .6s var(--ease)}
+.screen-view.on{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+.sv-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sv-head b{font:600 .95rem "Plus Jakarta Sans",sans-serif}
+.badge{font:600 .66rem/1 "JetBrains Mono",monospace;letter-spacing:.08em;padding:6px 9px;border-radius:7px;border:1px solid rgba(124,224,244,.3);color:var(--accent);background:rgba(124,224,244,.07)}
+.badge.ok{border-color:rgba(94,230,168,.3);color:var(--ok);background:rgba(94,230,168,.07)}
+.badge.warn{border-color:rgba(255,196,107,.35);color:var(--warn);background:rgba(255,196,107,.08)}
+.mic{display:flex;flex-direction:column;align-items:center;gap:18px;padding:26px 0 18px}
+.mic-btn{width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:var(--nacar);color:#041018;box-shadow:0 0 0 0 rgba(124,224,244,.5);animation:micp 2s infinite}
+.mic-btn svg{width:36px;height:36px}
+@keyframes micp{0%{box-shadow:0 0 0 0 rgba(124,224,244,.45)}70%{box-shadow:0 0 0 26px rgba(124,224,244,0)}100%{box-shadow:0 0 0 0 rgba(124,224,244,0)}}
+.transcript{font-size:.92rem;line-height:1.7;color:#E3F3FA;padding:16px;border-radius:12px;background:rgba(3,12,20,.55);border:1px solid var(--line)}
+.transcript mark{background:rgba(124,224,244,.14);color:#fff;padding:1px 4px;border-radius:4px}
+.pipeline{display:flex;flex-direction:column;gap:10px}
+.pl{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:13px 15px;border-radius:12px;border:1px solid var(--line);background:rgba(3,12,20,.5)}
+.pl .ico{width:34px;height:34px;border-radius:10px}
+.pl .ico svg{width:16px;height:16px}
+.pl b{font:600 .88rem "Plus Jakarta Sans",sans-serif;display:block}
+.pl span{font-size:.78rem;color:var(--soft)}
+.pl .t{font:600 .74rem "JetBrains Mono",monospace;color:var(--ok)}
+.note{border-radius:14px;background:#F7FBFD;color:#0E2A3B;padding:20px 22px;font-size:.84rem;line-height:1.55;box-shadow:0 20px 40px -18px rgba(0,0,0,.6)}
+.note .nh{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #D7263D;padding-bottom:10px;margin-bottom:12px}
+.note .nh b{font:800 1rem "Plus Jakarta Sans",sans-serif;color:#D7263D}
+.note .nh span{font:500 .68rem "JetBrains Mono",monospace;color:#4E6375;text-align:right}
+.note dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+.note dt{font-weight:700;color:#0B6E78;font-size:.76rem;letter-spacing:.04em}
+.note dd{margin:0;color:#25404F}
+.note .rx{margin-top:12px;padding:10px 12px;border-radius:10px;background:#EAF5F8;border-left:3px solid #0B6E78;font-size:.8rem}
+.records{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.rec{padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(3,12,20,.5)}
+.rec small{display:block;font:500 .66rem "JetBrains Mono",monospace;color:var(--soft);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.rec b{font:700 1.2rem "Plus Jakarta Sans",sans-serif}
+.rec span{font-size:.76rem;color:var(--muted);display:block}
+.spark{margin-top:12px;height:70px;border-radius:12px;border:1px solid var(--line);background:rgba(3,12,20,.5);padding:8px}
+
+/* ============ DIFERENCIADORES ============ */
+.compare{overflow:hidden;padding:0}
+.compare table{width:100%;border-collapse:collapse;font-size:.92rem}
+.compare th,.compare td{padding:17px 22px;text-align:left;border-bottom:1px solid var(--line)}
+.compare thead th{font:600 .72rem "JetBrains Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);background:rgba(3,12,20,.45)}
+.compare thead th.us{color:#041018;background:var(--nacar)}
+.compare td:first-child{color:#fff;font-weight:500}
+.compare td{color:var(--muted)}
+.compare td.us{background:rgba(124,224,244,.06);color:#fff;font-weight:500}
+.compare tbody tr{transition:background .3s}
+.compare tbody tr:hover{background:rgba(184,236,255,.035)}
+.compare tr:last-child td{border-bottom:0}
+.y,.n,.m{display:inline-flex;align-items:center;gap:8px}
+.y::before,.n::before,.m::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
+.y::before{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.n::before{background:var(--danger)}
+.m::before{background:var(--warn)}
+.impact{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:22px}
+.imp{padding:26px 24px}
+.imp b{display:block;font:800 clamp(2rem,3.2vw,2.7rem)/1 "Plus Jakarta Sans",sans-serif;letter-spacing:-.04em;margin-bottom:10px;font-variant-numeric:tabular-nums}
+.imp span{font-size:.86rem;color:var(--muted);line-height:1.45;display:block}
+.biz{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:64px}
+.plan{padding:30px 28px;display:flex;flex-direction:column}
+.plan .tier{font:600 .72rem "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.plan h3{font-size:1.3rem;margin-bottom:8px}
+.plan p{font-size:.9rem}
+.plan ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.plan li{display:flex;gap:10px;font-size:.88rem;color:var(--muted)}
+.plan li::before{content:"";flex:none;width:16px;height:16px;margin-top:3px;border-radius:50%;background:rgba(124,224,244,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237CE0F4' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/10px no-repeat}
+.plan.feat-plan{border-color:rgba(124,224,244,.4);background:linear-gradient(180deg,rgba(124,224,244,.09),rgba(12,28,42,.6))}
+.roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:64px;position:relative}
+.roadmap::before{content:"";position:absolute;left:0;right:0;top:19px;height:1px;background:linear-gradient(90deg,var(--accent),rgba(124,224,244,.15))}
+.rm{padding-right:28px;position:relative}
+.rm .pt{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line-hi);font:700 .76rem "JetBrains Mono",monospace;color:var(--accent);margin-bottom:18px;position:relative}
+.rm.done .pt{background:var(--nacar);color:#041018;border-color:transparent;box-shadow:0 0 18px rgba(124,224,244,.5)}
+.rm small{font:500 .7rem "JetBrains Mono",monospace;color:var(--soft);letter-spacing:.12em;text-transform:uppercase}
+.rm h4{font-size:1.02rem;margin:6px 0}
+.rm p{font-size:.88rem;margin:0}
+
+/* ============ CTA + FORM ============ */
+.cta-box{display:grid;grid-template-columns:1fr 1.05fr;gap:48px;padding:52px;border-radius:28px;position:relative;overflow:hidden}
+.cta-box::after{content:"";position:absolute;right:-160px;top:-160px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(124,224,244,.22),transparent 65%);pointer-events:none}
+.ask{display:flex;flex-direction:column;gap:12px;margin-top:26px}
+.ask div{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:rgba(3,12,20,.4)}
+.ask b{font:700 1.15rem "Plus Jakarta Sans",sans-serif;min-width:64px}
+.ask span{font-size:.88rem;color:var(--muted);line-height:1.5}
+form{display:flex;flex-direction:column;gap:14px;position:relative;z-index:1}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;border-radius:14px;border:1px solid var(--line);background:rgba(3,12,20,.5)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{text-align:center;padding:11px 8px;border-radius:10px;font:600 .84rem/1 "Plus Jakarta Sans",sans-serif;color:var(--muted);cursor:pointer;transition:all .3s var(--ease)}
+.seg label:hover{color:#fff}
+.seg input:checked+label{background:var(--nacar);color:#041018;box-shadow:0 6px 18px -6px rgba(124,224,244,.6)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{position:relative}
+.field input,.field select,.field textarea{width:100%;padding:22px 16px 9px;border-radius:12px;border:1px solid var(--line);background:rgba(3,12,20,.55);color:#fff;font:400 .94rem "Inter",sans-serif;transition:border-color .3s,box-shadow .3s,background .3s;appearance:none}
+.field textarea{min-height:110px;resize:vertical}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237F9BAA' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:16px}
+.field select option{background:#0A1A26;color:#fff}
+.field label{position:absolute;left:16px;top:16px;font-size:.92rem;color:var(--soft);pointer-events:none;transition:all .25s var(--ease)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 4px rgba(124,224,244,.12);background:rgba(3,12,20,.75)}
+.field input:focus+label,.field input:not(:placeholder-shown)+label,
+.field textarea:focus+label,.field textarea:not(:placeholder-shown)+label,
+.field select+label{top:7px;font-size:.68rem;letter-spacing:.06em;color:var(--accent)}
+.field.err input,.field.err textarea{border-color:var(--danger);box-shadow:0 0 0 4px rgba(255,122,138,.12)}
+.field .msg{display:none;font-size:.74rem;color:var(--danger);margin-top:5px}
+.field.err .msg{display:block}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:.8rem;color:var(--soft);line-height:1.5}
+.consent input{accent-color:var(--accent);margin-top:3px}
+form .btn{justify-content:center;width:100%;padding:16px}
+.btn .spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(4,16,24,.25);border-top-color:#041018;animation:spin2 .7s linear infinite;display:none}
+.btn.loading .spinner{display:block}.btn.loading .lbl,.btn.loading svg{display:none}
+@keyframes spin2{to{transform:rotate(360deg)}}
+.success{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;min-height:420px;position:relative;z-index:1;animation:viewIn .7s var(--ease)}
+.success.on{display:flex}
+.success .ok{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:rgba(94,230,168,.12);border:1px solid rgba(94,230,168,.4);color:var(--ok)}
+.success .ok svg{width:36px;height:36px;stroke-dasharray:30;stroke-dashoffset:30;animation:draw .8s var(--ease) .2s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* ============ FOOTER ============ */
+footer{padding:46px 0 36px;border-top:1px solid var(--line);margin-top:40px}
+.foot{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
+.foot p{margin:0;font-size:.84rem;color:var(--soft)}
+.foot-links{display:flex;gap:20px;font-size:.84rem;color:var(--muted)}
+.foot-links a:hover{color:var(--accent)}
+.compliance{display:flex;flex-wrap:wrap;gap:8px}
+.compliance span{font:500 .68rem "JetBrains Mono",monospace;letter-spacing:.06em;padding:6px 10px;border-radius:8px;border:1px solid var(--line);color:var(--soft)}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1080px){
+  .hero-grid{grid-template-columns:1fr;gap:64px}
+  .hero h1{max-width:18ch}
+  .mock{max-width:620px;margin:0 auto;width:100%}
+  .pains{grid-template-columns:repeat(2,1fr)}
+  .impact{grid-template-columns:repeat(2,1fr)}
+  .how{grid-template-columns:1fr}
+  .screen{position:relative;top:0}
+  .cta-box{grid-template-columns:1fr;padding:40px}
+}
+@media (max-width:900px){
+  nav.links{position:fixed;left:16px;right:16px;top:76px;flex-direction:column;gap:4px;padding:12px;border-radius:20px;background:rgba(5,15,24,.94);border:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);opacity:0;transform:translateY(-10px);pointer-events:none;transition:opacity .35s var(--ease),transform .35s var(--ease)}
+  nav.links a{padding:14px 16px;font-size:.98rem}
+  body.menu-open nav.links{opacity:1;transform:none;pointer-events:auto}
+  .burger{display:grid}
+  .nav-cta .btn{display:none}
+  .problem-grid{grid-template-columns:1fr}
+  .bento{grid-template-columns:1fr}
+  .f-a,.f-b,.f-c,.f-d,.f-e,.f-f{grid-column:auto;grid-row:auto}
+  .biz{grid-template-columns:1fr}
+  .roadmap{grid-template-columns:1fr;gap:28px}
+  .roadmap::before{left:19px;right:auto;top:0;bottom:0;width:1px;height:auto;background:linear-gradient(180deg,var(--accent),rgba(124,224,244,.15))}
+  .rm{display:grid;grid-template-columns:auto 1fr;gap:0 18px;padding:0}
+  .rm .pt{grid-row:span 3;margin:0}
+  .compare{overflow-x:auto}
+  .compare table{min-width:640px}
+}
+@media (max-width:640px){
+  .wrap{padding:0 20px}
+  section{padding:88px 0}
+  .hero{padding:110px 0 80px}
+  .hero-stats{gap:22px}
+  .pains,.impact{grid-template-columns:1fr}
+  .soap{grid-template-columns:1fr}
+  .timer{right:10px;bottom:-22px}
+  .float-chip{display:none}
+  .quote{grid-template-columns:1fr;padding:28px;gap:10px}
+  .row{grid-template-columns:1fr}
+  .cta-box{padding:28px 22px;border-radius:22px}
+  .seg label{font-size:.76rem;padding:11px 4px}
+  .records{grid-template-columns:1fr 1fr}
+  .scroll-cue{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .rv{opacity:1;transform:none}
+  .hero h1 .line>span{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-stage" aria-hidden="true"><div class="bg-aurora"></div><div class="bg-grid"></div><div class="bg-noise"></div></div>
+<canvas id="neural" aria-hidden="true"></canvas>
+<div class="progress" id="progress"></div>
+
+<!-- ================= HEADER ================= -->
+<header class="top" id="top">
+  <div class="wrap">
+    <div class="nav-shell">
+      <a href="#inicio" class="brand" aria-label="MedicAItion, inicio">
+        <span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></span>
+        <span><b>Medic</b><i>AI</i><b>tion</b></span>
+      </a>
+      <nav class="links" id="links" aria-label="Secciones">
+        <a href="#problema">Problema</a>
+        <a href="#solucion">Solución</a>
+        <a href="#demo">Cómo funciona</a>
+        <a href="#impacto">Impacto</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <div class="nav-cta">
+        <a href="#contacto" class="btn primary sm magnetic">Solicitar demo</a>
+        <button class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="links"><span></span></button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- ================= 1 · HERO (EL GANCHO) ================= -->
+<section class="hero" id="inicio">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="pill rv"><b><span class="dot"></span>EN VIVO</b> Piloto operando en Cruz Roja Mérida</div>
+      <h1>
+        <span class="line"><span style="--d:.05s">15 minutos</span></span>
+        <span class="line"><span style="--d:.15s">escribiendo.</span></span>
+        <span class="line"><span class="grad" style="--d:.28s">O 3 segundos</span></span>
+        <span class="line"><span class="grad" style="--d:.4s">atendiendo.</span></span>
+      </h1>
+      <p class="lead rv" style="--d:.5s">MedicAItion escucha al médico y genera la <strong style="color:#fff">Nota NOM-004, los códigos CIE-10 y la receta</strong> al instante. Con IA que corre dentro del hospital: sin internet, sin nube y sin que un solo dato del paciente salga de la institución.</p>
+      <div class="btns rv" style="--d:.6s">
+        <a href="#contacto" class="btn primary magnetic">Agendar una demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#demo" class="btn ghost magnetic">Ver cómo funciona</a>
+      </div>
+      <div class="hero-stats rv" style="--d:.7s">
+        <div class="hs"><b class="grad"><span data-count="85">0</span>%</b><span>menos carga administrativa</span></div>
+        <div class="hs"><b class="grad">&lt;<span data-count="3">0</span> s</b><span>por nota estructurada</span></div>
+        <div class="hs"><b class="grad"><span data-count="0">0</span> bytes</b><span>enviados a la nube</span></div>
+      </div>
+    </div>
+
+    <!-- Visual principal: simulación del producto -->
+    <div class="rv" style="--d:.35s">
+      <div class="mock glass spot" id="mock">
+        <div class="mock-halo"></div>
+        <div class="mock-bar"><i></i><i></i><i></i><span class="ttl">consulta · exp-2026-0842</span><span class="live"><span class="dot"></span>IA LOCAL</span></div>
+        <div class="mock-cols">
+          <div class="panel">
+            <h5><span>Dictado del médico</span><span class="wave" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i></span></h5>
+            <div class="dictation"><span id="typed"></span><span class="caret"></span></div>
+          </div>
+          <div class="panel">
+            <h5><span>Nota SOAP · NOM-004</span><span id="stateLbl" style="color:var(--accent)">esperando…</span></h5>
+            <div class="soap" id="soap">
+              <div><b>S</b><span>Poliuria y polidipsia de 3 semanas</span></div>
+              <div><b>O</b><span>TA 150/95 · Glucosa 186 mg/dL</span></div>
+              <div><b>A</b><span>DM2 descontrolada + HAS</span></div>
+              <div><b>P</b><span>Metformina 850 mg c/12 h · Losartán 50 mg</span></div>
+            </div>
+            <div class="tags" id="tags">
+              <span class="tag cie">E11.9 · DM2</span>
+              <span class="tag cie">I10 · HAS</span>
+              <span class="tag safe">✓ Sin interacciones</span>
+              <span class="tag">Receta lista</span>
+            </div>
+          </div>
+        </div>
+        <div class="float-chip glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Datos cifrados en el equipo</div>
+        <div class="timer glass"><b class="grad" id="clock">0.0s</b><span>tiempo de<br>generación</span></div>
+      </div>
+    </div>
+  </div>
+  <a href="#problema" class="scroll-cue" aria-label="Ir a El problema"><span>Desliza</span><i></i></a>
+</section>
+
+<!-- ================= 2 · EL PROBLEMA ================= -->
+<section id="problema">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow rv"><span class="num">01</span> El problema</div>
+      <h2 class="title rv" style="--d:.08s">El médico estudió para curar. Hoy pasa media consulta capturando.</h2>
+      <p class="lead rv" style="--d:.16s">En urgencias y consulta externa, la burocracia clínica le roba tiempo al paciente, agota al personal y expone a las instituciones a riesgos legales.</p>
+    </div>
+
+    <div class="problem-grid">
+      <article class="stat glass spot rv">
+        <div class="big grad"><span data-count="15">0</span> min</div>
+        <h3>por cada nota médica</h3>
+        <p>Llenado manual, campo por campo, para cumplir la NOM-004 y buscar el código CIE-10 correcto.</p>
+        <div class="bar"><i style="--w:88%"></i></div>
+      </article>
+      <article class="stat glass spot rv" style="--d:.1s">
+        <div class="big grad"><span data-count="75">0</span>%</div>
+        <h3>de notas incompletas</h3>
+        <p>Por falta de tiempo, la mayoría de los registros no cumple plenamente la norma oficial ante una auditoría.</p>
+        <div class="bar"><i style="--w:75%"></i></div>
+      </article>
+      <article class="stat glass spot rv" style="--d:.2s">
+        <div class="big grad">~<span data-count="50">0</span>%</div>
+        <h3>de la consulta frente a una pantalla</h3>
+        <p>Tiempo que no se dedica a explorar, escuchar ni explicar. El paciente lo nota; el médico lo paga con agotamiento.</p>
+        <div class="bar"><i style="--w:50%"></i></div>
+      </article>
+    </div>
+
+    <div class="pains">
+      <div class="pain glass spot rv"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><h4>Salas saturadas</h4><p>Cada minuto de captura se traduce en horas de espera para los pacientes.</p></div></div>
+      <div class="pain glass spot rv" style="--d:.08s"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l3-8 4 16 3-8h7"/></svg></div><div><h4>Burnout médico</h4><p>Jornadas extendidas por documentación, no por atención clínica.</p></div></div>
+      <div class="pain glass spot rv red" style="--d:.16s"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></div><div><h4>Errores de medicación</h4><p>Alergias e interacciones que nadie alcanza a verificar en plena guardia.</p></div></div>
+      <div class="pain glass spot rv red" style="--d:.24s"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/><path d="m3 3 18 18"/></svg></div><div><h4>Sin internet, sin sistema</h4><p>Las soluciones en la nube fallan justo donde más se necesitan: zonas rurales y emergencias.</p></div></div>
+    </div>
+
+    <div class="quote glass rv">
+      <div class="q">“</div>
+      <p>La pregunta no es si la IA llegará a la medicina. Es si llegará <em>respetando la privacidad del paciente</em> y funcionando <em>donde no hay señal</em>.</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="divider"></div></div>
+
+<!-- ================= 3 · LA SOLUCIÓN ================= -->
+<section id="solucion">
+  <div class="wrap">
+    <div class="sec-head center">
+      <div class="eyebrow rv"><span class="num">02</span> La solución</div>
+      <h2 class="title rv" style="--d:.08s">Un copiloto clínico que escucha, estructura y protege.</h2>
+      <p class="lead rv" style="--d:.16s">El médico habla con naturalidad. MedicAItion se encarga del resto: expediente, codificación, receta y seguridad farmacológica, todo en el equipo del consultorio.</p>
+    </div>
+
+    <div class="bento">
+      <article class="feat f-a glass spot rv">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>Local-first · Cero nube</h3>
+        <p>Los modelos de IA corren dentro del hospital. Los expedientes nunca viajan a servidores externos: privacidad por diseño, alineada a la NOM-024 y la LFPDPPP. Y si se cae el internet, la consulta sigue.</p>
+        <div class="privacy-vis" aria-hidden="true">
+          <div class="pv-ring r2"></div><div class="pv-ring r1"></div>
+          <div class="pv-core"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="pv-cloud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/><path d="m3 3 18 18"/></svg>NUBE: BLOQUEADA</div>
+          <div class="pv-lbl">// datos clínicos → perímetro del hospital</div>
+        </div>
+        <div class="kpi">100% OFFLINE-CAPABLE</div>
+      </article>
+      <article class="feat f-b glass spot rv" style="--d:.08s">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></div>
+        <h3>Dictado y transcripción clínica</h3>
+        <p>Voz, texto libre o foto de una receta manuscrita. El sistema entiende lenguaje médico coloquial y extrae signos vitales, síntomas y tratamiento.</p>
+        <div class="kpi">VOZ · TEXTO · OCR</div>
+      </article>
+      <article class="feat f-c glass spot rv" style="--d:.12s">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></div>
+        <h3>Nota NOM-004 lista para firmar</h3>
+        <p>Formato SOAP oficial, editable antes de imprimir, con receta limpia para el paciente. Cumplimiento normativo sin esfuerzo extra.</p>
+        <div class="kpi">&lt; 3 S POR NOTA</div>
+      </article>
+      <article class="feat f-d glass spot rv">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18" cy="16" r="3"/><path d="m20.5 18.5 1.5 1.5"/></svg></div>
+        <h3>CIE-10 semántico</h3>
+        <p>“Dolor de cabeza” → R51 Cefalea. Codificación automática por significado, no por palabra exacta.</p>
+        <div class="kpi">&gt;95% PRECISIÓN</div>
+      </article>
+      <article class="feat f-e glass spot rv" style="--d:.08s">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7zM8.5 8.5l7 7"/></svg></div>
+        <h3>Escudo farmacológico</h3>
+        <p>Alerta en tiempo real de alergias cruzadas e interacciones antes de emitir la receta.</p>
+        <div class="kpi">CDSS INTEGRADO</div>
+      </article>
+      <article class="feat f-f glass spot rv" style="--d:.16s">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M10.5 13 6.5 17M13.5 13l4 4"/></svg></div>
+        <h3>Red hospitalaria federada</h3>
+        <p>Expedientes interoperables entre sedes con exportación HL7 FHIR R4 y pasaporte clínico QR.</p>
+        <div class="kpi">HL7 FHIR R4</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4 · CÓMO FUNCIONA / DEMO ================= -->
+<section id="demo">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow rv"><span class="num">03</span> Cómo funciona</div>
+      <h2 class="title rv" style="--d:.08s">De la voz al expediente en cuatro pasos.</h2>
+      <p class="lead rv" style="--d:.16s">Sin capacitación compleja. Si el médico sabe hablar con su paciente, ya sabe usar MedicAItion.</p>
+    </div>
+
+    <div class="how" id="how">
+      <div class="steps" role="tablist" aria-label="Pasos del flujo">
+        <button class="step active rv" role="tab" aria-selected="true" data-step="0"><span class="n">01</span><span><h4>Dicta la consulta</h4><p>Habla como siempre: síntomas, exploración y plan. También acepta texto o foto.</p></span><span class="prog"><i></i></span></button>
+        <button class="step rv" style="--d:.06s" role="tab" aria-selected="false" data-step="1"><span class="n">02</span><span><h4>La IA local analiza</h4><p>Extrae signos, sugiere diagnóstico, codifica CIE-10 y verifica la seguridad de la receta.</p></span><span class="prog"><i></i></span></button>
+        <button class="step rv" style="--d:.12s" role="tab" aria-selected="false" data-step="2"><span class="n">03</span><span><h4>Revisa y firma</h4><p>Nota NOM-004 y receta listas. Todo es editable antes de imprimir.</p></span><span class="prog"><i></i></span></button>
+        <button class="step rv" style="--d:.18s" role="tab" aria-selected="false" data-step="3"><span class="n">04</span><span><h4>Expediente vivo</h4><p>La consulta se integra al historial longitudinal, con tendencias y alertas.</p></span><span class="prog"><i></i></span></button>
+      </div>
+
+      <div class="screen glass rv" style="--d:.1s" aria-live="polite">
+        <!-- paso 1 -->
+        <div class="screen-view on">
+          <div class="sv-head"><b>Captura de consulta</b><span class="badge">GRABANDO · 00:42</span></div>
+          <div class="mic"><div class="mic-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></div>
+            <div class="wave" style="height:34px" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i><i style="--i:10"></i><i style="--i:11"></i></div>
+          </div>
+          <div class="transcript">“Masculino de 52 años, contador, refiere <mark>sed excesiva y orina frecuente</mark> desde hace tres semanas. <mark>TA 150 sobre 95</mark>, <mark>glucosa capilar 186</mark>. Inicio metformina 850 cada 12 horas y losartán 50 diario. Alérgico a <mark>penicilina</mark>.”</div>
+        </div>
+        <!-- paso 2 -->
+        <div class="screen-view">
+          <div class="sv-head"><b>Motor clínico local</b><span class="badge ok">COMPLETADO · 2.4 s</span></div>
+          <div class="pipeline">
+            <div class="pl"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12h3l3-8 4 16 3-8h7"/></svg></div><div><b>Signos vitales extraídos</b><span>TA 150/95 · Glucosa 186 mg/dL</span></div><span class="t">0.3s</span></div>
+            <div class="pl"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h7"/></svg></div><div><b>Codificación CIE-10</b><span>E11.9 Diabetes mellitus tipo 2 · I10 Hipertensión</span></div><span class="t">0.6s</span></div>
+            <div class="pl"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"/></svg></div><div><b>Escudo farmacológico</b><span>Penicilina registrada · sin conflicto con la receta</span></div><span class="t">0.4s</span></div>
+            <div class="pl"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div><div><b>Redacción SOAP NOM-004</b><span>Subjetivo · Objetivo · Análisis · Plan</span></div><span class="t">1.1s</span></div>
+            <div class="pl" style="border-color:rgba(255,196,107,.3)"><div class="ico" style="color:var(--warn);background:rgba(255,196,107,.08);border-color:rgba(255,196,107,.3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></div><div><b>Triaje sugerido</b><span>ESI 3 · seguimiento en 2 semanas</span></div><span class="badge warn">AMARILLO</span></div>
+          </div>
+        </div>
+        <!-- paso 3 -->
+        <div class="screen-view">
+          <div class="sv-head"><b>Nota médica de evolución</b><span class="badge">EDITABLE</span></div>
+          <div class="note">
+            <div class="nh"><b>✚ Cruz Roja Mérida</b><span>CLUES YUC-CR-001<br>18/11/2026 · 21:24</span></div>
+            <dl>
+              <dt>S</dt><dd>Poliuria y polidipsia de 3 semanas de evolución.</dd>
+              <dt>O</dt><dd>TA 150/95 mmHg · Glucosa capilar 186 mg/dL.</dd>
+              <dt>A</dt><dd>E11.9 DM2 sin complicaciones · I10 HAS primaria.</dd>
+              <dt>P</dt><dd>Control glucémico, dieta, cita en 14 días.</dd>
+            </dl>
+            <div class="rx"><b>Rx</b> · Metformina 850 mg VO c/12 h × 30 días<br><b>Rx</b> · Losartán 50 mg VO c/24 h × 30 días</div>
+          </div>
+        </div>
+        <!-- paso 4 -->
+        <div class="screen-view">
+          <div class="sv-head"><b>Expediente longitudinal</b><span class="badge ok">SINCRONIZADO</span></div>
+          <div class="records">
+            <div class="rec"><small>Consultas</small><b class="grad">12</b><span>en 18 meses</span></div>
+            <div class="rec"><small>Glucosa</small><b class="grad">186</b><span>↑ vs. 142 previo</span></div>
+            <div class="rec"><small>Alergias</small><b style="color:var(--danger)">1</b><span>Penicilina</span></div>
+            <div class="rec"><small>Riesgo CV</small><b style="color:var(--warn)">Medio</b><span>Requiere seguimiento</span></div>
+          </div>
+          <div class="spark"><svg viewBox="0 0 300 54" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7CE0F4" stop-opacity=".35"/><stop offset="1" stop-color="#7CE0F4" stop-opacity="0"/></linearGradient></defs><path d="M0 40 L30 36 L60 38 L90 30 L120 33 L150 26 L180 29 L210 22 L240 24 L270 14 L300 8 L300 54 L0 54Z" fill="url(#sg)"/><path d="M0 40 L30 36 L60 38 L90 30 L120 33 L150 26 L180 29 L210 22 L240 24 L270 14 L300 8" fill="none" stroke="#7CE0F4" stroke-width="2"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="divider"></div></div>
+
+<!-- ================= 5 · DIFERENCIADORES / IMPACTO ================= -->
+<section id="impacto">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow rv"><span class="num">04</span> Diferenciadores e impacto</div>
+      <h2 class="title rv" style="--d:.08s">No es otro expediente. Es la diferencia entre capturar y atender.</h2>
+      <p class="lead rv" style="--d:.16s">Comparado con los expedientes tradicionales y con las IA en la nube, MedicAItion es el único que combina velocidad, privacidad y operación sin conexión.</p>
+    </div>
+
+    <div class="compare glass rv">
+      <table>
+        <thead><tr><th>Criterio</th><th>Expediente tradicional</th><th>IA en la nube</th><th class="us">MedicAItion</th></tr></thead>
+        <tbody>
+          <tr><td>Tiempo por nota</td><td><span class="n">12–15 min</span></td><td><span class="m">30–60 s</span></td><td class="us"><span class="y">&lt; 3 s</span></td></tr>
+          <tr><td>Funciona sin internet</td><td><span class="m">Parcial</span></td><td><span class="n">No</span></td><td class="us"><span class="y">Sí, 100%</span></td></tr>
+          <tr><td>Datos del paciente</td><td><span class="y">Locales</span></td><td><span class="n">En servidores externos</span></td><td class="us"><span class="y">Nunca salen del hospital</span></td></tr>
+          <tr><td>Codificación CIE-10</td><td><span class="n">Manual en catálogos</span></td><td><span class="m">Genérica</span></td><td class="us"><span class="y">Automática y semántica</span></td></tr>
+          <tr><td>Formato NOM-004</td><td><span class="m">Depende del médico</span></td><td><span class="n">No adaptado a México</span></td><td class="us"><span class="y">Nativo</span></td></tr>
+          <tr><td>Seguridad farmacológica</td><td><span class="n">No</span></td><td><span class="m">Limitada</span></td><td class="us"><span class="y">Alergias + interacciones</span></td></tr>
+          <tr><td>Costo por uso de IA</td><td><span class="y">—</span></td><td><span class="n">Pago por token</span></td><td class="us"><span class="y">$0 por consulta</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="impact">
+      <div class="imp glass spot rv"><b class="grad"><span data-count="85">0</span>%</b><span>menos tiempo administrativo validado en el piloto de Cruz Roja Mérida</span></div>
+      <div class="imp glass spot rv" style="--d:.08s"><b class="grad">+<span data-count="2">0</span> h</b><span>recuperadas por médico en cada turno para atención directa</span></div>
+      <div class="imp glass spot rv" style="--d:.16s"><b class="grad"><span data-count="7">0</span></b><span>nodos de la red federada operando en Yucatán</span></div>
+      <div class="imp glass spot rv" style="--d:.24s"><b class="grad"><span data-count="25" data-suffix="k">0</span>+</b><span>clínicas públicas y privadas en México como mercado objetivo</span></div>
+    </div>
+
+    <!-- Modelo de negocio -->
+    <div class="sec-head" style="margin:96px 0 0">
+      <div class="eyebrow rv">Modelo de negocio</div>
+      <h2 class="title rv" style="--d:.08s;font-size:clamp(1.6rem,2.6vw,2.2rem)">Sostenible para la clínica. Escalable para el país.</h2>
+    </div>
+    <div class="biz" style="margin-top:36px">
+      <article class="plan glass spot rv">
+        <div class="tier">Consultorio</div>
+        <h3>Suscripción B2B</h3>
+        <p>Para médicos independientes y clínicas privadas pequeñas.</p>
+        <ul><li>Licencia mensual por consultorio</li><li>Nota, receta y CIE-10 ilimitadas</li><li>Instalación en el equipo existente</li></ul>
+      </article>
+      <article class="plan glass spot rv feat-plan" style="--d:.08s">
+        <div class="tier">Hospital</div>
+        <h3>Licencia institucional</h3>
+        <p>Para hospitales, Cruz Roja y unidades de la Secretaría de Salud.</p>
+        <ul><li>Red federada multi-sede</li><li>Interoperabilidad HL7 FHIR R4</li><li>Auditoría NOM-004 / NOM-024</li><li>Soporte y capacitación in situ</li></ul>
+      </article>
+      <article class="plan glass spot rv" style="--d:.16s">
+        <div class="tier">Ecosistema</div>
+        <h3>Alianzas y servicios</h3>
+        <p>Integraciones con aseguradoras, laboratorios y gobiernos estatales.</p>
+        <ul><li>Analítica epidemiológica anónima</li><li>Portal del paciente "Mi Salud Hoy"</li><li>Implementación a la medida</li></ul>
+      </article>
+    </div>
+
+    <div class="roadmap">
+      <div class="rm done rv"><div class="pt">✓</div><small>Fase 1 · 60 días</small><h4>Piloto Cruz Roja Mérida</h4><p>Validación en urgencias y consulta externa.</p></div>
+      <div class="rm rv" style="--d:.1s"><div class="pt">02</div><small>Fase 2 · 6 meses</small><h4>5 clínicas ambulatorias</h4><p>Expansión regional y certificación del sistema.</p></div>
+      <div class="rm rv" style="--d:.2s"><div class="pt">03</div><small>Fase 3 · 12 meses</small><h4>50 centros del sureste</h4><p>Despliegue comercial SaaS institucional.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 6 · CIERRE Y CTA ================= -->
+<section id="contacto">
+  <div class="wrap">
+    <div class="cta-box glass rv">
+      <div>
+        <div class="eyebrow">05 · Únete</div>
+        <h2 class="title" style="max-width:16ch">Devolvámosle al médico el tiempo con su paciente.</h2>
+        <p class="lead">Buscamos aliados estratégicos y financiamiento para certificar el sistema e iniciar el despliegue en 50 centros hospitalarios del sureste de México.</p>
+        <div class="ask">
+          <div><b class="grad">Demo</b><span>Ve MedicAItion en vivo con un caso real en 15 minutos.</span></div>
+          <div><b class="grad">Invertir</b><span>Ronda semilla para certificación y expansión regional.</span></div>
+          <div><b class="grad">Aliarse</b><span>Hospitales, clínicas y gobiernos que quieran ser sede piloto.</span></div>
+        </div>
+      </div>
+
+      <div>
+        <form id="form" novalidate>
+          <div class="seg" role="radiogroup" aria-label="Tipo de solicitud">
+            <input type="radio" name="tipo" id="t1" value="demo" checked><label for="t1">Solicitar demo</label>
+            <input type="radio" name="tipo" id="t2" value="inversion"><label for="t2">Invertir</label>
+            <input type="radio" name="tipo" id="t3" value="alianza"><label for="t3">Colaborar</label>
+          </div>
+          <div class="row">
+            <div class="field"><input id="nombre" name="nombre" placeholder=" " required autocomplete="name"><label for="nombre">Nombre completo</label><div class="msg">Escribe tu nombre.</div></div>
+            <div class="field"><input id="email" name="email" type="email" placeholder=" " required autocomplete="email"><label for="email">Correo electrónico</label><div class="msg">Ingresa un correo válido.</div></div>
+          </div>
+          <div class="row">
+            <div class="field"><input id="org" name="org" placeholder=" " autocomplete="organization"><label for="org">Institución u organización</label></div>
+            <div class="field"><select id="rol" name="rol"><option>Médico / Director médico</option><option>Administración hospitalaria</option><option>Inversionista</option><option>Gobierno / Sector público</option><option>Otro</option></select><label for="rol">Perfil</label></div>
+          </div>
+          <div class="field"><textarea id="mensaje" name="mensaje" placeholder=" "></textarea><label for="mensaje" id="msgLbl">¿Cuántos médicos o consultorios tiene tu institución?</label></div>
+          <label class="consent"><input type="checkbox" id="consent" required> Acepto que MedicAItion use estos datos únicamente para contactarme, conforme a la LFPDPPP.</label>
+          <button class="btn primary magnetic" type="submit" id="submit"><span class="spinner"></span><span class="lbl" id="submitLbl">Agendar mi demo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+        <div class="success" id="success">
+          <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <h3 style="font-size:1.5rem">¡Solicitud recibida!</h3>
+          <p id="successMsg" style="max-width:38ch">Te contactaremos en menos de 24 horas para coordinar tu demo.</p>
+          <button class="btn ghost sm" id="again" type="button">Enviar otra solicitud</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a href="#inicio" class="brand"><span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></span><span><b>Medic</b><i>AI</i><b>tion</b></span></a>
+    <div class="compliance"><span>NOM-004-SSA3</span><span>NOM-024-SSA3</span><span>LFPDPPP</span><span>HL7 FHIR R4</span><span>CIE-10</span></div>
+    <div class="foot-links"><a href="#problema">Problema</a><a href="#solucion">Solución</a><a href="#demo">Demo</a><a href="/">Entrar al sistema</a></div>
+  </div>
+  <div class="wrap" style="margin-top:22px"><p style="font-size:.8rem;color:var(--soft);margin:0">© 2026 MedicAItion · Mérida, Yucatán, México. Inteligencia clínica que se queda en casa.</p></div>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, c = document) => c.querySelector(s);
+  const $$ = (s, c = document) => [...c.querySelectorAll(s)];
+
+  requestAnimationFrame(() => document.body.classList.add('loaded'));
+
+  /* ---------- Header sólido + barra de progreso + sección activa ---------- */
+  const header = $('#top'), progress = $('#progress');
+  const navLinks = $$('nav.links a');
+  const sections = navLinks.map(a => $(a.getAttribute('href')));
+  let ticking = false;
+  const onScroll = () => {
+    const y = scrollY, h = document.documentElement.scrollHeight - innerHeight;
+    header.classList.toggle('solid', y > 30);
+    progress.style.transform = `scaleX(${h > 0 ? y / h : 0})`;
+    let current = -1;
+    sections.forEach((s, i) => { if (s && s.getBoundingClientRect().top < innerHeight * .4) current = i; });
+    navLinks.forEach((a, i) => a.classList.toggle('active', i === current));
+    ticking = false;
+  };
+  addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(onScroll); ticking = true; } }, { passive: true });
+  onScroll();
+
+  /* ---------- Menú móvil ---------- */
+  const burger = $('#burger');
+  burger.addEventListener('click', () => {
+    const open = document.body.classList.toggle('menu-open');
+    burger.setAttribute('aria-expanded', open);
+  });
+  navLinks.forEach(a => a.addEventListener('click', () => { document.body.classList.remove('menu-open'); burger.setAttribute('aria-expanded', false); }));
+
+  /* ---------- Contadores ---------- */
+  const animateCount = el => {
+    const end = +el.dataset.count, suffix = el.dataset.suffix || '';
+    if (reduce || end === 0) { el.textContent = end + suffix; return; }
+    const dur = 1600, t0 = performance.now();
+    const step = t => {
+      const p = Math.min((t - t0) / dur, 1), e = 1 - Math.pow(1 - p, 4);
+      el.textContent = Math.round(end * e) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  /* ---------- Reveal on scroll ---------- */
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      en.target.classList.add('in');
+      $$('[data-count]', en.target).forEach(animateCount);
+      io.unobserve(en.target);
+    });
+  }, { threshold: .15, rootMargin: '0px 0px -40px 0px' });
+  $$('.rv, .stat').forEach(el => io.observe(el));
+
+  /* ---------- Spotlight + tilt sutil en tarjetas ---------- */
+  const fine = matchMedia('(hover:hover) and (pointer:fine)').matches;
+  $$('.spot').forEach(card => {
+    card.addEventListener('pointermove', e => {
+      const r = card.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      card.style.setProperty('--mx', x + 'px'); card.style.setProperty('--my', y + 'px');
+      if (fine && !reduce && card.id !== 'mock') {
+        const rx = ((y / r.height) - .5) * -4, ry = ((x / r.width) - .5) * 4;
+        card.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-3px)`;
+      }
+    });
+    card.addEventListener('pointerleave', () => { card.style.transform = ''; });
+  });
+
+  /* ---------- Botones magnéticos ---------- */
+  if (fine && !reduce) $$('.magnetic').forEach(b => {
+    b.addEventListener('pointermove', e => {
+      const r = b.getBoundingClientRect();
+      b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .18}px, ${(e.clientY - r.top - r.height / 2) * .28}px)`;
+    });
+    b.addEventListener('pointerleave', () => { b.style.transform = ''; });
+  });
+
+  /* ---------- Simulación del producto en el hero ---------- */
+  const text = 'Masculino 52 años, sed excesiva y orina frecuente desde hace 3 semanas. TA 150/95, glucosa 186. Inicio metformina 850 y losartán 50.';
+  const typed = $('#typed'), soap = $$('#soap div'), tags = $$('#tags .tag'), clock = $('#clock'), stateLbl = $('#stateLbl');
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  async function heroLoop() {
+    while (true) {
+      typed.textContent = ''; soap.forEach(s => s.classList.remove('on')); tags.forEach(t => t.classList.remove('on'));
+      clock.textContent = '0.0s'; stateLbl.textContent = 'escuchando…';
+      for (let i = 0; i <= text.length; i++) { typed.textContent = text.slice(0, i); await sleep(reduce ? 0 : 26); }
+      stateLbl.textContent = 'procesando…';
+      const t0 = performance.now();
+      const tick = setInterval(() => { clock.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's'; }, 50);
+      for (const s of soap) { await sleep(420); s.classList.add('on'); }
+      for (const t of tags) { await sleep(220); t.classList.add('on'); }
+      clearInterval(tick); clock.textContent = '2.6s'; stateLbl.textContent = '✓ lista para firmar';
+      await sleep(4200);
+    }
+  }
+  heroLoop();
+
+  /* ---------- Demo paso a paso (autoavance + clic) ---------- */
+  const how = $('#how'), steps = $$('.step', how), views = $$('.screen-view', how);
+  const DUR = 5500; let idx = 0, timer = null, visible = false;
+  const show = i => {
+    idx = i;
+    steps.forEach((s, k) => { s.classList.toggle('active', k === i); s.setAttribute('aria-selected', k === i); const bar = $('.prog i', s); bar.style.animation = 'none'; bar.offsetWidth; bar.style.animation = ''; });
+    views.forEach((v, k) => v.classList.toggle('on', k === i));
+  };
+  const schedule = () => { clearTimeout(timer); if (visible && !reduce) timer = setTimeout(() => { show((idx + 1) % steps.length); schedule(); }, DUR); };
+  steps.forEach((s, i) => s.addEventListener('click', () => { show(i); schedule(); }));
+  how.addEventListener('mouseenter', () => { how.classList.add('paused'); clearTimeout(timer); });
+  how.addEventListener('mouseleave', () => { how.classList.remove('paused'); schedule(); });
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; visible ? schedule() : clearTimeout(timer); }, { threshold: .35 }).observe(how);
+  how.style.setProperty('--dur', DUR + 'ms');
+
+  /* ---------- Formulario ---------- */
+  const form = $('#form'), success = $('#success'), submit = $('#submit');
+  const copy = {
+    demo: { btn: 'Agendar mi demo', ph: '¿Cuántos médicos o consultorios tiene tu institución?', ok: 'Te contactaremos en menos de 24 horas para coordinar tu demo en vivo.' },
+    inversion: { btn: 'Recibir el pitch deck', ph: '¿Qué tipo de inversión o fondo representas?', ok: 'Te enviaremos el pitch deck y agendaremos una llamada con el equipo fundador.' },
+    alianza: { btn: 'Proponer una alianza', ph: '¿Cómo te gustaría colaborar con MedicAItion?', ok: 'Nuestro equipo de alianzas revisará tu propuesta y te escribirá pronto.' }
+  };
+  const tipo = () => form.tipo.value;
+  $$('input[name="tipo"]', form).forEach(r => r.addEventListener('change', () => {
+    $('#submitLbl').textContent = copy[tipo()].btn; $('#msgLbl').textContent = copy[tipo()].ph;
+  }));
+  const setErr = (el, bad) => el.closest('.field').classList.toggle('err', bad);
+  ['nombre', 'email'].forEach(id => $('#' + id).addEventListener('input', e => setErr(e.target, false)));
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const n = $('#nombre'), m = $('#email'), c = $('#consent');
+    const badN = n.value.trim().length < 2, badM = !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m.value.trim());
+    setErr(n, badN); setErr(m, badM);
+    if (badN || badM) { (badN ? n : m).focus(); return; }
+    if (!c.checked) { c.focus(); c.parentElement.style.color = 'var(--danger)'; return; }
+    c.parentElement.style.color = '';
+    submit.classList.add('loading'); submit.disabled = true;
+    const data = Object.fromEntries(new FormData(form)); data.fecha = new Date().toISOString();
+    try { const list = JSON.parse(localStorage.getItem('medicaition_leads') || '[]'); list.push(data); localStorage.setItem('medicaition_leads', JSON.stringify(list)); } catch (_) {}
+    await sleep(1100);
+    $('#successMsg').textContent = copy[tipo()].ok;
+    form.style.display = 'none'; success.classList.add('on');
+    submit.classList.remove('loading'); submit.disabled = false;
+  });
+  $('#again').addEventListener('click', () => { form.reset(); $('#submitLbl').textContent = copy.demo.btn; $('#msgLbl').textContent = copy.demo.ph; success.classList.remove('on'); form.style.display = ''; });
+
+  /* ---------- Fondo: red neuronal + pulso ECG (canvas 2D ligero) ---------- */
+  const cv = $('#neural'), ctx = cv.getContext('2d');
+  let W, H, DPR, nodes = [], mouse = { x: -999, y: -999 };
+  const resize = () => {
+    DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const count = Math.round(Math.min(70, W * H / 22000));
+    nodes = Array.from({ length: count }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25, r: Math.random() * 1.4 + .6 }));
+  };
+  resize(); addEventListener('resize', resize);
+  addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+  const ecg = x => { const p = x % 1; if (p < .40) return 0; if (p < .44) return -.15; if (p < .47) return .9; if (p < .50) return -.45; if (p < .53) return .1; if (p < .62) return 0; if (p < .70) return -.18 * Math.sin((p - .62) / .08 * Math.PI); return 0; };
+  let t = 0, running = true;
+  document.addEventListener('visibilitychange', () => { running = !document.hidden; if (running) requestAnimationFrame(draw); });
+  function draw() {
+    if (!running) return;
+    ctx.clearRect(0, 0, W, H); t += .004;
+    for (const n of nodes) {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1; if (n.y < 0 || n.y > H) n.vy *= -1;
+      const dx = n.x - mouse.x, dy = n.y - mouse.y, d = Math.hypot(dx, dy);
+      if (d < 140) { n.x += dx / d * .6; n.y += dy / d * .6; }
+    }
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d < 130) { ctx.strokeStyle = `rgba(124,224,244,${(1 - d / 130) * .16})`; ctx.lineWidth = .6; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+    }
+    for (const n of nodes) { ctx.fillStyle = 'rgba(184,236,255,.55)'; ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill(); }
+    // línea de pulso cardiaco que recorre la parte baja del hero
+    const fade = Math.max(0, 1 - scrollY / (innerHeight * .9));
+    if (fade > 0) {
+      const base = H * .86, amp = Math.min(70, H * .08), head = (t * 0.9 % 1.2) * W;
+      ctx.lineWidth = 1.6; ctx.beginPath();
+      const end = Math.min(W, head);
+      for (let x = Math.max(0, head - 420); x <= end; x += 3) { const y = base - ecg(x / 420) * amp; ctx.lineTo(x, y); }
+      const g = ctx.createLinearGradient(head - 420, 0, head, 0);
+      g.addColorStop(0, 'rgba(124,224,244,0)'); g.addColorStop(.85, `rgba(184,236,255,${.55 * fade})`); g.addColorStop(1, `rgba(255,255,255,${.9 * fade})`);
+      ctx.strokeStyle = g; ctx.stroke();
+    }
+    if (!reduce) requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
