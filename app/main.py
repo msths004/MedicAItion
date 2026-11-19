@@ -218,6 +218,14 @@ app.include_router(legal_router)
 app.include_router(auth_router)
 app.include_router(pulso_router)
 
+@app.get("/app")
+def get_app():
+    return FileResponse("frontend/index.html")
+
+@app.get("/sistema")
+def get_sistema():
+    return FileResponse("frontend/index.html")
+
 @app.get("/landing")
 def get_landing():
     return FileResponse("frontend/landing.html")
