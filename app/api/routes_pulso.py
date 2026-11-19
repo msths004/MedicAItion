@@ -1,24 +1,27 @@
 """
-routes_pulso.py — Backend de Asistente Clínico "Pulso" (100% IA Local + Privacidad NOM-024)
-===========================================================================================
+routes_pulso.py — Backend de Asistente Híbrido Evolutivo "Dr. Oso · Pulso" (100% IA Local NOM-024)
+==================================================================================================
 Provee:
-  • GET  /api/pulso/status       — Verifica conexión con servidor local Ollama (http://localhost:11434)
-                                   y lista modelos instalados + estado del Motor Clínico Local integrado.
-  • POST /api/pulso/config       — Guarda URL/modelo preferido de Ollama local.
-  • POST /api/pulso/chat-stream  — Respuesta en streaming (NDJSON) para:
-                                     1) Resumen previo del paciente
-                                     2) Borrador de nota SOAP a partir de dictado (con [PENDIENTE])
-                                     3) Búsqueda de pacientes y citas en lenguaje natural
-                                     4) Consulta clínica asistida (con aviso "Revisar por el médico")
-                                   Usa Ollama local si está conectado o el Motor Clínico Local integrado.
-  • POST /api/pulso/audit        — Registra en la bitácora NOM-024 cada acción de Pulso
-                                   (usuario, fecha, acción) SIN almacenar contenido clínico sensible.
+  • GET  /api/pulso/status         — Sondea LM Studio (localhost:1234/v1), Ollama (localhost:11434),
+                                     GGUF local y estado del Orquestador Híbrido + ML Evolutivo.
+  • POST /api/pulso/config         — Configura URLs y modelos (Qwen3-8B / medgemma-4b-it / Ollama).
+  • POST /api/pulso/chat-stream    — Streaming NDJSON con:
+                                       - Enrutador Dinámico (CLINICAL_NORMATIVE / UNIVERSAL_GENERAL / AGENTIC_TOOL)
+                                       - Guardrail Anti-Alucinación de Identidad (XML + filtro en vivo)
+                                       - Clasificador ML de Triaje (`scikit-learn` NEWS2 / qSOFA)
+                                       - RAG Híbrido (BM25 + ChromaDB RRF) + Memoria Episódica
+                                       - Ventana Deslizante (últimos 6-8 turnos, máx. 8192 tokens)
+  • POST /api/pulso/feedback       — Registra 👍 / 👎 / ✏️ Corregir y Enseñar en ChromaDB `episodic_learning`
+                                     y genera pares en `training_data/dpo_pairs.jsonl`.
+  • GET  /api/pulso/learning-stats — Estadísticas en tiempo real del aprendizaje evolutivo local.
+  • POST /api/pulso/audit          — Bitácora NOM-024 sin almacenar contenido clínico sensible.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import os
 import re
 import unicodedata
 from datetime import datetime
@@ -29,11 +32,19 @@ import httpx
 from fastapi import APIRouter, Body, Request
 from fastapi.responses import StreamingResponse
 
-from app.core.clinical_generative_engine import generate_conversational_response
 from app.core.entity_extractor import _heuristic_extract
+from app.core.evolutionary_learning import episodic_memory, risk_ml_classifier
+from app.core.hybrid_ai_orchestrator import (
+    generate_hybrid_fallback_response,
+    hybrid_retriever,
+    identity_guardrail,
+    intent_router,
+    sliding_window,
+)
 from app.core.local_llm_runner import (
     find_local_gguf_model,
     get_local_llm_status,
+    is_hybrid_sota_gguf,
     stream_local_llm_chat,
 )
 from app.db.chroma_store import get_collection
@@ -42,8 +53,6 @@ from app.db.local_db import (
     SessionLocal,
     get_active_practitioner,
     get_all_patients,
-    get_patient_by_curp,
-    get_patient_events,
     get_patient_full_history,
     log_audit_action,
 )
@@ -51,23 +60,15 @@ from app.db.local_db import (
 router = APIRouter(prefix="/api/pulso", tags=["Pulso Local AI Assistant"])
 
 _PULSO_SETTINGS: Dict[str, Any] = {
+    "lmstudio_url": "http://localhost:1234/v1",
     "ollama_url": "http://localhost:11434",
-    "model": "qwen2.5:7b-instruct",
+    "model": "Qwen3-8B-Q4_K_M",
+    "primary_model": "Qwen3-8B-Q4_K_M",
+    "clinical_specialist_model": "medgemma-4b-it",
+    "context_window": 8192,
+    "sliding_window_turns": 8,
     "temperature": 0.2,
 }
-
-PULSO_SYSTEM_PROMPT = """Eres "Pulso" (Dr. Oso), asistente médico y clínico de IA 100% LOCAL integrado en MedicAItion (Cruz Roja Mérida / Yucatán).
-REGLAS CLÍNICAS Y MULTILINGÜES OBLIGATORIAS:
-1. CAPACIDAD MULTILINGÜE UNIVERSAL: Acepta y comprende prompts y consultas en CUALQUIER IDIOMA (español, inglés, francés, portugués, alemán, maya, etc.). Responde SIEMPRE en el MISMO IDIOMA en el que el usuario o médico redactó su pregunta o prompt.
-2. NUNCA inventes datos clínicos, signos vitales, antecedentes ni hallazgos de exploración física de pacientes reales no documentados.
-3. Todo dato clínico que falte o no haya sido dictado en una nota clínica DEBE marcarse literalmente como [PENDIENTE] (ej. [PENDIENTE: exploración física], [PENDIENTE: signos vitales]).
-4. Toda sugerencia diagnóstica, código CIE-10 o propuesta de tratamiento DEBE incluir el aviso explícito: "⚠️ Revisar por el médico tratante / Review by attending physician".
-5. Si el usuario pide un borrador SOAP, estructura siempre en:
-   - S (Subjetivo)
-   - O (Objetivo)
-   - A (Análisis / Impresión diagnóstica — Revisar por el médico)
-   - P (Plan y tratamiento — Revisar por el médico)
-"""
 
 
 def _norm(text: str) -> str:
@@ -110,70 +111,103 @@ def _record_pulso_audit(action: str, operator: str, engine_used: str) -> None:
         db.close()
 
 
-async def _probe_ollama(base_url: Optional[str] = None) -> Dict[str, Any]:
-    url = (base_url or _PULSO_SETTINGS["ollama_url"]).rstrip("/")
+async def _probe_local_backends(
+    ollama_url: Optional[str] = None,
+    lmstudio_url: Optional[str] = None,
+) -> Dict[str, Any]:
+    lm_url = (lmstudio_url or _PULSO_SETTINGS["lmstudio_url"]).rstrip("/")
+    ol_url = (ollama_url or _PULSO_SETTINGS["ollama_url"]).rstrip("/")
     gguf_info = get_local_llm_status()
+    learning_stats = episodic_memory.get_learning_stats()
+    rag_docs = hybrid_retriever.corpus_size()
 
+    # 1. Sondeo rápido a LM Studio / llama.cpp OpenAI Server (localhost:1234/v1)
+    lmstudio_connected = False
+    lmstudio_models: List[str] = []
     try:
-        async with httpx.AsyncClient(timeout=1.8) as client:
-            res = await client.get(f"{url}/api/tags")
-            if res.status_code == 200:
-                data = res.json()
-                models = [m.get("name") for m in (data.get("models") or []) if m.get("name")]
-                return {
-                    "ollama_connected": True,
-                    "ollama_url": url,
-                    "configured_model": _PULSO_SETTINGS["model"],
-                    "available_models": models,
-                    "active_engine": "ollama_local",
-                    "status_label": "IA local conectada (Ollama)",
-                    "local_gguf": gguf_info,
-                }
-    except Exception as exc:
-        err_msg = str(exc)
-    else:
-        err_msg = f"HTTP {res.status_code}"
+        async with httpx.AsyncClient(timeout=0.8) as client:
+            r_lm = await client.get(f"{lm_url}/models")
+            if r_lm.status_code == 200:
+                payload = r_lm.json()
+                lmstudio_models = [m.get("id") for m in (payload.get("data") or []) if m.get("id")]
+                lmstudio_connected = True
+    except Exception:
+        pass
 
-    if gguf_info.get("has_local_gguf"):
-        return {
-            "ollama_connected": False,
-            "ollama_url": url,
-            "configured_model": gguf_info["model_name"],
-            "available_models": [gguf_info["model_name"]],
-            "active_engine": "local_gguf_engine",
-            "status_label": f"IA local activa (GGUF: {gguf_info['model_name']})",
-            "local_gguf": gguf_info,
-            "ollama_hint": "Ejecutando modelo neuronal GGUF 100% offline con llama-cpp-python.",
-        }
+    # 2. Sondeo rápido a Ollama (localhost:11434)
+    ollama_connected = False
+    ollama_models: List[str] = []
+    ol_err = ""
+    try:
+        async with httpx.AsyncClient(timeout=0.8) as client:
+            r_ol = await client.get(f"{ol_url}/api/tags")
+            if r_ol.status_code == 200:
+                payload = r_ol.json()
+                ollama_models = [m.get("name") for m in (payload.get("models") or []) if m.get("name")]
+                ollama_connected = True
+            else:
+                ol_err = f"HTTP {r_ol.status_code}"
+    except Exception as exc:
+        ol_err = str(exc)
+
+    combined_models = list(dict.fromkeys(lmstudio_models + ollama_models))
+    if lmstudio_connected:
+        active_engine = "lmstudio_hybrid_local"
+        status_label = f"IA Híbrida Conectada (LM Studio: {lmstudio_models[0] if lmstudio_models else _PULSO_SETTINGS['primary_model']})"
+    elif ollama_connected:
+        active_engine = "ollama_local"
+        status_label = f"IA Local Conectada (Ollama: {_PULSO_SETTINGS['model']})"
+    elif gguf_info.get("has_local_gguf") and is_hybrid_sota_gguf(gguf_info.get("model_path")):
+        active_engine = "local_gguf_engine"
+        combined_models = [gguf_info["model_name"]]
+        status_label = f"IA Híbrida GGUF ({gguf_info['model_name']})"
+    else:
+        active_engine = "hybrid_clinical_local"
+        status_label = "IA Híbrida Evolutiva Activa · BM25+ChromaDB+ML"
 
     return {
-        "ollama_connected": False,
-        "ollama_url": url,
+        "lmstudio_connected": lmstudio_connected,
+        "lmstudio_url": lm_url,
+        "lmstudio_models": lmstudio_models,
+        "ollama_connected": ollama_connected,
+        "ollama_url": ol_url,
         "configured_model": _PULSO_SETTINGS["model"],
-        "available_models": [],
-        "active_engine": "embedded_clinical_local",
-        "status_label": "IA local activa · Mini ChatGPT Clínico Offline",
+        "primary_model": _PULSO_SETTINGS["primary_model"],
+        "clinical_specialist_model": _PULSO_SETTINGS["clinical_specialist_model"],
+        "context_window": _PULSO_SETTINGS["context_window"],
+        "sliding_window_turns": _PULSO_SETTINGS["sliding_window_turns"],
+        "available_models": combined_models,
+        "active_engine": active_engine,
+        "status_label": status_label,
         "local_gguf": gguf_info,
+        "learning_stats": learning_stats,
+        "hybrid_rag_docs": rag_docs,
         "ollama_hint": (
-            f"No se detectó servidor Ollama en {url} ({err_msg}). "
-            "Pulso opera con el Motor Clínico Local integrado (Mini ChatGPT Offline + ChromaDB CIE-10)."
+            f"Motor híbrido listo (RAG {rag_docs} guías + scikit-learn Triaje + ChromaDB Evolutivo). "
+            + ("" if (lmstudio_connected or ollama_connected) else f"Opcional: inicia LM Studio en {lm_url} ({ol_err or 'offline'}).")
         ),
     }
 
 
 @router.get("/status")
-async def get_pulso_status(ollama_url: Optional[str] = None):
-    """Devuelve el estado de conexión con Ollama local y el motor clínico integrado."""
-    return await _probe_ollama(ollama_url)
+async def get_pulso_status(ollama_url: Optional[str] = None, lmstudio_url: Optional[str] = None):
+    """Devuelve el estado de motores locales (LM Studio, Ollama, GGUF, Híbrido) y métricas ML."""
+    return await _probe_local_backends(ollama_url=ollama_url, lmstudio_url=lmstudio_url)
 
 
 @router.post("/config")
 async def update_pulso_config(data: dict = Body(...), request: Request = None):
-    """Actualiza URL y modelo local de Ollama en Configuración."""
+    """Actualiza URLs y modelos locales (LM Studio Qwen3-8B / medgemma-4b-it / Ollama)."""
+    if data.get("lmstudio_url"):
+        _PULSO_SETTINGS["lmstudio_url"] = str(data["lmstudio_url"]).strip().rstrip("/")
     if data.get("ollama_url"):
         _PULSO_SETTINGS["ollama_url"] = str(data["ollama_url"]).strip().rstrip("/")
     if data.get("model"):
         _PULSO_SETTINGS["model"] = str(data["model"]).strip()
+    if data.get("primary_model"):
+        _PULSO_SETTINGS["primary_model"] = str(data["primary_model"]).strip()
+    if data.get("clinical_specialist_model"):
+        _PULSO_SETTINGS["clinical_specialist_model"] = str(data["clinical_specialist_model"]).strip()
     if "temperature" in data and data["temperature"] is not None:
         try:
             _PULSO_SETTINGS["temperature"] = max(0.0, min(1.0, float(data["temperature"])))
@@ -183,7 +217,7 @@ async def update_pulso_config(data: dict = Body(...), request: Request = None):
     if request is not None:
         _record_pulso_audit("PULSO_CONFIG_IA_LOCAL", _extract_operator(request), _PULSO_SETTINGS["model"])
 
-    status = await _probe_ollama(_PULSO_SETTINGS["ollama_url"])
+    status = await _probe_local_backends(_PULSO_SETTINGS["ollama_url"], _PULSO_SETTINGS["lmstudio_url"])
     return {"status": "updated", "settings": _PULSO_SETTINGS, "connection": status}
 
 
@@ -195,7 +229,7 @@ def check_model_download_status():
 
 @router.post("/model-download")
 def trigger_model_download():
-    """Inicia la descarga en segundo plano del modelo Qwen2.5-0.5B GGUF si no existe."""
+    """Inicia la descarga en segundo plano del modelo GGUF local si no existe."""
     st = get_local_llm_status()
     if st["has_local_gguf"]:
         return {"status": "already_installed", "model": st["model_name"]}
@@ -204,6 +238,7 @@ def trigger_model_download():
 
     import subprocess
     import sys
+
     script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "download_local_llm.py"))
     subprocess.Popen([sys.executable, script_path])
     return {"status": "started", "target": "qwen2.5-0.5b-instruct-q4_k_m.gguf"}
@@ -219,27 +254,79 @@ def log_pulso_interaction(data: dict = Body(...), request: Request = None):
     return {"status": "logged", "action": action, "operator": operator}
 
 
+@router.get("/learning-stats")
+def get_pulso_learning_stats():
+    """Devuelve métricas del aprendizaje continuo evolutivo (ChromaDB + DPO JSONL + ML)."""
+    stats = episodic_memory.get_learning_stats()
+    stats["hybrid_rag_docs"] = hybrid_retriever.corpus_size()
+    return stats
+
+
+@router.post("/feedback")
+def record_pulso_feedback(data: dict = Body(...), request: Request = None):
+    """
+    Registra calificación o corrección clínica del médico (👍 / 👎 / ✏️ Corregir y Enseñar):
+      - Guarda preferencia vectorial en ChromaDB `episodic_learning`.
+      - Genera automáticamente par DPO/LoRA en `training_data/dpo_pairs.jsonl`.
+      - Audita evento NOM-024 sin almacenar contenido clínico en la bitácora.
+    """
+    operator = _extract_operator(request) if request else "Médico Tratante"
+    prompt = str(data.get("prompt") or "").strip()
+    original_response = str(data.get("original_response") or "").strip()
+    corrected_response = data.get("corrected_response")
+    if corrected_response is not None:
+        corrected_response = str(corrected_response).strip()
+    rating = str(data.get("rating") or "positive").strip()
+    curp = str(data.get("curp") or "").strip().upper() or None
+    intent = str(data.get("intent") or "CLINICAL_NORMATIVE").strip()
+
+    res = episodic_memory.record_feedback(
+        prompt=prompt,
+        original_response=original_response,
+        corrected_response=corrected_response,
+        rating=rating,
+        doctor_name=operator,
+        patient_curp=curp,
+        intent=intent,
+    )
+    _record_pulso_audit(f"PULSO_FEEDBACK_{res['rating'].upper()}", operator, "episodic_learning")
+    return res
+
+
 # ---------------------------------------------------------------------------
-# Funciones clínicas locales en memoria (Resumen, SOAP, Búsqueda Natural)
+# Funciones clínicas locales en memoria (Resumen, SOAP, Búsqueda Natural, Handoff)
 # ---------------------------------------------------------------------------
 
 def _search_cie10_local(query_text: str, top_k: int = 2) -> List[Dict[str, str]]:
     if not query_text or len(query_text.strip()) < 3:
         return []
     try:
-        col = get_collection("cie10_mexico_2024_diagnosticos")
-        res = col.query(query_texts=[query_text], n_results=top_k)
-        docs = (res.get("documents") or [[]])[0]
-        metas = (res.get("metadatas") or [[]])[0]
-        out = []
-        for doc, meta in zip(docs, metas):
-            code = (meta or {}).get("codigo") or (meta or {}).get("code") or ""
-            desc = (meta or {}).get("descripcion") or doc or ""
-            if code or desc:
-                out.append({"codigo": code, "descripcion": desc})
-        return out
+        from app.core.cie10_mapper import _get_catalog, _lexical_candidates
+        catalog = _get_catalog("diagnosticos")
+        hits = _lexical_candidates(query_text, catalog, limit=top_k)
+        if hits:
+            return [{"codigo": h["codigo"], "descripcion": h["descripcion"]} for h in hits]
     except Exception:
-        return []
+        pass
+    try:
+        from app.core.cie10_mapper import _get_embedder
+        emb = _get_embedder()
+        if emb is not None:
+            col = get_collection("cie10_mexico_2024_diagnosticos")
+            vec = emb.encode([query_text.upper()]).tolist()
+            res = col.query(query_embeddings=vec, n_results=top_k)
+            docs = (res.get("documents") or [[]])[0]
+            metas = (res.get("metadatas") or [[]])[0]
+            out = []
+            for doc, meta in zip(docs, metas):
+                code = (meta or {}).get("codigo") or (meta or {}).get("code") or ""
+                desc = (meta or {}).get("descripcion") or doc or ""
+                if code or desc:
+                    out.append({"codigo": code, "descripcion": desc})
+            return out
+    except Exception:
+        pass
+    return []
 
 
 def _find_patient_from_query(query: str, active_curp: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -248,16 +335,24 @@ def _find_patient_from_query(query: str, active_curp: Optional[str] = None) -> O
     stopwords = {
         "busca", "buscar", "paciente", "expediente", "resumen", "previo", "del", "de", "la",
         "el", "los", "las", "para", "con", "citas", "cita", "hoy", "nota", "soap", "dictado",
-        "quien", "es", "dame", "mostrar", "ver", "historial", "alergias", "tiene", "como",
+        "quien", "que", "eres", "esta", "este", "estas", "dame", "mostrar", "ver", "historial",
+        "alergias", "alergia", "tiene", "como", "hola", "encuentra", "sobre", "acerca",
+        "estado", "actual", "signos", "vitales", "ultimos", "ultimas", "consultas",
+        "riesgo", "clinico", "evalua", "news2", "qsofa", "alarma", "crisis", "hipertensiva",
+        "cefalea", "intensa", "manejo", "mmhg", "lpm", "rpm", "temp", "spo2",
     }
-    tokens = [t for t in re.split(r"\s+", q_norm) if len(t) >= 3 and t not in stopwords]
+    tokens = [t for t in re.findall(r"[a-z0-9]+", q_norm) if len(t) >= 3 and t not in stopwords]
 
-    # 1. Buscar coincidencia explícita en el texto de la pregunta
     best_match = None
     best_score = 0
     for p in patients:
         full = _norm(f"{p.get('nombres', '')} {p.get('primer_apellido', '')} {p.get('segundo_apellido', '')} {p.get('curp', '')}")
-        score = sum(2 if tok in full else 0 for tok in tokens)
+        full_words = set(re.findall(r"[a-z0-9]+", full))
+        curp_val = _norm(p.get("curp") or "")
+        score = 0
+        for tok in tokens:
+            if tok in full_words or (len(tok) >= 10 and tok in curp_val):
+                score += 2
         if score > best_score:
             best_score = score
             best_match = p
@@ -265,7 +360,6 @@ def _find_patient_from_query(query: str, active_curp: Optional[str] = None) -> O
     if best_match and best_score >= 2:
         return get_patient_full_history(best_match["curp"])
 
-    # 2. Si no se nombró a otro, usar el paciente activo en pantalla
     if active_curp:
         hist = get_patient_full_history(active_curp.strip().upper())
         if hist:
@@ -276,8 +370,6 @@ def _find_patient_from_query(query: str, active_curp: Optional[str] = None) -> O
     return None
 
 
-
-
 def _build_interhospital_transfer_response(curp: str, bundle: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Genera un Resumen Clínico de Transferencia / Handoff Interhospitalario y detecta divergencias de protocolo."""
     p = bundle.get("patient") if bundle else None
@@ -285,7 +377,7 @@ def _build_interhospital_transfer_response(curp: str, bundle: Optional[Dict[str,
         return {
             "avatar_state": "reposo",
             "action_audit": "PULSO_TRANSFER_SUMMARY",
-            "text": "No hay un paciente seleccionado para generar el resumen de transferencia interhospitalaria. Por favor selecciona o busca un paciente."
+            "text": "No hay un paciente seleccionado para generar el resumen de transferencia interhospitalaria. Por favor selecciona o busca un paciente.",
         }
 
     full_name = p.get("nombre_completo") or f"{p.get('nombres', '')} {p.get('primer_apellido', '')}".strip()
@@ -295,71 +387,67 @@ def _build_interhospital_transfer_response(curp: str, bundle: Optional[Dict[str,
     sangre = p.get("tipo_sangre") or "O+"
     alergias = [a.get("descripcion") for a in (p.get("alergias") or [])]
     alg_str = ", ".join(alergias) if alergias else "Sin alergias conocidas documentadas"
-    
-    # Origen detectado en la red
+
     clues_origen = p.get("clues_institucion") or "YUC-SSA-001 (Hospital O'Horán)"
     hosp_origen = "Hospital General Dr. Agustín O'Horán" if "SSA-001" in clues_origen else "Hospital de Origen Remitente"
     hosp_destino = "Cruz Roja Mexicana - Delegación Mérida (Sede Receptora)"
 
-    # Antecedentes y diagnósticos
     antecedentes = p.get("antecedentes") or []
     diag_general = p.get("anotaciones_generales") or "Cuadro agudo en estudio"
 
-    # Divergencias de protocolo detectadas
     divergencias = []
     if "diabetes" in diag_general.lower() or any("diab" in (a.get("descripcion", "").lower()) for a in antecedentes):
         divergencias.append(
-            "⚠️ **Protocolo Glucémico Divergente:** El hospital de origen maneja esquema de Insulina NPH subcutánea cada 12 hrs. "
-            "El protocolo receptor institucional de Cruz Roja Mérida estipula infusión basal análoga (Glargina) con escala móvil rápida según glucemia capilar horaria para evitar hipoglucemias nocturnas."
+            "⚠️ **ALERTA CLÍNICA (Protocolo Glucémico Divergente):** El hospital de origen maneja esquema de Insulina NPH subcutánea cada 12 hrs. "
+            "El protocolo receptor de Cruz Roja Mérida estipula infusión basal análoga (Glargina) con escala móvil rápida según glucemia capilar horaria."
         )
     if "hipertens" in diag_general.lower() or any("hipertens" in (a.get("descripcion", "").lower()) for a in antecedentes):
         divergencias.append(
-            "⚠️ **Protocolo Antihipertensivo Divergente:** El centro de origen utilizó Enalapril IV / Captopril sublingual. "
-            "En la sede receptora el protocolo de crisis hipertensiva prioriza Labetalol o Nicardipino IV con monitoreo continuo de PAM, evitando caídas bruscas de perfusión coronaria."
+            "⚠️ **ALERTA CLÍNICA (Protocolo Antihipertensivo Divergente):** El centro de origen utilizó Enalapril IV / Captopril sublingual. "
+            "En sede receptora, el protocolo de crisis hipertensiva prioriza Labetalol o Nicardipino IV con monitoreo continuo de PAM."
         )
     if any("penicil" in a.lower() for a in alergias):
         divergencias.append(
-            "🚨 **ALERTA CRÍTICA DE SEGURIDAD FARMACOLÓGICA:** Paciente alérgico a Betalactámicos. "
-            "Verificar que la orden del hospital emisor no contenga Ceftriaxona o Ampicilina. Protocolo receptor exige Vancomicina + Ciprofloxacino o Aztreonam."
+            "🚨 **ALERTA CLÍNICA (Seguridad Farmacológica):** Paciente alérgico a Betalactámicos. "
+            "Evitar Ceftriaxona o Ampicilina; usar alternativas seguras según sensibilidad."
         )
     if not divergencias:
         divergencias.append(
-            "✅ **Protocolos Alineados:** El esquema de tratamiento y la analgesia del hospital emisor coinciden con las Guías de Práctica Clínica receptoras de la Cruz Roja Mérida (CENETEC / NOM-004)."
+            "✅ **Protocolos Alineados:** El esquema terapéutico coincide con las Guías de Práctica Clínica receptoras de Cruz Roja Mérida (CENETEC / NOM-004)."
         )
 
     divergencias_block = "\n\n".join(divergencias)
-
     text = f"""### 🏥 Resumen Clínico de Transferencia Interhospitalaria (Handoff Seguro)
 **Paciente:** {full_name} (`{curp_val}`) · {edad} · {sexo} · **Tipo Sanguíneo:** {sangre}
 
 ---
 
 #### 📍 Ruta de Interoperabilidad Federada
-- **Hospital Emisor (Origen):** {hosp_origen} (`{clues_origen}`)
-- **Hospital Receptor (Destino):** {hosp_destino}
-- **Vía de Transferencia:** Red Interhospitalaria Segura Safe Harbor (NOM-024 / NOM-004)
+- **Hospital Emisor:** {hosp_origen} (`{clues_origen}`)
+- **Hospital Receptor:** {hosp_destino}
 
----
-
-#### ⚡ Síntesis Rápida de Ingreso para el Médico Receptor
-- **Diagnóstico / Motivo de Envío:** {diag_general}
+#### ⚡ Síntesis Rápida de Ingreso
+- **Diagnóstico / Motivo:** {diag_general}
 - **Alergias Críticas:** {alg_str}
-- **Antecedentes de Relevancia:** {'; '.join(a.get('descripcion', '') for a in antecedentes[:3]) if antecedentes else 'Sin antecedentes crónicos declarados'}
+- **Antecedentes:** {'; '.join(a.get('descripcion', '') for a in antecedentes[:3]) if antecedentes else 'Sin antecedentes crónicos declarados'}
 
----
-
-#### ⚖️ Auditoría de Divergencia de Protocolos Clínicos
+#### ⚖️ Auditoría de Divergencia de Protocolos
 {divergencias_block}
 
----
-💡 *Nota del Copiloto Dr. Oso:* El médico receptor no necesita revisar decenas de hojas del expediente emisor. Se recomienda conciliar medicación activa y registrar la nota de recepción en el apartado de Nueva Consulta.
+⚠️ *Revisar por el médico tratante antes de confirmar órdenes de recepción.*
 """
-
     return {
         "avatar_state": "alerta" if len(divergencias) > 1 else "contento",
         "action_audit": "PULSO_TRANSFER_SUMMARY",
-        "text": text
+        "text": text,
     }
+
+
+def _Number_or_zero(val: Any) -> float:
+    try:
+        return float(val or 0)
+    except Exception:
+        return 0.0
 
 
 def _build_patient_summary_response(bundle: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -416,9 +504,8 @@ def _build_patient_summary_response(bundle: Optional[Dict[str, Any]]) -> Dict[st
             last_visits.append(f"• **{ev.get('nombre_evento') or 'Evento clínico'}** (sin nota firmada)")
 
     visits_block = "\n".join(last_visits) if last_visits else "• Sin consultas previas firmadas."
-    has_alert = bool(alergias) or any(
-        (vitals and (Number_or_zero(vitals[0].get("temperature_c")) >= 38.0 or Number_or_zero(vitals[0].get("spo2")) in range(1, 93)))
-        for _ in [0]
+    has_alert = bool(alergias) or (
+        bool(vitals) and (_Number_or_zero(vitals[0].get("temperature_c")) >= 38.0 or _Number_or_zero(vitals[0].get("spo2")) in range(1, 93))
     )
 
     text = (
@@ -438,15 +525,7 @@ def _build_patient_summary_response(bundle: Optional[Dict[str, Any]]) -> Dict[st
     }
 
 
-def Number_or_zero(val: Any) -> float:
-    try:
-        return float(val or 0)
-    except Exception:
-        return 0.0
-
-
 def _build_soap_draft_response(raw_text: str, bundle: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    # Limpiar prefijos de comando ("haz un soap de:", "dictado:", etc.)
     cleaned = re.sub(
         r"^(genera|crear|crea|haz|redacta|borrador|nota)?\s*(un|una|el|la)?\s*(borrador\s+de\s+)?(nota\s+)?(soap|dictado)\s*(:|de|para|con)?\s*",
         "",
@@ -475,7 +554,7 @@ def _build_soap_draft_response(raw_text: str, bundle: Optional[Dict[str, Any]]) 
     alg_warn = ""
     if alergias:
         alg_names = ", ".join(a.get("descripcion", "") for a in alergias)
-        alg_warn = f"\n🚨 **Alerta de alergia registrada en expediente:** {alg_names} *(Revisar por el médico)*."
+        alg_warn = f"\n⚠️ **ALERTA CLÍNICA (Alergia en expediente):** {alg_names} *(Revisar por el médico)*."
 
     subj = (
         f"Paciente refiere: {', '.join(sintomas)}. Relato original: \"{cleaned}\""
@@ -519,14 +598,14 @@ def _build_soap_draft_response(raw_text: str, bundle: Optional[Dict[str, Any]]) 
         plan = "[PENDIENTE: plan terapéutico, estudios solicitados y seguimiento] — ⚠️ *Revisar por el médico*."
 
     text = (
-        f"### 📝 Borrador de Nota Clínica SOAP\n"
+        f"### 📝 Borrador de Nota Clínica SOAP (NOM-004)\n"
         f"- **S (Subjetivo):** {subj}\n"
         f"- **O (Objetivo):** {obj}\n"
         f"- **A (Análisis):** {ana}\n"
         f"- **P (Plan):** {plan}\n"
         f"{alg_warn}\n\n"
-        f"ℹ️ *Regla de seguridad: los campos marcados con `[PENDIENTE]` no se inventan. "
-        f"⚠️ Revisar por el médico antes de incorporar o firmar en el expediente NOM-004.*"
+        f"ℹ️ *Regla NOM-004: los campos marcados con `[PENDIENTE]` no se inventan. "
+        f"⚠️ Revisar por el médico antes de firmar.*"
     )
     return {
         "avatar_state": "alerta" if alergias else "reposo",
@@ -615,68 +694,139 @@ def _build_natural_search_response(query: str) -> Dict[str, Any]:
     }
 
 
-def _classify_and_execute_local(prompt: str, active_curp: Optional[str] = None) -> Dict[str, Any]:
+def _execute_agentic_tool(prompt: str, active_curp: Optional[str], bundle: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     q = _norm(prompt)
-    bundle = _find_patient_from_query(prompt, active_curp)
-
-    # 0. Resumen de Transferencia Interhospitalaria y Divergencia de Protocolos (NOM-024 / Handoff)
-    if any(k in q for k in ("transferencia", "derivacion", "derivación", "otro hospital", "hospital emisor", "protocolo distinto", "protocolo divergente", "divergencia")):
+    if any(k in q for k in ("transferencia", "derivacion", "otro hospital", "hospital emisor", "protocolo distinto", "protocolo divergente", "divergencia")):
         target_curp = active_curp or (bundle["patient"]["curp"] if bundle and bundle.get("patient") else "")
         return _build_interhospital_transfer_response(target_curp, bundle)
-
-    # 1. Petición explícita de nota o borrador SOAP
     if any(k in q for k in ("borrador soap", "nota soap", "formato soap", "haz un soap", "crea un soap", "redacta soap", "dictado soap", "genera soap", "generar soap")):
         return _build_soap_draft_response(prompt, bundle)
-
-    # 2. Búsqueda de pacientes y agenda
-    if any(k in q for k in ("busca paciente", "buscar paciente", "citas de hoy", "agenda de hoy", "programadas hoy", "directorio de pacientes")):
+    if any(k in q for k in ("busca paciente", "buscar paciente", "busca los pacientes", "citas de hoy", "agenda de hoy", "programadas hoy", "directorio de pacientes", "citas programadas")):
         return _build_natural_search_response(prompt)
-
-    # 3. Resumen previo del paciente
-    if any(k in q for k in ("resumen del paciente", "antecedentes del paciente", "alergias del paciente", "historial del paciente", "quien es el paciente")):
+    if any(k in q for k in ("resumen del paciente", "resumen previo del paciente", "antecedentes del paciente", "alergias del paciente", "historial del paciente", "quien es el paciente")):
         return _build_patient_summary_response(bundle)
+    return _build_soap_draft_response(prompt, bundle)
 
-    # 4. Caso clínico dictado específicamente para ingreso (no pregunta)
-    if (q.startswith("paciente ") or q.startswith("caso ")) and any(k in q for k in ("acude a consulta", "refiere que", "ingresa con", "motivo de ingreso")):
-        return _build_soap_draft_response(prompt, bundle)
 
-    # 5. Mini ChatGPT Clínico Local: responde a CUALQUIER pregunta médica o general en español
-    gen = generate_conversational_response(prompt, bundle)
-    return {
-        "avatar_state": gen["avatar_state"],
-        "action_audit": "PULSO_CONSULTA_IA",
-        "text": gen["text"],
-    }
-
+# ---------------------------------------------------------------------------
+# ENDPOINT PRINCIPAL DE STREAMING HÍBRIDO (NDJSON)
+# ---------------------------------------------------------------------------
 
 @router.post("/chat-stream")
 async def pulso_chat_stream(data: dict = Body(...), request: Request = None):
     """
-    Endpoint de chat en streaming (NDJSON) para el asistente Pulso / Dr. Oso.
-    - Mini ChatGPT Clínico 100% LOCAL:
-      1) Si Ollama (`http://localhost:11434`) está disponible, transmite tokens reales desde Ollama.
-      2) Si hay un modelo GGUF local (Qwen2.5 / Llama) en `models/`, ejecuta la red neuronal con llama-cpp.
-      3) Si no, transmite desde el Motor Clínico Generativo Local integrado con razonamiento clínico profundo.
-    - Registra la acción en la bitácora NOM-024 sin almacenar datos sensibles.
+    Orquestador Híbrido Evolutivo en Streaming (NDJSON):
+      1. IntentRouter clasifica en CLINICAL_NORMATIVE / UNIVERSAL_GENERAL / AGENTIC_TOOL.
+      2. En rutas clínicas: evalúa signos vitales con `scikit-learn` (NEWS2 / qSOFA),
+         recupera fragmentos híbridos BM25 + ChromaDB y recupera preferencias de `episodic_learning`.
+      3. IdentityGuardrail aísla `<ASSISTANT_IDENTITY>` vs `<PATIENT_RECORD_READONLY_DO_NOT_IMPERSONATE>`.
+      4. SlidingWindowContext preserva los últimos 6-8 turnos (máx. 8192 tokens).
+      5. Despacha a LM Studio (localhost:1234/v1), Ollama, GGUF local o Motor Híbrido Local.
     """
     prompt = str(data.get("prompt") or data.get("message") or "").strip()
     active_curp = (data.get("curp") or "").strip().upper() or None
+    history = data.get("history") if isinstance(data.get("history"), list) else []
     ollama_url = str(data.get("ollama_url") or _PULSO_SETTINGS["ollama_url"]).strip().rstrip("/")
+    lmstudio_url = str(data.get("lmstudio_url") or _PULSO_SETTINGS["lmstudio_url"]).strip().rstrip("/")
     model_name = str(data.get("model") or _PULSO_SETTINGS["model"]).strip()
+    route_override = data.get("route_override")
 
     operator = _extract_operator(request) if request else "Operador Local"
-    local_result = _classify_and_execute_local(prompt, active_curp)
-    probe = await _probe_ollama(ollama_url)
 
-    engine_used = probe.get("active_engine") or "embedded_clinical_local"
-    if probe.get("ollama_connected"):
+    # 1. Enrutamiento Dinámico de Intención
+    route = intent_router.classify(prompt, route_override=route_override)
+
+    # 2. Aislamiento de Contexto Clínico (NUNCA inyectar expediente en Ruta Universal)
+    bundle = None
+    patient_name: Optional[str] = None
+    ml_triage: Optional[Dict[str, Any]] = None
+    rag_chunks: List[Dict[str, Any]] = []
+    episodic_prefs: List[Dict[str, Any]] = []
+
+    if route in ("CLINICAL_NORMATIVE", "AGENTIC_TOOL"):
+        bundle = _find_patient_from_query(prompt, active_curp)
+        if bundle and bundle.get("patient"):
+            p = bundle["patient"]
+            patient_name = p.get("nombre_completo") or f"{p.get('nombres', '')} {p.get('primer_apellido', '')} {p.get('segundo_apellido', '')}".strip()
+
+        # Evaluar triaje ML solo si el prompt contiene signos vitales/síntomas o es clínico directo
+        prompt_vitals = risk_ml_classifier.extract_vitals_from_text(prompt)
+        active_vitals = None
+        if bundle and bundle.get("vital_readings"):
+            active_vitals = bundle["vital_readings"][0]
+
+        if prompt_vitals or any(k in _norm(prompt) for k in ("triaje", "triage", "riesgo", "alerta", "urgencia", "fiebre", "dolor", "disnea", "presion", "ta ")):
+            ml_triage = risk_ml_classifier.evaluate_vitals(active_vitals, prompt)
+        elif active_vitals and route == "CLINICAL_NORMATIVE":
+            ml_triage = risk_ml_classifier.evaluate_vitals(active_vitals, prompt)
+
+        rag_chunks = hybrid_retriever.retrieve(prompt, top_k=3)
+        episodic_prefs = episodic_memory.retrieve_doctor_preferences(prompt, top_k=2)
+
+    # 3. Construir ejecución local/herramienta + System Prompt blindado + Sliding Window
+    if route == "AGENTIC_TOOL":
+        local_result = _execute_agentic_tool(prompt, active_curp, bundle)
+        # Complementar avatar si ML detecta riesgo crítico
+        if ml_triage and ml_triage.get("is_emergency"):
+            local_result["avatar_state"] = "alerta"
+    else:
+        local_result = generate_hybrid_fallback_response(
+            prompt=prompt,
+            route=route,
+            patient_bundle=bundle,
+            rag_chunks=rag_chunks,
+            episodic_prefs=episodic_prefs,
+            ml_triage=ml_triage,
+        )
+        local_result["action_audit"] = "PULSO_CONSULTA_IA" if route == "CLINICAL_NORMATIVE" else "PULSO_CONSULTA_UNIVERSAL"
+
+    system_prompt = identity_guardrail.build_system_prompt(
+        route=route,
+        doctor_name=operator,
+        patient_bundle=bundle if route != "UNIVERSAL_GENERAL" else None,
+        rag_chunks=rag_chunks,
+        episodic_prefs=episodic_prefs,
+        ml_triage=ml_triage,
+    )
+    windowed_messages = sliding_window.build_messages(
+        system_prompt=system_prompt,
+        user_prompt=prompt,
+        history=history,
+        max_turns=_PULSO_SETTINGS["sliding_window_turns"],
+    )
+
+    probe = await _probe_local_backends(ollama_url=ollama_url, lmstudio_url=lmstudio_url)
+    engine_used = probe.get("active_engine") or "hybrid_clinical_local"
+    if probe.get("lmstudio_connected"):
+        # Si medgemma-4b-it está disponible en LM Studio y la ruta es clínica, usarlo en cascada; si no Qwen3-8B
+        lm_models = probe.get("lmstudio_models") or []
+        chosen_lm = lm_models[0] if lm_models else _PULSO_SETTINGS["primary_model"]
+        if route == "CLINICAL_NORMATIVE":
+            for m_id in lm_models:
+                if "medgemma" in m_id.lower():
+                    chosen_lm = m_id
+                    break
+        else:
+            for m_id in lm_models:
+                if "qwen" in m_id.lower():
+                    chosen_lm = m_id
+                    break
+        engine_used = f"lmstudio:{chosen_lm}"
+    elif probe.get("ollama_connected"):
         engine_used = f"ollama:{model_name}"
-    _record_pulso_audit(local_result["action_audit"], operator, engine_used)
+
+    _record_pulso_audit(local_result.get("action_audit", "PULSO_CONSULTA_IA"), operator, engine_used)
 
     async def event_generator() -> AsyncGenerator[bytes, None]:
         meta_chunk = {
             "type": "meta",
             "engine": engine_used,
+            "route": route,
+            "ml_triage": ml_triage,
+            "rag_sources": [{"title": c["title"], "source": c["source"]} for c in rag_chunks],
+            "episodic_matches": len(episodic_prefs),
+            "learning_stats": probe.get("learning_stats"),
+            "lmstudio_connected": probe.get("lmstudio_connected", False),
             "ollama_connected": probe.get("ollama_connected", False),
             "local_gguf_ready": probe.get("local_gguf", {}).get("has_local_gguf", False),
             "avatar_state": local_result.get("avatar_state", "reposo"),
@@ -685,74 +835,187 @@ async def pulso_chat_stream(data: dict = Body(...), request: Request = None):
         }
         yield (json.dumps(meta_chunk, ensure_ascii=False) + "\n").encode("utf-8")
 
-        # 1. Modo Ollama Local (si está conectado)
+        # Herramientas agénticas deterministas (BD real / SOAP [PENDIENTE] / Handoff): responder con precisión garantizada
+        if route == "AGENTIC_TOOL":
+            safe_txt = identity_guardrail.sanitize_identity_leak(local_result["text"], patient_name)
+            words = re.split(r"(\s+)", safe_txt)
+            buf = ""
+            for idx, w in enumerate(words):
+                buf += w
+                if idx % 3 == 2 or idx == len(words) - 1:
+                    yield (json.dumps({"type": "token", "content": buf}, ensure_ascii=False) + "\n").encode("utf-8")
+                    buf = ""
+                    await asyncio.sleep(0.012)
+            yield (json.dumps({"type": "done"}, ensure_ascii=False) + "\n").encode("utf-8")
+            return
+
+        # Helper para aplicar filtro anti-suplantación sobre el bloque inicial de cualquier LLM
+        async def _stream_with_identity_filter(token_iter):
+            opening_buf = ""
+            flushed_opening = False
+            token_count = 0
+            async for tok in token_iter:
+                if not tok:
+                    continue
+                token_count += 1
+                if not flushed_opening:
+                    opening_buf += tok
+                    if len(opening_buf) >= 140 or "\n" in opening_buf:
+                        cleaned_open = identity_guardrail.sanitize_identity_leak(opening_buf, patient_name)
+                        flushed_opening = True
+                        yield (json.dumps({"type": "token", "content": cleaned_open}, ensure_ascii=False) + "\n").encode("utf-8")
+                else:
+                    yield (json.dumps({"type": "token", "content": tok}, ensure_ascii=False) + "\n").encode("utf-8")
+            if opening_buf and not flushed_opening:
+                cleaned_open = identity_guardrail.sanitize_identity_leak(opening_buf, patient_name)
+                yield (json.dumps({"type": "token", "content": cleaned_open}, ensure_ascii=False) + "\n").encode("utf-8")
+
+        # 1. Backend LM Studio / llama.cpp OpenAI-compatible (localhost:1234/v1)
+        if probe.get("lmstudio_connected"):
+            try:
+                lm_model = engine_used.split(":", 1)[1] if ":" in engine_used else _PULSO_SETTINGS["primary_model"]
+                payload = {
+                    "model": lm_model,
+                    "messages": windowed_messages,
+                    "temperature": _PULSO_SETTINGS["temperature"],
+                    "max_tokens": 1200,
+                    "stream": True,
+                }
+                async with httpx.AsyncClient(timeout=45.0) as client:
+                    async with client.stream("POST", f"{lmstudio_url}/chat/completions", json=payload) as resp:
+                        if resp.status_code == 200:
+                            # Si ML detectó emergencia clínica, anteponer cabecera de alerta antes del stream LLM
+                            if ml_triage and ml_triage.get("is_emergency") and ml_triage.get("red_flags"):
+                                alert_banner = (
+                                    f"⚠️ **ALERTA CLÍNICA ({ml_triage['summary_badge']}):** "
+                                    + " | ".join(ml_triage["red_flags"][:2])
+                                    + "\n\n---\n\n"
+                                )
+                                yield (json.dumps({"type": "token", "content": alert_banner}, ensure_ascii=False) + "\n").encode("utf-8")
+
+                            async def _lm_tokens():
+                                async for line in resp.aiter_lines():
+                                    if not line or not line.startswith("data:"):
+                                        continue
+                                    raw = line[5:].strip()
+                                    if raw == "[DONE]":
+                                        break
+                                    try:
+                                        obj = json.loads(raw)
+                                        delta = ((obj.get("choices") or [{}])[0].get("delta") or {}).get("content") or ""
+                                        if delta:
+                                            yield delta
+                                    except Exception:
+                                        continue
+
+                            async for frame in _stream_with_identity_filter(_lm_tokens()):
+                                yield frame
+                            yield (json.dumps({"type": "done"}, ensure_ascii=False) + "\n").encode("utf-8")
+                            return
+            except Exception as exc:
+                print(f"[PulsoStream] Fallback desde LM Studio: {exc}")
+
+        # 2. Backend Ollama Local (localhost:11434)
         if probe.get("ollama_connected"):
             try:
-                context_msg = (
-                    f"CONTEXTO LOCAL EN MEMORIA:\n{local_result['text']}\n\n"
-                    f"SOLICITUD DEL MÉDICO:\n{prompt}"
-                )
                 payload = {
                     "model": model_name,
                     "stream": True,
-                    "options": {"temperature": _PULSO_SETTINGS["temperature"]},
-                    "messages": [
-                        {"role": "system", "content": PULSO_SYSTEM_PROMPT},
-                        {"role": "user", "content": context_msg},
-                    ],
+                    "options": {
+                        "temperature": _PULSO_SETTINGS["temperature"],
+                        "num_ctx": _PULSO_SETTINGS["context_window"],
+                    },
+                    "messages": windowed_messages,
                 }
                 async with httpx.AsyncClient(timeout=45.0) as client:
                     async with client.stream("POST", f"{ollama_url}/api/chat", json=payload) as resp:
                         if resp.status_code == 200:
-                            async for line in resp.aiter_lines():
-                                if not line:
-                                    continue
-                                try:
-                                    obj = json.loads(line)
-                                    token = (obj.get("message") or {}).get("content") or ""
-                                    if token:
-                                        yield (json.dumps({"type": "token", "content": token}, ensure_ascii=False) + "\n").encode("utf-8")
-                                except Exception:
-                                    continue
+                            if ml_triage and ml_triage.get("is_emergency") and ml_triage.get("red_flags"):
+                                alert_banner = (
+                                    f"⚠️ **ALERTA CLÍNICA ({ml_triage['summary_badge']}):** "
+                                    + " | ".join(ml_triage["red_flags"][:2])
+                                    + "\n\n---\n\n"
+                                )
+                                yield (json.dumps({"type": "token", "content": alert_banner}, ensure_ascii=False) + "\n").encode("utf-8")
+
+                            async def _ol_tokens():
+                                async for line in resp.aiter_lines():
+                                    if not line:
+                                        continue
+                                    try:
+                                        obj = json.loads(line)
+                                        tok = (obj.get("message") or {}).get("content") or ""
+                                        if tok:
+                                            yield tok
+                                    except Exception:
+                                        continue
+
+                            async for frame in _stream_with_identity_filter(_ol_tokens()):
+                                yield frame
                             yield (json.dumps({"type": "done"}, ensure_ascii=False) + "\n").encode("utf-8")
                             return
-            except Exception:
-                pass
+            except Exception as exc:
+                print(f"[PulsoStream] Fallback desde Ollama: {exc}")
 
-        # 2. Modo GGUF Local (llama-cpp-python) si el modelo está descargado
-        # Para consultas abiertas y mini ChatGPT clínico multilingüe
+        # 3. Modelo GGUF embebido (solo arquitectura híbrida SOTA Qwen3/MedGemma, evitando OpenBioLLM legado)
         gguf_model = find_local_gguf_model()
-        if gguf_model and local_result.get("action_audit") == "PULSO_CONSULTA_IA":
+        if gguf_model and (is_hybrid_sota_gguf(gguf_model) or bool(data.get("force_gguf"))):
             try:
-                messages = [
-                    {"role": "system", "content": PULSO_SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt},
-                ]
-                has_tokens = False
+                opening_buf = ""
+                flushed_opening = False
                 token_count = 0
-                for token in stream_local_llm_chat(messages, temperature=0.25):
-                    # Protección ante tokens degenerados
-                    if token.strip() == "G" and token_count == 0:
+                has_system_leak = False
+                buffered_tokens: List[str] = []
+
+                for tok in stream_local_llm_chat(windowed_messages, temperature=_PULSO_SETTINGS["temperature"]):
+                    if not tok:
                         continue
-                    has_tokens = True
                     token_count += 1
-                    yield (json.dumps({"type": "token", "content": token}, ensure_ascii=False) + "\n").encode("utf-8")
-                    await asyncio.sleep(0.003)
-                if has_tokens and token_count > 3:
+                    opening_buf += tok
+                    if len(opening_buf) < 60 and not flushed_opening:
+                        buffered_tokens.append(tok)
+                        continue
+                    if not flushed_opening:
+                        if any(tag in opening_buf for tag in ("<ATTENDING_PHYSICIAN>", "<ASSISTANT_IDENTITY>", "<PATIENT_RECORD")):
+                            has_system_leak = True
+                            break
+                        if ml_triage and ml_triage.get("is_emergency") and ml_triage.get("red_flags"):
+                            alert_banner = (
+                                f"⚠️ **ALERTA CLÍNICA ({ml_triage['summary_badge']}):** "
+                                + " | ".join(ml_triage["red_flags"][:2])
+                                + "\n\n---\n\n"
+                            )
+                            yield (json.dumps({"type": "token", "content": alert_banner}, ensure_ascii=False) + "\n").encode("utf-8")
+                        cleaned_open = identity_guardrail.sanitize_identity_leak(opening_buf, patient_name)
+                        flushed_opening = True
+                        yield (json.dumps({"type": "token", "content": cleaned_open}, ensure_ascii=False) + "\n").encode("utf-8")
+                    else:
+                        yield (json.dumps({"type": "token", "content": tok}, ensure_ascii=False) + "\n").encode("utf-8")
+                    await asyncio.sleep(0.002)
+
+                if not has_system_leak and not flushed_opening and len(opening_buf.strip()) >= 25 and not any(
+                    tag in opening_buf for tag in ("<ATTENDING_PHYSICIAN>", "<ASSISTANT_IDENTITY>", "<PATIENT_RECORD")
+                ):
+                    cleaned_open = identity_guardrail.sanitize_identity_leak(opening_buf, patient_name)
+                    flushed_opening = True
+                    yield (json.dumps({"type": "token", "content": cleaned_open}, ensure_ascii=False) + "\n").encode("utf-8")
+
+                if flushed_opening and not has_system_leak:
                     yield (json.dumps({"type": "done"}, ensure_ascii=False) + "\n").encode("utf-8")
                     return
-            except Exception as e:
-                print(f"[PulsoStream] Aviso en inferencia GGUF local: {e}")
+            except Exception as exc:
+                print(f"[PulsoStream] Aviso inferencia GGUF local: {exc}")
 
-        # 3. Modo Motor Clínico Generativo Local Integrado (Streaming inmediato palabra a palabra)
-        words = re.split(r"(\s+)", local_result["text"])
+        # 4. Orquestador Híbrido Local Integrado (BM25 + ChromaDB + scikit-learn + Guardrail)
+        safe_fallback = identity_guardrail.sanitize_identity_leak(local_result["text"], patient_name)
+        words = re.split(r"(\s+)", safe_fallback)
         chunk_buf = ""
         for idx, w in enumerate(words):
             chunk_buf += w
             if idx % 3 == 2 or idx == len(words) - 1:
                 yield (json.dumps({"type": "token", "content": chunk_buf}, ensure_ascii=False) + "\n").encode("utf-8")
                 chunk_buf = ""
-                await asyncio.sleep(0.015)
+                await asyncio.sleep(0.012)
 
         yield (json.dumps({"type": "done"}, ensure_ascii=False) + "\n").encode("utf-8")
 

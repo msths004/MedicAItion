@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css?v=7.2.0-receta-resumen" />
-  <link rel="stylesheet" href="nacar_theme.css?v=8.0.0-nacar" />
+  <link rel="stylesheet" href="nacar_theme.css?v=8.1.0-hybrid" />
 </head>
 <body class="mode-dashboard">
 
@@ -2945,16 +2945,20 @@
       <div class="pulso-greeting-sub">IA médica 100% local · revisa siempre las sugerencias · <em>¡Arrástrame a cualquier parte!</em></div>
     </div>
 
-    <!-- Panel de Chat de 360 px -->
-    <section id="pulso-chat-panel" class="pulso-chat-panel" role="dialog" aria-modal="false" aria-label="Asistente clínico Dr. Oso con IA local" aria-hidden="true">
+    <!-- Panel de Chat Bio-Clínico Híbrido (400 px) -->
+    <section id="pulso-chat-panel" class="pulso-chat-panel" role="dialog" aria-modal="false" aria-label="Asistente clínico Dr. Oso con IA híbrida local" aria-hidden="true">
       <header class="pulso-chat-header">
         <div class="pulso-chat-brand">
           <div id="pulso-header-avatar" class="pulso-header-avatar-box"></div>
-          <div>
-            <div class="pulso-chat-title">Dr. Oso · Pulso</div>
+          <div class="pulso-header-titles">
+            <div class="pulso-title-line">
+              <span class="pulso-chat-title">Dr. Oso · Pulso</span>
+              <span class="pulso-hybrid-pill" title="Arquitectura Híbrida Qwen3-8B + MedGemma-4B">Híbrido Qwen3 + MedGemma</span>
+            </div>
             <div class="pulso-chat-subtitle">
               <span id="pulso-conn-dot" class="pulso-conn-dot is-online" aria-hidden="true"></span>
-              <span id="pulso-conn-label">IA local conectada</span>
+              <span id="pulso-conn-label">IA Híbrida Evolutiva</span>
+              <span class="pulso-learning-pill" id="pulso-learning-badge" title="Preferencias clínicas y pares DPO guardados">🧬 Memoria: <strong id="pulso-learning-count">0</strong></span>
             </div>
           </div>
         </div>
@@ -2965,33 +2969,35 @@
         </div>
       </header>
 
-      <!-- Barra de estados interactivos + volver a la esquina -->
+      <!-- Barra de estados interactivos sin scroll horizontal ni corte -->
       <div class="pulso-states-bar" role="toolbar" aria-label="Estados del avatar Pulso">
         <button type="button" class="pulso-state-chip is-active" data-state="reposo" onclick="setPulsoAvatarState('reposo')" aria-label="Estado reposo">Reposo</button>
         <button type="button" class="pulso-state-chip" data-state="escuchando" onclick="setPulsoAvatarState('escuchando')" aria-label="Estado escuchando">Escuchando</button>
         <button type="button" class="pulso-state-chip" data-state="pensando" onclick="setPulsoAvatarState('pensando')" aria-label="Estado pensando">Pensando</button>
         <button type="button" class="pulso-state-chip" data-state="alerta" onclick="setPulsoAvatarState('alerta')" aria-label="Estado alerta clínica">Alerta clínica</button>
         <button type="button" class="pulso-state-chip" data-state="contento" onclick="setPulsoAvatarState('contento')" aria-label="Estado contento">Contento</button>
-        <button type="button" class="pulso-state-chip" onclick="resetPulsoToCorner()" aria-label="Volver a la esquina">Volver a la esquina</button>
       </div>
 
-      <!-- Acciones clínicas rápidas -->
+      <!-- Acciones clínicas rápidas + Triaje ML -->
       <div class="pulso-quick-actions" role="group" aria-label="Funciones rápidas del asistente Pulso">
         <button type="button" class="pulso-quick-btn" onclick="runPulsoQuickAction('summary')" aria-label="Generar resumen previo del paciente actual">
-          📋 Resumen previo
+          📋 Resumen
         </button>
         <button type="button" class="pulso-quick-btn" onclick="runPulsoQuickAction('soap')" aria-label="Generar borrador de nota SOAP a partir del dictado">
-          📝 Borrador SOAP
+          📝 SOAP
+        </button>
+        <button type="button" class="pulso-quick-btn" onclick="runPulsoQuickAction('triage')" aria-label="Evaluar riesgo clínico ML del paciente">
+          🚨 Triaje ML
         </button>
         <button type="button" class="pulso-quick-btn" onclick="runPulsoQuickAction('search')" aria-label="Buscar pacientes y citas en lenguaje natural">
-          🔍 Buscar pacientes/citas
+          🔍 Buscar
         </button>
       </div>
 
-      <!-- Historial de mensajes -->
+      <!-- Historial de mensajes (sin doble scrollbar) -->
       <div id="pulso-chat-messages" class="pulso-chat-messages" role="log" aria-live="polite" aria-label="Historial de conversación con Pulso"></div>
 
-      <!-- Pie de controles e input accesible -->
+      <!-- Pie de controles e input auto-expandible sin flechas nativas -->
       <footer class="pulso-chat-footer">
         <div class="pulso-input-row">
           <button type="button" id="pulso-mic-btn" class="pulso-mic-btn" onclick="togglePulsoMicDictation()" aria-label="Iniciar dictado por micrófono" aria-pressed="false" title="Dictar con micrófono (es-MX)">
@@ -3000,9 +3006,10 @@
           <textarea
             id="pulso-chat-input"
             class="pulso-chat-input"
-            rows="2"
-            placeholder="Escribe o dicta una nota clínica, busca un paciente o pide un resumen..."
+            rows="1"
+            placeholder="Consulta clínica, código o nota SOAP..."
             aria-label="Mensaje o dictado clínico para Pulso"
+            oninput="autoResizePulsoInput(this)"
             onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendPulsoPrompt(); }"
           ></textarea>
           <button type="button" id="pulso-send-btn" class="pulso-send-btn" onclick="sendPulsoPrompt()" aria-label="Enviar consulta a Pulso">
@@ -3010,13 +3017,13 @@
           </button>
         </div>
         <div class="pulso-footer-meta">
-          <span>🔒 Datos sólo en memoria local · Bitácora NOM-024 activa</span>
-          <button type="button" class="pulso-clear-link" onclick="clearPulsoConversation()" aria-label="Borrar conversación en memoria">Borrar conversación</button>
+          <span>🔒 Local RTX/NOM-024 · Sliding Window 8K</span>
+          <button type="button" class="pulso-clear-link" onclick="clearPulsoConversation()" aria-label="Borrar conversación en memoria">Limpiar chat</button>
         </div>
       </footer>
     </section>
 
-    <!-- Botón flotante arrastrable por toda la pantalla -->
+    <!-- Botón flotante arrastrable (se oculta al abrir el panel para no empalmarse) -->
     <button
       type="button"
       id="pulso-fab-btn"
@@ -3025,7 +3032,7 @@
       aria-label="Abrir asistente clínico Dr. Oso (Ctrl+J). Arrastrable por toda la pantalla"
       aria-expanded="false"
       aria-controls="pulso-chat-panel"
-      title="Dr. Oso · Asistente con IA Local (Ctrl+J) · Arrastra para mover"
+      title="Dr. Oso · IA Híbrida Evolutiva (Ctrl+J) · Arrastra para mover"
     >
       <span id="pulso-fab-avatar" class="pulso-fab-avatar-wrap"></span>
     </button>
@@ -3037,7 +3044,7 @@
   <script src="calendar.js?v=8.0.0-nacar"></script>
   <script src="clinical_ops.js?v=8.0.0-nacar"></script>
   <script src="specialized_care.js?v=8.0.0-nacar"></script>
-  <script src="pulso_assistant.js?v=8.0.0-nacar"></script>
+  <script src="pulso_assistant.js?v=8.1.0-hybrid"></script>
   <script src="premium_search.js?v=8.0.0-nacar"></script>
   <script src="app.js?v=8.0.0-nacar"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" async onload="window.NacarEngine&&window.NacarEngine.onVendorLoaded&&window.NacarEngine.onVendorLoaded()"></script>

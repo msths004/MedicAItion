@@ -23,8 +23,14 @@ def find_local_gguf_model() -> Optional[str]:
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     models_dir = os.path.join(base_dir, "models")
     
-    # 1. Preferir modelos médicos especializados SOTA (OpenBioLLM / BioMistral / Med42)
+    # 1. Preferir arquitectura híbrida RTX 4050 (Qwen3-8B Q4_K_M + medgemma-4b-it) y fallbacks clínicos
     preferred = [
+        "Qwen3-8B-Q4_K_M.gguf",
+        "qwen3-8b-q4_k_m.gguf",
+        "medgemma-4b-it-Q4_K_M.gguf",
+        "medgemma-4b-it-q4_k_m.gguf",
+        "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+        "qwen2.5-7b-instruct-q4_k_m.gguf",
         "OpenBioLLM-Llama3-8B-Q4_K_M.gguf",
         "OpenBioLLM-Llama3-8B-Q3_K_M.gguf",
         "BioMistral-7B.Q4_K_M.gguf",
@@ -62,10 +68,25 @@ def find_local_gguf_model() -> Optional[str]:
     return None
 
 
+def is_hybrid_sota_gguf(model_path: Optional[str]) -> bool:
+    """
+    Determina si el archivo GGUF corresponde a la familia híbrida SOTA recomendada
+    (Qwen3 / MedGemma / Qwen2.5 >= 3B / Gemma-2/3 / Llama-3.1) y excluye modelos
+    legados con alucinación de rol o baja capacidad generalista (OpenBioLLM-8B, 0.5B).
+    """
+    if not model_path:
+        return False
+    name = os.path.basename(model_path).lower()
+    if any(legacy in name for legacy in ("openbiollm", "0.5b", "biomistral")):
+        return False
+    return any(sota in name for sota in ("qwen3", "medgemma", "qwen2.5-7b", "qwen2.5-3b", "gemma-2", "gemma-3", "llama-3.1"))
+
+
 def get_local_llm_status() -> Dict[str, Any]:
     """Devuelve información sobre el estado del LLM local GGUF."""
     model_path = find_local_gguf_model()
     has_model = model_path is not None
+    is_sota = is_hybrid_sota_gguf(model_path)
     size_mb = round(os.path.getsize(model_path) / (1024 * 1024), 1) if has_model else 0
     model_name = os.path.basename(model_path) if has_model else "Ninguno descargado"
     
@@ -77,6 +98,7 @@ def get_local_llm_status() -> Dict[str, Any]:
 
     return {
         "has_local_gguf": has_model,
+        "is_hybrid_sota": is_sota,
         "model_name": model_name,
         "model_path": model_path,
         "size_mb": size_mb,
@@ -106,20 +128,34 @@ def get_llm_instance():
             print(f"[LocalLLM] Cargando modelo GGUF: {model_path} con {cpu_threads} hilos...")
             
             m_name = os.path.basename(model_path).lower()
-            # Si es OpenBioLLM (8B) o BioMistral (7B), offload acelerado a GPU RTX 4050 (24 capas)
-            gpu_layers = 24 if ("8b" in m_name or "7b" in m_name) else 0
+            # 100% Capas en GPU RTX 4050 (6 GB VRAM) + KV Cache Q8_0 (type_k=8, type_v=8)
+            use_full_gpu = any(tag in m_name for tag in ("qwen3", "medgemma", "8b", "7b", "4b"))
+            gpu_layers = -1 if use_full_gpu else 0
 
-            try:
-                _LLM_INSTANCE = Llama(
-                    model_path=model_path,
-                    n_ctx=2048,
-                    n_threads=cpu_threads,
-                    n_batch=512,
-                    n_gpu_layers=gpu_layers,
-                    verbose=False,
-                )
-            except Exception as e_gpu:
-                print(f"[LocalLLM] Fallback a CPU (error GPU: {e_gpu})...")
+            loaded = False
+            for ctx_size in (8192, 4096, 2048):
+                for use_q8_kv in (True, False):
+                    try:
+                        kwargs = dict(
+                            model_path=model_path,
+                            n_ctx=ctx_size,
+                            n_threads=cpu_threads,
+                            n_batch=512,
+                            n_gpu_layers=gpu_layers,
+                            verbose=False,
+                        )
+                        if use_q8_kv:
+                            kwargs["type_k"] = 8
+                            kwargs["type_v"] = 8
+                        _LLM_INSTANCE = Llama(**kwargs)
+                        loaded = True
+                        break
+                    except Exception as e_gpu:
+                        print(f"[LocalLLM] Aviso ctx={ctx_size} q8_kv={use_q8_kv} gpu={gpu_layers}: {e_gpu}")
+                if loaded:
+                    break
+
+            if not loaded:
                 _LLM_INSTANCE = Llama(
                     model_path=model_path,
                     n_ctx=2048,
@@ -170,11 +206,11 @@ def detect_prompt_language(text: str) -> str:
 def stream_local_llm_chat(
     messages: List[Dict[str, str]],
     temperature: float = 0.3,
-    max_tokens: int = 512,
+    max_tokens: int = 1024,
 ) -> Generator[str, None, None]:
     """
-    Genera tokens en streaming utilizando el modelo GGUF local con tokenización de tokens especiales.
-    Soporta cualquier idioma de forma universal (español, inglés, francés, portugués, alemán, etc.).
+    Genera tokens en streaming utilizando el modelo GGUF local (Qwen3 / MedGemma / Llama)
+    con tokenización de tokens especiales y Sliding Window ya aplicado por el orquestador.
     """
     llm = get_llm_instance()
     if llm is None:
@@ -182,53 +218,11 @@ def stream_local_llm_chat(
 
     m_name = os.path.basename(_CURRENT_MODEL_PATH or "").lower()
 
-    # Obtener el texto del último mensaje de usuario para detectar idioma
-    user_text = ""
-    for m in reversed(messages):
-        if m.get("role") == "user":
-            user_text = m.get("content", "")
-            break
-
-    lang = detect_prompt_language(user_text)
-
-    # Configuración de anclaje e instrucciones adaptadas al idioma detectado
-    if lang == "en":
-        anchor = "Gladly, analyzing your clinical query:\n\n"
-        default_sys = (
-            "You are Dr. Oso, Cruz Roja's clinical AI assistant. "
-            "Respond in ENGLISH in a clear, empathetic, and evidence-based manner."
-        )
-    elif lang == "fr":
-        anchor = "Avec plaisir, en analysant votre demande médicale:\n\n"
-        default_sys = (
-            "Vous êtes le Dr. Oso, assistant médical clinique de la Croix-Rouge. "
-            "Répondez en FRANÇAIS de manière claire, empathique et fondée sur des preuves."
-        )
-    elif lang == "pt":
-        anchor = "Com prazer, analisando sua consulta médica:\n\n"
-        default_sys = (
-            "Você é o Dr. Oso, assistente médico clínico da Cruz Vermelha. "
-            "Responda em PORTUGUÊS de forma clara, empática e fundamentada."
-        )
-    elif lang == "de":
-        anchor = "Gerne, hier ist die medizinische Analyse:\n\n"
-        default_sys = (
-            "Sie sind Dr. Oso, klinischer medizinischer Assistent des Roten Kreuzes. "
-            "Antworten Sie auf DEUTSCH klar, einfühlsam und evidenzbasiert."
-        )
-    elif lang == "es":
-        anchor = "Con gusto, analizando tu consulta médica:\n\n"
-        default_sys = (
-            "Eres Dr. Oso, médico asistente virtual de Cruz Roja Mérida. "
-            "Responde en ESPAÑOL clínico, claro, empático y fundamentado."
-        )
-    else:
-        anchor = ""
-        default_sys = (
-            "You are Dr. Oso, a multilingual clinical medical assistant. "
-            "Detect and respond fluently in the EXACT SAME LANGUAGE as the user's prompt (Spanish, English, French, Portuguese, German, Maya, etc.). "
-            "Be clear, empathetic, and medically grounded."
-        )
+    default_sys = (
+        "Eres Dr. Oso (Pulso), Sistema de IA Híbrida integrado en MedicAItion. "
+        "Asistes al médico tratante; jamás asumas la identidad de ningún paciente. "
+        "Responde en el mismo idioma que el usuario."
+    )
 
     processed_messages = []
     has_system = False
@@ -237,39 +231,43 @@ def stream_local_llm_chat(
         content = m.get("content", "")
         if role == "system":
             has_system = True
-            processed_messages.append({"role": role, "content": content})
-        else:
-            processed_messages.append({"role": role, "content": content})
+        processed_messages.append({"role": role, "content": content})
 
     if not has_system:
         processed_messages.insert(0, {"role": "system", "content": default_sys})
 
-    # Formateo nativo según la arquitectura del modelo (Llama-3 vs ChatML)
-    if "llama" in m_name or "openbiollm" in m_name or "med42" in m_name:
-        prompt = "<|begin_of_text|>"
-        for m in processed_messages:
-            role = m.get("role", "user")
-            content = m.get("content", "")
-            prompt += f"<|start_header_id|>{role}<|end_header_id|>\n\n{content}<|eot_id|>"
-        prompt += f"<|start_header_id|>assistant<|end_header_id|>\n\n{anchor}"
-        stop_tokens_str = ["<|eot_id|>", "<|end_of_text|>"]
-    else:
-        # ChatML nativo para Qwen, Mistral, BioMistral
+    # Formateo nativo según arquitectura (Gemma/MedGemma vs Llama-3 vs Qwen3 ChatML)
+    if "gemma" in m_name:
+        sys_msg = ""
         parts = []
         for m in processed_messages:
-            role = m.get("role", "user")
-            content = m.get("content", "")
-            parts.append(f"<|im_start|>{role}\n{content}<|im_end|>")
-        parts.append(f"<|im_start|>assistant\n{anchor}")
+            if m["role"] == "system":
+                sys_msg = m["content"]
+                continue
+            r = "model" if m["role"] == "assistant" else "user"
+            txt = f"{sys_msg}\n\n{m['content']}" if (r == "user" and sys_msg) else m["content"]
+            if r == "user" and sys_msg:
+                sys_msg = ""
+            parts.append(f"<start_of_turn>{r}\n{txt}<end_of_turn>")
+        parts.append("<start_of_turn>model\n")
+        prompt = "\n".join(parts)
+        stop_tokens_str = ["<end_of_turn>", "<eos>"]
+    elif "llama" in m_name or "openbiollm" in m_name or "med42" in m_name:
+        prompt = "<|begin_of_text|>"
+        for m in processed_messages:
+            prompt += f"<|start_header_id|>{m['role']}<|end_header_id|>\n\n{m['content']}<|eot_id|>"
+        prompt += "<|start_header_id|>assistant<|end_header_id|>\n\n"
+        stop_tokens_str = ["<|eot_id|>", "<|end_of_text|>"]
+    else:
+        # ChatML nativo para Qwen3, Qwen2.5, Mistral, BioMistral
+        parts = []
+        for m in processed_messages:
+            parts.append(f"<|im_start|>{m['role']}\n{m['content']}<|im_end|>")
+        parts.append("<|im_start|>assistant\n")
         prompt = "\n".join(parts)
         stop_tokens_str = ["<|im_end|>", "<|endoftext|>"]
 
     try:
-        # Emitir el anclaje inicial si existe
-        if anchor:
-            yield anchor
-
-        # Tokenizar con special=True para preservar tokens de control nativos
         input_tokens = llm.tokenize(prompt.encode("utf-8"), special=True)
         tokens_generated = 0
         eos_id = llm.token_eos()

@@ -2036,6 +2036,652 @@ h1, h2, h3, h4,
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+/* ── REDISEÑO INTEGRAL UI/UX: WIDGET "DR. OSO · PULSO" (IA HÍBRIDA EVOLUTIVA) ── */
+#pulso-floating-root {
+  position: fixed !important;
+  right: 24px;
+  bottom: 44px;
+  z-index: 10050 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Ocultar el FAB gigante cuando el panel de chat está abierto para cero empalme sobre pie de página */
+#pulso-floating-root.panel-is-open #pulso-fab-btn {
+  display: none !important;
+}
+
+.pulso-chat-panel {
+  width: 400px !important;
+  max-width: calc(100vw - 32px) !important;
+  height: 560px !important;
+  max-height: calc(100vh - 96px) !important;
+  background: rgba(7, 18, 28, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 28px 68px -12px rgba(0, 0, 0, 0.78), 0 0 28px rgba(124, 224, 244, 0.16) !important;
+  overflow: hidden !important;
+  display: none;
+  flex-direction: column;
+  margin-bottom: 0 !important;
+}
+
+:root[data-theme="light"] .pulso-chat-panel {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(11, 110, 120, 0.34) !important;
+  box-shadow: 0 24px 56px -12px rgba(14, 42, 59, 0.22), 0 0 22px rgba(2, 132, 199, 0.12) !important;
+}
+
+/* Encabezado limpio, alineado y sin superposición de avatar sobre el título */
+.pulso-chat-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 12px 14px !important;
+  background: linear-gradient(135deg, rgba(10, 32, 50, 0.95) 0%, rgba(11, 110, 120, 0.72) 100%) !important;
+  border-bottom: 1px solid var(--line-strong) !important;
+  border-top-left-radius: 21px !important;
+  border-top-right-radius: 21px !important;
+  flex-shrink: 0 !important;
+  cursor: move;
+}
+
+:root[data-theme="light"] .pulso-chat-header {
+  background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 55%, #0B6E78 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28) !important;
+}
+
+.pulso-chat-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.pulso-header-avatar-box {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  border-radius: 13px !important;
+  overflow: hidden !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1.5px solid rgba(184, 236, 255, 0.55) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+}
+
+.dr-oso-header-portrait {
+  width: 42px !important;
+  height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  position: static !important;
+}
+
+.dr-oso-header-img {
+  width: 38px !important;
+  height: 38px !important;
+  max-height: 38px !important;
+  max-width: 38px !important;
+  object-fit: contain !important;
+  position: static !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.pulso-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pulso-title-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pulso-chat-title {
+  font: 700 0.94rem/1.15 "Plus Jakarta Sans", sans-serif !important;
+  color: #FFFFFF !important;
+  white-space: nowrap;
+}
+
+.pulso-hybrid-pill {
+  background: rgba(124, 224, 244, 0.2);
+  color: #E0F2FE;
+  border: 1px solid rgba(184, 236, 255, 0.42);
+  border-radius: 999px;
+  padding: 2px 7px;
+  font: 600 0.62rem/1 "JetBrains Mono", monospace;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.pulso-chat-subtitle {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.7rem !important;
+  color: #D8ECF6 !important;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+#pulso-conn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 165px;
+}
+
+.pulso-learning-pill {
+  background: rgba(16, 185, 129, 0.2);
+  color: #A7F3D0;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font: 600 0.64rem/1.2 "JetBrains Mono", monospace;
+  white-space: nowrap;
+}
+
+.pulso-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+}
+
+.pulso-icon-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  background: rgba(5, 13, 20, 0.45) !important;
+  border: 1px solid rgba(184, 236, 255, 0.28) !important;
+  color: #FFFFFF !important;
+  font-size: 0.78rem !important;
+}
+
+.pulso-icon-btn:hover {
+  background: rgba(124, 224, 244, 0.28) !important;
+  border-color: #7CE0F4 !important;
+}
+
+/* Barra de estados fluida: cero scroll horizontal, cero píldoras cortadas */
+.pulso-states-bar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 7px 12px !important;
+  background: rgba(5, 13, 20, 0.65) !important;
+  border-bottom: 1px solid var(--line) !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+:root[data-theme="light"] .pulso-states-bar {
+  background: #F0F9FF !important;
+  border-bottom-color: rgba(186, 230, 253, 0.85) !important;
+}
+
+.pulso-state-chip {
+  background: rgba(12, 28, 42, 0.78) !important;
+  color: var(--muted) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  padding: 3px 9px !important;
+  font: 600 0.67rem/1.2 "Inter", sans-serif !important;
+  transition: all 0.18s ease;
+}
+
+:root[data-theme="light"] .pulso-state-chip {
+  background: #FFFFFF !important;
+  color: #0E2A3B !important;
+  border-color: rgba(186, 230, 253, 0.9) !important;
+}
+
+.pulso-state-chip.is-active,
+.pulso-state-chip.active {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border-color: transparent !important;
+  font-weight: 700 !important;
+}
+
+/* Acciones rápidas en cuadrícula compacta de 4 botones */
+.pulso-quick-actions {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 6px !important;
+  padding: 7px 12px !important;
+  background: rgba(6, 18, 30, 0.52) !important;
+  border-bottom: 1px solid var(--line) !important;
+  flex-shrink: 0 !important;
+}
+
+:root[data-theme="light"] .pulso-quick-actions {
+  background: #F8FAFC !important;
+  border-bottom-color: rgba(186, 230, 253, 0.7) !important;
+}
+
+.pulso-quick-btn {
+  background: rgba(124, 224, 244, 0.1) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 9px !important;
+  padding: 5px 4px !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pulso-quick-btn:hover {
+  background: rgba(124, 224, 244, 0.22) !important;
+  border-color: var(--accent) !important;
+}
+
+:root[data-theme="light"] .pulso-quick-btn {
+  background: #FFFFFF !important;
+  color: #0B6E78 !important;
+  border-color: rgba(11, 110, 120, 0.35) !important;
+}
+
+/* Contenedor de mensajes: scroll vertical limpio único, cero scroll horizontal */
+.pulso-chat-messages {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding: 12px 14px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: rgba(4, 10, 16, 0.55) !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 224, 244, 0.35) transparent;
+}
+
+:root[data-theme="light"] .pulso-chat-messages {
+  background: #F4F9FB !important;
+  scrollbar-color: rgba(11, 110, 120, 0.3) transparent;
+}
+
+.pulso-chat-messages::-webkit-scrollbar {
+  width: 5px;
+  height: 0px;
+}
+
+.pulso-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(124, 224, 244, 0.35);
+  border-radius: 999px;
+}
+
+.pulso-msg {
+  max-width: 94% !important;
+}
+
+.pulso-msg-user .pulso-msg-bubble {
+  background: linear-gradient(135deg, #0284C7 0%, #0B6E78 100%) !important;
+  color: #FFFFFF !important;
+  border-radius: 14px 14px 4px 14px !important;
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.28) !important;
+}
+
+.pulso-msg-assistant .pulso-msg-bubble {
+  background: rgba(12, 28, 42, 0.88) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px 14px 14px 4px !important;
+  font-size: 0.82rem !important;
+  line-height: 1.52 !important;
+}
+
+:root[data-theme="light"] .pulso-msg-assistant .pulso-msg-bubble {
+  background: #FFFFFF !important;
+  color: #0E2A3B !important;
+  border-color: rgba(186, 230, 253, 0.9) !important;
+}
+
+/* Telemetría de Ruta e IA Evolutiva sobre cada respuesta */
+.pulso-msg-telemetry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.pulso-meta-pill {
+  font: 600 0.64rem/1.2 "JetBrains Mono", monospace;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.pulso-meta-pill.pill-clinical {
+  background: rgba(14, 165, 233, 0.16);
+  color: #7CE0F4;
+  border-color: rgba(124, 224, 244, 0.35);
+}
+
+.pulso-meta-pill.pill-universal {
+  background: rgba(168, 85, 247, 0.18);
+  color: #E9D5FF;
+  border-color: rgba(192, 132, 252, 0.4);
+}
+
+.pulso-meta-pill.pill-agentic {
+  background: rgba(20, 184, 166, 0.18);
+  color: #5EEAD4;
+  border-color: rgba(94, 234, 212, 0.38);
+}
+
+.pulso-meta-pill.pill-risk-high {
+  background: rgba(239, 68, 68, 0.22);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.pulso-meta-pill.pill-risk-mod {
+  background: rgba(245, 158, 11, 0.2);
+  color: #FDE68A;
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.pulso-meta-pill.pill-risk-low {
+  background: rgba(16, 185, 129, 0.16);
+  color: #6EE7B7;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.pulso-meta-pill.pill-episodic {
+  background: rgba(52, 211, 153, 0.18);
+  color: #A7F3D0;
+  border-color: rgba(52, 211, 153, 0.42);
+}
+
+:root[data-theme="light"] .pulso-meta-pill.pill-clinical {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+:root[data-theme="light"] .pulso-meta-pill.pill-universal {
+  background: #F3E8FF;
+  color: #6B21A8;
+}
+
+:root[data-theme="light"] .pulso-meta-pill.pill-risk-high {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+:root[data-theme="light"] .pulso-meta-pill.pill-risk-mod {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+:root[data-theme="light"] .pulso-meta-pill.pill-risk-low,
+:root[data-theme="light"] .pulso-meta-pill.pill-episodic {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+/* Bloques de código y alertas dentro de respuestas */
+.pulso-code-wrap {
+  margin: 8px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(124, 224, 244, 0.25);
+  background: #030A11;
+}
+
+.pulso-code-lang {
+  display: block;
+  padding: 3px 10px;
+  font: 600 0.65rem "JetBrains Mono", monospace;
+  color: #7CE0F4;
+  background: rgba(124, 224, 244, 0.1);
+  border-bottom: 1px solid rgba(124, 224, 244, 0.16);
+  text-transform: uppercase;
+}
+
+.pulso-code-block {
+  margin: 0;
+  padding: 9px 11px;
+  overflow-x: auto;
+  font: 400 0.74rem/1.45 "JetBrains Mono", monospace;
+  color: #E2E8F0;
+}
+
+.pulso-inline-code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.76rem;
+  background: rgba(124, 224, 244, 0.14);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+.pulso-alert-inline {
+  display: inline-block;
+  color: #FCA5A5;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+:root[data-theme="light"] .pulso-alert-inline {
+  color: #B91C1C;
+  background: #FEE2E2;
+}
+
+.pulso-msg-h3 {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--accent);
+  margin: 4px 0 6px;
+}
+
+.pulso-msg-h4 {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--ink);
+  margin: 6px 0 3px;
+}
+
+.pulso-msg-hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 8px 0;
+}
+
+/* Barra de Feedback Evolutivo (👍 / 👎 / ✏️ Corregir y Enseñar) */
+.pulso-feedback-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.pulso-fb-btn {
+  background: rgba(124, 224, 244, 0.08);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 0.69rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.pulso-fb-btn:hover {
+  background: rgba(124, 224, 244, 0.2);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.pulso-fb-btn.is-selected {
+  background: rgba(16, 185, 129, 0.22);
+  color: #6EE7B7;
+  border-color: rgba(16, 185, 129, 0.55);
+}
+
+.pulso-fb-btn.is-selected-neg {
+  background: rgba(239, 68, 68, 0.22);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+:root[data-theme="light"] .pulso-fb-btn.is-selected {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+:root[data-theme="light"] .pulso-fb-btn.is-selected-neg {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.pulso-correction-box {
+  margin-top: 6px;
+  padding: 9px;
+  border-radius: 12px;
+  background: rgba(6, 16, 26, 0.85);
+  border: 1px solid var(--line-strong);
+}
+
+:root[data-theme="light"] .pulso-correction-box {
+  background: #F8FAFC;
+  border-color: #38BDF8;
+}
+
+.pulso-correction-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+
+.pulso-correction-textarea {
+  width: 100%;
+  min-height: 76px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-input);
+  color: var(--ink);
+  font-size: 0.76rem;
+  padding: 6px 8px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.pulso-correction-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.pulso-corr-cancel {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.71rem;
+  cursor: pointer;
+}
+
+.pulso-corr-save {
+  background: linear-gradient(135deg, #059669 0%, #0D9488 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 11px;
+  font-size: 0.71rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Footer y Textarea auto-expandible sin flechas diminutas */
+.pulso-chat-footer {
+  padding: 10px 12px !important;
+  background: rgba(7, 18, 28, 0.92) !important;
+  border-top: 1px solid var(--line) !important;
+  flex-shrink: 0 !important;
+}
+
+:root[data-theme="light"] .pulso-chat-footer {
+  background: #FFFFFF !important;
+  border-top-color: rgba(186, 230, 253, 0.85) !important;
+}
+
+.pulso-input-row {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+}
+
+.pulso-chat-input {
+  flex: 1 !important;
+  min-height: 40px !important;
+  max-height: 110px !important;
+  padding: 9px 12px !important;
+  border-radius: 12px !important;
+  background: rgba(4, 12, 20, 0.86) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line-strong) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.4 !important;
+  resize: none !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+}
+
+.pulso-chat-input::-webkit-scrollbar {
+  display: none;
+}
+
+:root[data-theme="light"] .pulso-chat-input {
+  background: #F4F9FB !important;
+  color: #0E2A3B !important;
+  border-color: rgba(11, 110, 120, 0.35) !important;
+}
+
+.pulso-mic-btn,
+.pulso-send-btn {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+.pulso-footer-meta {
+  color: var(--muted) !important;
+  margin-top: 6px !important;
+}
+
+.pulso-clear-link {
+  color: var(--accent) !important;
+}
+
 /* Espacio inferior para que el HUD no tape botones al final del scroll */
 .view-viewport {
   padding-bottom: 52px !important;
@@ -2071,7 +2717,8 @@ h1, h2, h3, h4,
   .preloader,
   .c-scroll,
   .aww-cursor,
-  .aww-hud {
+  .aww-hud,
+  #pulso-floating-root {
     display: none !important;
   }
   body {
